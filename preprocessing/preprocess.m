@@ -505,9 +505,11 @@ else
 end
 interpolated.auto_badchans = rejected_chans;
 % detrending
-res = bsxfun(@minus, interpolated.data, mean(interpolated.data,2));
+doubled_data = double(interpolated.data);
+res = bsxfun(@minus, doubled_data, mean(doubled_data, 2));
+singled_data = single(res);
 result = interpolated;
-result.data = res;
+result.data = singled_data;
 
 %% Creating the final figure to save
 fig = figure;
