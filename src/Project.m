@@ -760,6 +760,7 @@ classdef Project < handle
             preprocessed_subject_count = 0;
             for i = 1:length(subjects)
                 subject_name = subjects{i};
+                display(['Adding subject ', subject_name]);
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
 
@@ -771,7 +772,7 @@ classdef Project < handle
                     name_temp = file.name;
                     splits = strsplit(name_temp, ext);
                     file_name = splits{1};
-
+                    display(['...Adding file ', file_name]);
                     % Block creation extracts and updates automatically the rating 
                     % information from the existing files, if any.
                     block = Block(subject, file_name, ext, self.ds_rate, self.params);
