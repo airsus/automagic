@@ -92,8 +92,6 @@ if(length(intersect_labels) < 3)
 end
 
 display(defaults.run_message);
-
-
 options = [0 1 0 0 1];
 [~, ~, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
     

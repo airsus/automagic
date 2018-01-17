@@ -499,7 +499,22 @@ end
 
 % PCA or ICA
 if (ica_params.bool ) % If ICA is checked
-    EEG_cleared = perform_ica(EEG_regressed, ica_params);
+    eeg_system.ref_chan = 13;
+    % Remove the reference channel
+    data.data(eeg_system.ref_chan,:) = [];
+    data.nbchan = size(data.data,1);
+    refchanloc = data.chanlocs(eeg_system.ref_chan);
+    data.chanlocs(eeg_system.ref_chan) = [];
+    
+%     EEG_cleared = perform_ica(EEG_regressed, ica_params);
+    
+    % Add back the reference channel
+    data.data = [data.data(1:eeg_system.ref_chan-1,:); ...
+                zeros(1,size(data.data,2));...
+                data.data(eeg_system.ref_chan:end,:)];
+    data.nbchan = size(data.data,1);
+    data.chanlocs = [data.chanlocs(1:eeg_system.ref_chan-1), refchanloc, ...
+                    data.chanlocs(eeg_system.ref_chan:end)];
 else % If PCA is not checked either, the EEG_cleared will remain unchanged
     [EEG_cleared, noise] = perform_pca(EEG_regressed, pca_params);
 end
