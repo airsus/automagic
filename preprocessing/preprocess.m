@@ -506,7 +506,7 @@ if (ica_params.bool ) % If ICA is checked
     refchanloc = data.chanlocs(eeg_system.ref_chan);
     data.chanlocs(eeg_system.ref_chan) = [];
     
-%     EEG_cleared = perform_ica(EEG_regressed, ica_params);
+    EEG_cleared = perform_ica(EEG_regressed, ica_params);
     
     % Add back the reference channel
     data.data = [data.data(1:eeg_system.ref_chan-1,:); ...
