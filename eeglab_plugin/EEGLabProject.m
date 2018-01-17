@@ -65,6 +65,10 @@ properties
 
     % List of indices of blocks that are not rated (or rated as NotRated).
     not_rated_list
+    
+    % This determines the color scale in rating gui:
+    % [-colorScale, colorScale]. Default is 100.
+    colorScale
 end
 
 properties(SetAccess=private)
@@ -99,6 +103,7 @@ methods
         self.ALLEEG = ALLEEG;
         self.params = params;
         self.CGV = ConstantGlobalValues;
+        self.colorScale = self.CGV.COLOR_SCALE;
         self = self.create_rating_structure();
 
     end

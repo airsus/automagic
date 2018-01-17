@@ -179,12 +179,16 @@ if((isempty(fieldnames(pca_params)) || (isempty(pca_params.lambda) || pca_params
     elseif(regexp(folder, 'eeglab'))
         folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
     else
-      while(isempty(regexp(folder, 'gui', 'once')) || ...
-            isempty(regexp(folder, 'eeg_lab', 'once')))
+      while(isempty(regexp(folder, 'gui', 'once')) && ...
+            isempty(regexp(folder, 'eeglab', 'once')))
         
         msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
             ' the gui folder of the automagic: your_path/automagic/gui/'];
-        waitfor(msgbox(msg));
+        if(exist('warndlg2', 'file'))
+            warndlg2(msg);
+        else
+            warndlg(msg);
+        end
         folder = uigetdir(pwd, msg);
         
         if(isempty(folder))
@@ -229,12 +233,16 @@ if( channel_rejection_params.rar && ~ exist('performReference.m', 'file'))
     elseif(regexp(folder, 'eeglab'))
         folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
     else
-      while(isempty(regexp(folder, 'gui', 'once')) || ...
-            isempty(regexp(folder, 'eeg_lab', 'once')))
+      while(isempty(regexp(folder, 'gui', 'once')) && ...
+            isempty(regexp(folder, 'eeglab', 'once')))
         
         msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
             ' the gui folder of the automagic: your_path/automagic/gui/'];
-        waitfor(msgbox(msg));
+        if(exist('warndlg2', 'file'))
+            warndlg2(msg);
+        else
+            warndlg(msg);
+        end
         folder = uigetdir(pwd, msg);
         
         if(isempty(folder))

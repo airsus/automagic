@@ -74,6 +74,7 @@ probcheck = findHandlerFromList(allhandlers, 'probcheck');
 probin = findHandlerFromList(allhandlers, 'probin');
 speccheck = findHandlerFromList(allhandlers, 'speccheck');
 specin = findHandlerFromList(allhandlers, 'specin');
+rarcheck = findHandlerFromList(allhandlers, 'rarcheck');
 icacheck = findHandlerFromList(allhandlers, 'icacheck');
 pcacheck = findHandlerFromList(allhandlers, 'pcacheck');
 lambdain = findHandlerFromList(allhandlers, 'lambdain');
@@ -81,6 +82,7 @@ tolin = findHandlerFromList(allhandlers, 'tolerancein');
 maxiterin = findHandlerFromList(allhandlers, 'maxiterin');
 ok = findHandlerFromList(allhandlers, 'ok');
 interpol = findHandlerFromList(allhandlers, 'interpolpopup');
+refchan = findHandlerFromList(allhandlers, 'refedit');
 reduce_chans = findHandlerFromList(allhandlers, 'reducechancheck');
 eog_chans = findHandlerFromList(allhandlers, 'eogchans');
 exclud_chans = findHandlerFromList(allhandlers, 'excludchans');
@@ -260,7 +262,8 @@ function okcallback(PushButton, EventData)
        prob_val = default_params.channel_rejection_params.prob_thresh;
     end
 
-
+    rar_bool = get(rarcheck, 'Value');
+    
     if( get(pcacheck, 'Value') )
         lambda = str2double(get(lambdain, 'String'));
         tol = str2double(get(tolin, 'String'));
@@ -305,6 +308,14 @@ function okcallback(PushButton, EventData)
             msgbox('Notch filter is left empty and therefore will be skipped.'))
     end
     
+    ref_chan = str2num(get(refchan, 'String'));
+    if(isempty(ref_chan))
+        waitfor(msgbox(['Please specify the channel index of the reference ',...
+            ' channel contraining 0s'],...
+            'Error','error'));
+        return;
+    end
+    eeg_system.ref_chan = ref_chan;
     
     params.eeg_system = eeg_system;
     params.perform_eog_regression = perform_eog_regression;
@@ -315,6 +326,8 @@ function okcallback(PushButton, EventData)
     params.channel_rejection_params.kurt_thresh = kurt_val;
     params.channel_rejection_params.spec_thresh = spec_val;
     params.channel_rejection_params.prob_thresh = prob_val;
+    params.channel_rejection_params.rar = rar_bool;
+    params.channel_rejection_params.exclude_chans = default_params.channel_rejection_params.exclude_chans;
     params.pca_params.lambda = lambda;
     params.pca_params.tol = tol;
     params.pca_params.maxIter = maxIter;
@@ -363,6 +376,7 @@ function defaultcallback(PushButton, EventData)
     format_default(set(probin, 'String', ...
             default_params.channel_rejection_params.prob_thresh));
 
+    set(rarcheck, 'Value', default_params.channel_rejection_params.rar);
     % ICA
     set(icacheck, 'Value', default_params.ica_params.bool);
         
@@ -396,6 +410,9 @@ function defaultcallback(PushButton, EventData)
     index = find(not(cellfun('isempty', IndexC)));
     set(interpol, 'Value', index);
 
+    % Reference channel
+    set(refchan, 'String', '');
+    
     switch_components();
 end
 
@@ -549,7 +566,7 @@ low_label.style = {{} {'Style','text',...
 low_label.pos = [1 1 1];
 
 low_inputs.style = { {'Style','checkbox',...
-            'String','None', 'Value', 0, 'tag', 'lowcheckin'} {'Style','edit',...
+            'String','', 'Value', 0, 'tag', 'lowcheckin'} {'Style','edit',...
             'String','', 'tag', 'lowfreqin', 'Enable', 'off'} {'Style','edit',...
             'String','', 'tag', 'loworderin', 'Enable', 'off'} };
 low_inputs.pos = [1 1 1];
@@ -579,6 +596,9 @@ channel_rejection_input_spec.style = { {'Style','checkbox',...
             'String','4', 'tag', 'specin'}};
 channel_rejection_input_spec.pos = [1 1]; 
 
+channel_rejection_input_rar.style = { {'Style','checkbox',...
+            'String','Robust Average Referencing', 'tag', 'rarcheck', 'Value', 0} };
+channel_rejection_input_rar.pos = 1; 
 % ICA
 % ---------------------------------------
 ica_checkbox.style = { {'Style','checkbox',...
@@ -606,6 +626,21 @@ pca_maxiter.style = { {} {'Style','text',...
             'String','1000', 'tag', 'maxiterin'} };
 pca_maxiter.pos = [1 1 1]; 
 
+% Interpolation mode
+% ---------------------------------------
+interpolation_text.style = {{'Style','text',...
+            'String','Interpolation'}  {'Style','popupmenu',...
+            'String',{'spherical', 'invdist', 'spacetime'}, ...
+            'tag', 'interpolpopup', 'Value', 1} };
+interpolation_text.pos = [1 1];
+
+% Reference channel
+% ---------------------------------------
+refchan.style = {{'Style','text',...
+            'String','Reference channel'}  {'Style','edit',...
+            'String', '', 'tag', 'refedit'} };
+refchan.pos = [1 1];
+
 % Reduce number of channels
 % ---------------------------------------
 reduce_chan_chechbox.style = { {'Style','checkbox',...
@@ -613,12 +648,6 @@ reduce_chan_chechbox.style = { {'Style','checkbox',...
             'tag', 'reducechancheck', 'Value', 1} {'Style','edit',...
             'String','', 'tag', 'excludchans'}};
 reduce_chan_chechbox.pos = [1 1]; 
-
-interpolation_text.style = {{'Style','text',...
-            'String','Interpolation'}  {'Style','popupmenu',...
-            'String',{'spherical', 'invdist', 'spacetime'}, ...
-            'tag', 'interpolpopup', 'Value', 1} };
-interpolation_text.pos = [1 1];
 
 % EOG channels
 % ---------------------------------------
@@ -640,23 +669,25 @@ okcancel.pos = [1 1 1];
             
 % Return both lists of uis and their positions
 % --------------------------------------------
-verpos = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];
+verpos = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];
 uipositions = {notch_text.pos notch_input.pos high_text.pos ...
     high_label.pos high_inputs.pos low_text.pos ...
     low_label.pos low_inputs.pos ...
     channel_rejection_text.pos channel_rejection_label.pos ...
     channel_rejection_input_kur.pos channel_rejection_input_prob.pos ...
-    channel_rejection_input_spec.pos ica_checkbox.pos pca_checkbox.pos ...
-    pca_lambda.pos pca_tolerance.pos pca_maxiter.pos interpolation_text.pos ...
-    reduce_chan_chechbox.pos eog.pos okcancel.pos};
+    channel_rejection_input_spec.pos channel_rejection_input_rar.pos ...
+    ica_checkbox.pos pca_checkbox.pos pca_lambda.pos pca_tolerance.pos ...
+    pca_maxiter.pos interpolation_text.pos refchan. pos reduce_chan_chechbox.pos ...
+    eog.pos okcancel.pos};
 uilist = [notch_text.style notch_input.style high_text.style ...
     high_label.style high_inputs.style low_text.style ...
     low_label.style low_inputs.style channel_rejection_text.style ...
     channel_rejection_label.style channel_rejection_input_kur.style ...
     channel_rejection_input_prob.style channel_rejection_input_spec.style...
-    ica_checkbox.style pca_checkbox.style pca_lambda.style pca_tolerance.style...
-    pca_maxiter.style interpolation_text.style reduce_chan_chechbox.style ...
-    eog.style okcancel.style];
+    channel_rejection_input_rar.style ica_checkbox.style pca_checkbox.style ...
+    pca_lambda.style pca_tolerance.style pca_maxiter.style ...
+    interpolation_text.style refchan.style reduce_chan_chechbox.style eog.style ...
+    okcancel.style];
 
 end
 
