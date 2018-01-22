@@ -499,7 +499,6 @@ end
 
 % PCA or ICA
 if (ica_params.bool ) % If ICA is checked
-    eeg_system.ref_chan = 13;
     % Remove the reference channel
     data.data(eeg_system.ref_chan,:) = [];
     data.nbchan = size(data.data,1);
