@@ -924,7 +924,8 @@ set(p, 'ButtonDownFcn', {@delete_line, p, y, handles})
 hold off;
 
 % --- Draw a star * on the plot to show the channels that have been
-% interpolated automatically during the preprocessing step
+% selected as bad channels during the preprocessing step. Note that they
+% are not necessary interpolated.
 function mark_interpolated_chans(handles)
 % handles  structure with handles of the gui
 

@@ -68,12 +68,14 @@ loworder = findHandlerFromList(allhandlers, 'loworderin');
 highcheck = findHandlerFromList(allhandlers, 'highcheckin');
 highfreq = findHandlerFromList(allhandlers, 'highfreqin');
 highorder = findHandlerFromList(allhandlers, 'highorderin');
-kurtcheck = findHandlerFromList(allhandlers, 'kurtcheck');
-kurtin = findHandlerFromList(allhandlers, 'kurtin');
-probcheck = findHandlerFromList(allhandlers, 'probcheck');
-probin = findHandlerFromList(allhandlers, 'probin');
-speccheck = findHandlerFromList(allhandlers, 'speccheck');
-specin = findHandlerFromList(allhandlers, 'specin');
+chancritcheck = findHandlerFromList(allhandlers, 'chancritcheck');
+chancritin = findHandlerFromList(allhandlers, 'chancritin');
+linenosecritcheck = findHandlerFromList(allhandlers, 'linenosecritcheck');
+linenosecritin = findHandlerFromList(allhandlers, 'linenosecritin');
+burstcritcheck = findHandlerFromList(allhandlers, 'burstcritcheck');
+burstcritin = findHandlerFromList(allhandlers, 'burstcritin');
+windowcritcheck = findHandlerFromList(allhandlers, 'windowcritcheck');
+windowcritin = findHandlerFromList(allhandlers, 'windowcritin');
 rarcheck = findHandlerFromList(allhandlers, 'rarcheck');
 icacheck = findHandlerFromList(allhandlers, 'icacheck');
 pcacheck = findHandlerFromList(allhandlers, 'pcacheck');
@@ -95,11 +97,14 @@ otherradio.set('callback', @otherradiocallback);
 notchedit.set('callback', @notcheditcallback);
 lowcheck.set('callback', @lowcheckcallback);
 highcheck.set('callback', @highcheckcallback);
-kurtcheck.set('callback', @kurtcheckcallback);
-probcheck.set('callback', @probcheckcallback);
-speccheck.set('callback', @speccheckcallback);
+chancritcheck.set('callback', @chancritcheckcallback);
+linenosecritcheck.set('callback', @linenosecritcheckcallback);
+burstcritcheck.set('callback', @burstcritcheckcallback);
+windowcritcheck.set('callback', @windowcritcheckcallback);
 icacheck.set('callback', @icacheckcallback);
 pcacheck.set('callback', @pcacheckcallback);
+eog_chans_check.set('callback', @eogregressioncallback);
+reduce_chans.set('callback', @reducechancallback);
 ok.set('callback', @okcallback);
 default.set('callback', @defaultcallback);
     
@@ -160,13 +165,22 @@ end
 
 % Channel Rejection criterias callback
 % -------------------------------------------
-function kurtcheckcallback(PushButton, EventData)
+function chancritcheckcallback(PushButton, EventData)
     switch_components();
 end
-function probcheckcallback(PushButton, EventData)
+function linenosecritcheckcallback(PushButton, EventData)
     switch_components();
 end
-function speccheckcallback(PushButton, EventData)
+function burstcritcheckcallback(PushButton, EventData)
+    switch_components();
+end
+function windowcritcheckcallback(PushButton, EventData)
+    switch_components();
+end
+function reducechancallback(PushButton, EventData)
+    switch_components();
+end
+function eogregressioncallback(PushButton, EventData)
     switch_components();
 end
 
@@ -234,32 +248,40 @@ function okcallback(PushButton, EventData)
         low_order = default_params.filter_params.high_order;
     end
 
-    if( get(kurtcheck, 'Value') )
-        kurt_val = str2double(get(kurtin, 'String'));
+    if( get(chancritcheck, 'Value') )
+        chancrit_val = str2double(get(chancritin, 'String'));
     else
-        kurt_val = -1;
+        chancrit_val = 'off';
     end
-    if( isempty(kurt_val) || isnan(kurt_val))
-       kurt_val = default_params.channel_rejection_params.kurt_thresh;
+    if( isempty(chancrit_val) || isnan(chancrit_val))
+       chancrit_val = default_params.channel_rejection_params.channel_criterion;
     end
 
-    if( get(speccheck, 'Value') )
-        spec_val = str2double(get(specin, 'String'));
+    if( get(linenosecritcheck, 'Value') )
+        linenosecrit_val = str2double(get(linenosecritin, 'String'));
     else
-        spec_val = -1;
+        linenosecrit_val = 'off';
     end
-    if( isempty(spec_val) || isnan(spec_val))
-       spec_val = default_params.channel_rejection_params.spec_thresh; ;
+    if( isempty(linenosecrit_val) || isnan(linenosecrit_val))
+       linenosecrit_val = default_params.channel_rejection_params.line_noise_criterion; ;
     end
 
-
-    if( get(probcheck, 'Value') )
-        prob_val = str2double(get(probin, 'String'));
+    if( get(burstcritcheck, 'Value') )
+        burstcrit_val = str2double(get(burstcritin, 'String'));
     else
-        prob_val = -1;
+        burstcrit_val = 'off';
     end
-    if( isempty(prob_val) || isnan(prob_val))
-       prob_val = default_params.channel_rejection_params.prob_thresh;
+    if( isempty(burstcrit_val) || isnan(burstcrit_val))
+       burstcrit_val = default_params.channel_rejection_params.burst_criterion;
+    end
+
+    if( get(windowcritcheck, 'Value') )
+        windowcrit_val = str2double(get(windowcritin, 'String'));
+    else
+        windowcrit_val = 'off';
+    end
+    if( isempty(windowcrit_val) || isnan(windowcrit_val))
+       windowcrit_val = default_params.channel_rejection_params.window_criterion;
     end
 
     rar_bool = get(rarcheck, 'Value');
@@ -323,11 +345,11 @@ function okcallback(PushButton, EventData)
     params.filter_params.high_order = high_order;
     params.filter_params.low_order = low_order;
     params.filter_params.notch_freq = notch_freq;
-    params.channel_rejection_params.kurt_thresh = kurt_val;
-    params.channel_rejection_params.spec_thresh = spec_val;
-    params.channel_rejection_params.prob_thresh = prob_val;
+    params.channel_rejection_params.channel_criterion = chancrit_val;
+    params.channel_rejection_params.line_noise_criterion = linenosecrit_val;
+    params.channel_rejection_params.burst_criterion = burstcrit_val;
+    params.channel_rejection_params.window_criterion = windowcrit_val;
     params.channel_rejection_params.rar = rar_bool;
-    params.channel_rejection_params.exclude_chans = default_params.channel_rejection_params.exclude_chans;
     params.pca_params.lambda = lambda;
     params.pca_params.tol = tol;
     params.pca_params.maxIter = maxIter;
@@ -352,31 +374,36 @@ function defaultcallback(PushButton, EventData)
         format_default(default_params.filter_params.high_freq));
 
     % Channel rejection
-    if( default_params.channel_rejection_params.kurt_thresh ~= -1)
-        set(kurtcheck, 'Value', 1);       
+    if( ~strcmp(default_params.channel_rejection_params.channel_criterion, 'off'))
+        set(chancritcheck, 'Value', 1);       
     else
-        set(kurtcheck, 'Value', 0);
+        set(chancritcheck, 'Value', 0);
     end
-    set(kurtin, 'String', ...
-            format_default(default_params.channel_rejection_params.kurt_thresh));
+    set(chancritin, 'String', format_default(default_params.channel_rejection_params.channel_criterion));
 
-    if( default_params.channel_rejection_params.spec_thresh ~= -1)
-        set(speccheck, 'Value', 1);
+    if( ~strcmp(default_params.channel_rejection_params.line_noise_criterion, 'off'))
+        set(linenosecritcheck, 'Value', 1);
     else
-        set(speccheck, 'Value', 0);
+        set(linenosecritcheck, 'Value', 0);
     end
-    set(specin, 'String', ...
-        format_default(default_params.channel_rejection_params.spec_thresh));
+    set(linenosecritin, 'String', format_default(default_params.channel_rejection_params.line_noise_criterion));
 
-    if( default_params.channel_rejection_params.prob_thresh ~= -1)
-        set(probcheck, 'Value', 1);
+    if( ~strcmp(default_params.channel_rejection_params.burst_criterion, 'off'))
+        set(burstcritcheck, 'Value', 1);
     else
-        set(probcheck, 'Value', 0);
+        set(burstcritcheck, 'Value', 0);
     end
-    format_default(set(probin, 'String', ...
-            default_params.channel_rejection_params.prob_thresh));
-
+    set(burstcritin, 'String', format_default(default_params.channel_rejection_params.burst_criterion));
+    
+    if( ~strcmp(default_params.channel_rejection_params.window_criterion, 'off'))
+        set(windowcritcheck, 'Value', 1);
+    else
+        set(windowcritcheck, 'Value', 0);
+    end
+    set(windowcritin, 'String', format_default(default_params.channel_rejection_params.window_criterion));
+    
     set(rarcheck, 'Value', default_params.channel_rejection_params.rar);
+    
     % ICA
     set(icacheck, 'Value', default_params.ica_params.bool);
         
@@ -397,12 +424,12 @@ function defaultcallback(PushButton, EventData)
     end
 
     % Reduce channels
-    set(exclud_chans, 'String', '');
+    set(exclud_chans, 'String', num2str(default_params.channel_reduction_params.tobe_excluded_chans));
     set(reduce_chans, 'Value', default_params.channel_reduction_params.perform_reduce_channels);
         
     % EOG channels
-    set(eog_chans, 'String', '');
-    set(eog_chans_check, 'Value', 1);
+    set(eog_chans, 'String', num2str(default_params.eog_regression_params.eog_chans));
+    set(eog_chans_check, 'Value', default_params.eog_regression_params.perform_eog_regression);
     
     % Interpolation
     IndexC = strfind(interpol.String, ...
@@ -411,7 +438,7 @@ function defaultcallback(PushButton, EventData)
     set(interpol, 'Value', index);
 
     % Reference channel
-    set(refchan, 'String', '');
+    set(refchan, 'String', default_params.eeg_system.ref_chan);
     
     switch_components();
 end
@@ -446,25 +473,32 @@ function switch_components()
            format_default(default_params.filter_params.low_freq));
     end
 
-    if( get(kurtcheck, 'Value') )
-        set(kurtin, 'enable', 'on');
+    if( get(chancritcheck, 'Value') )
+        set(chancritin, 'enable', 'on');
     else
-        set(kurtin, 'enable', 'off', 'String', ...
-            format_default(num2str(default_params.channel_rejection_params.kurt_thresh)));
+        set(chancritin, 'enable', 'off', 'String', ...
+            	default_params.channel_rejection_params.channel_criterion);
     end
 
-    if( get(speccheck, 'Value') )
-        set(specin, 'enable', 'on');
+    if( get(linenosecritcheck, 'Value') )
+        set(linenosecritin, 'enable', 'on');
     else
-        set(specin, 'enable', 'off', 'String', ...
-            format_default(num2str(default_params.channel_rejection_params.spec_thresh)));
+        set(linenosecritin, 'enable', 'off', 'String', ...
+            	default_params.channel_rejection_params.line_noise_criterion);
     end
 
-    if( get(probcheck, 'Value') )
-        set(probin, 'enable', 'on');
+    if( get(burstcritcheck, 'Value') )
+        set(burstcritin, 'enable', 'on');
     else
-        set(probin, 'enable', 'off', 'String', ...
-            format_default(num2str(default_params.channel_rejection_params.prob_thresh)));
+        set(burstcritin, 'enable', 'off', 'String', ...
+            	default_params.channel_rejection_params.burst_criterion);
+    end
+    
+    if( get(windowcritcheck, 'Value') )
+        set(windowcritin, 'enable', 'on');
+    else
+        set(windowcritin, 'enable', 'off', 'String', ...
+            	default_params.channel_rejection_params.window_criterion);
     end
 
     if( get(pcacheck, 'Value') )
@@ -490,7 +524,24 @@ function switch_components()
         set(maxiterin, 'enable', 'off', 'String', ...
             format_default(num2str(default_params.pca_params.maxIter)));
     end
+    
+    if( get(reduce_chans, 'Value') )
+        set(exclud_chans, 'enable', 'on');
+    else
+        set(exclud_chans, 'enable', 'off', 'String', ...
+            	num2str(default_params.channel_reduction_params.tobe_excluded_chans));
+    end
+
+    if( get(eog_chans_check, 'Value') )
+        set(eog_chans, 'enable', 'on');
+    else
+        set(eog_chans, 'enable', 'off', 'String', ...
+            	num2str(default_params.eog_regression_params.eog_chans));
+    end
 end
+
+% Put all initial values to default
+defaultcallback();
 
 % This makes the code stop until we make sure the pop up window is closed
 waitfor(allhandlers{1})
@@ -581,20 +632,25 @@ channel_rejection_label.style = {{} {'Style','text',...
             'String','Threshold'}};
 channel_rejection_label.pos = [1 1];
 
-channel_rejection_input_kur.style = { {'Style','checkbox',...
-            'String','Kurtosis', 'tag', 'kurtcheck', 'Value', 1} {'Style','edit',...
-            'String','3', 'tag', 'kurtin'}};
-channel_rejection_input_kur.pos = [1 1];        
+channel_rejection_input_chan.style = { {'Style','checkbox',...
+            'String','Channel Criterion', 'tag', 'chancritcheck', 'Value', 1} {'Style','edit',...
+            'String','3', 'tag', 'chancritin'}};
+channel_rejection_input_chan.pos = [1 1];        
 
-channel_rejection_input_prob.style = { {'Style','checkbox',...
-            'String','Probability', 'tag', 'probcheck', 'Value', 1} {'Style','edit',...
-            'String','4', 'tag', 'probin'}};
-channel_rejection_input_prob.pos = [1 1]; 
+channel_rejection_input_linenoise.style = { {'Style','checkbox',...
+            'String','Line Noise Criterion', 'tag', 'linenosecritcheck', 'Value', 1} {'Style','edit',...
+            'String','4', 'tag', 'linenosecritin'}};
+channel_rejection_input_linenoise.pos = [1 1]; 
 
-channel_rejection_input_spec.style = { {'Style','checkbox',...
-            'String','Spectrum', 'tag', 'speccheck', 'Value', 1} {'Style','edit',...
-            'String','4', 'tag', 'specin'}};
-channel_rejection_input_spec.pos = [1 1]; 
+channel_rejection_input_burst.style = { {'Style','checkbox',...
+            'String','Burst Criterion', 'tag', 'burstcritcheck', 'Value', 1} {'Style','edit',...
+            'String','4', 'tag', 'burstcritin'}};
+channel_rejection_input_burst.pos = [1 1]; 
+
+channel_rejection_input_win.style = { {'Style','checkbox',...
+            'String','Window Criterion', 'tag', 'windowcritcheck', 'Value', 1} {'Style','edit',...
+            'String','4', 'tag', 'windowcritin'}};
+channel_rejection_input_win.pos = [1 1]; 
 
 channel_rejection_input_rar.style = { {'Style','checkbox',...
             'String','Robust Average Referencing', 'tag', 'rarcheck', 'Value', 0} };
@@ -669,25 +725,25 @@ okcancel.pos = [1 1 1];
             
 % Return both lists of uis and their positions
 % --------------------------------------------
-verpos = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];
+verpos = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1];
 uipositions = {notch_text.pos notch_input.pos high_text.pos ...
     high_label.pos high_inputs.pos low_text.pos ...
     low_label.pos low_inputs.pos ...
     channel_rejection_text.pos channel_rejection_label.pos ...
-    channel_rejection_input_kur.pos channel_rejection_input_prob.pos ...
-    channel_rejection_input_spec.pos channel_rejection_input_rar.pos ...
-    ica_checkbox.pos pca_checkbox.pos pca_lambda.pos pca_tolerance.pos ...
-    pca_maxiter.pos interpolation_text.pos refchan. pos reduce_chan_chechbox.pos ...
-    eog.pos okcancel.pos};
+    channel_rejection_input_chan.pos channel_rejection_input_linenoise.pos ...
+    channel_rejection_input_burst.pos channel_rejection_input_win.pos ...
+    channel_rejection_input_rar.pos ica_checkbox.pos pca_checkbox.pos ...
+    pca_lambda.pos pca_tolerance.pos pca_maxiter.pos interpolation_text.pos ...
+    refchan. pos reduce_chan_chechbox.pos eog.pos okcancel.pos};
 uilist = [notch_text.style notch_input.style high_text.style ...
     high_label.style high_inputs.style low_text.style ...
     low_label.style low_inputs.style channel_rejection_text.style ...
-    channel_rejection_label.style channel_rejection_input_kur.style ...
-    channel_rejection_input_prob.style channel_rejection_input_spec.style...
-    channel_rejection_input_rar.style ica_checkbox.style pca_checkbox.style ...
-    pca_lambda.style pca_tolerance.style pca_maxiter.style ...
-    interpolation_text.style refchan.style reduce_chan_chechbox.style eog.style ...
-    okcancel.style];
+    channel_rejection_label.style channel_rejection_input_chan.style ...
+    channel_rejection_input_linenoise.style channel_rejection_input_burst.style...
+    channel_rejection_input_win.style channel_rejection_input_rar.style ...
+    ica_checkbox.style pca_checkbox.style pca_lambda.style pca_tolerance.style ...
+    pca_maxiter.style interpolation_text.style refchan.style ...
+    reduce_chan_chechbox.style eog.style okcancel.style];
 
 end
 

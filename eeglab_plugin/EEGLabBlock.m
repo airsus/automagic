@@ -74,8 +74,8 @@ properties(SetAccess=private)
     % of this channel in the list.  
     man_badchans
 
-    % List of the channels that have been interpolated during the
-    % prerpocessing step.
+    % List of the channels that have been selected as bad channels during
+    % the preprocessing. Note that they are not necessarily interpolated.
     auto_badchans
 
     % is true if the block has been already interpolated at least once.

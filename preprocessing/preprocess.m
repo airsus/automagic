@@ -11,11 +11,9 @@ function [result, fig] = preprocess(data, varargin)
 %   respectively. This latter one is needed only if a .fif file is used,
 %   otherwise it can be omitted.
 %   
-%   To learn more about 'filter_params', 'channel_rejection_params', 
-%   ica_params and 'pca_params' please see their corresponding functions 
-%   perform_filter.m, reject_channels.m, perform_ica.m and perform_pca.m.
-%   Please note that channel_rejection_params.exclude_chans is determined 
-%   in this file based on 'eeg_system'.
+%   To learn more about 'filter_params', ica_params and 'pca_params' 
+%   please see their corresponding functions perform_filter.m, 
+%   perform_ica.m and perform_pca.m.
 %   
 %   'interpolation_params' is an optional structure with an optional field
 %   'method' which can be on of the following chars: 'spherical',
@@ -83,10 +81,11 @@ DEFS = DefaultParameters;
 p = inputParser;
 addParameter(p,'eeg_system', struct('name', DEFS.eeg_system.name),@isstruct);
 addParameter(p,'filter_params', struct, @isstruct);
-addParameter(p,'channel_rejection_params', struct('kurt_thresh',DEFS.channel_rejection_params.kurt_thresh, ...
-                                                  'prob_thresh', DEFS.channel_rejection_params.prob_thresh, ...
-                                                  'spec_thresh', DEFS.channel_rejection_params.spec_thresh, ...
-                                                  'exclude_chans', DEFS.channel_rejection_params.exclude_chans, ...
+addParameter(p,'channel_rejection_params', struct('highpass', DEFS.channel_rejection_params.highpass, ...
+                                                  'channel_criterion',DEFS.channel_rejection_params.channel_criterion, ...
+                                                  'line_noise_criterion', DEFS.channel_rejection_params.line_noise_criterion, ...
+                                                  'burst_criterion', DEFS.channel_rejection_params.burst_criterion, ...
+                                                  'window_criterion', DEFS.channel_rejection_params.window_criterion, ...
                                                   'rar', DEFS.channel_rejection_params.rar), @isstruct);
 addParameter(p,'pca_params', struct, @isstruct);
 addParameter(p,'ica_params', struct('bool', DEFS.ica_params.bool, ...
@@ -105,6 +104,13 @@ channel_rejection_params = p.Results.channel_rejection_params;
 pca_params = p.Results.pca_params;
 ica_params = p.Results.ica_params;
 interpolation_params = p.Results.interpolation_params;
+% TODO: Remove the next line
+channel_rejection_params = struct('highpass', DEFS.channel_rejection_params.highpass, ...
+                              'channel_criterion',DEFS.channel_rejection_params.channel_criterion, ...
+                              'line_noise_criterion', DEFS.channel_rejection_params.line_noise_criterion, ...
+                              'burst_criterion', DEFS.channel_rejection_params.burst_criterion, ...
+                              'window_criterion', DEFS.channel_rejection_params.window_criterion, ...
+                              'rar', DEFS.channel_rejection_params.rar);
 perform_eog_regression = p.Results.perform_eog_regression;
 perform_reduce_channels = p.Results.perform_reduce_channels;
 original_file_address = p.Results.original_file;
@@ -114,7 +120,7 @@ assert( isempty(fieldnames(pca_params)) || ( ~ isempty(pca_params.lambda) && pca
 
 pca_url = DEFS.pca_params.pca_url;
 rar_url = DEFS.channel_rejection_params.rar_url;
-
+asr_url = DEFS.channel_rejection_params.asr_url;
 % System dependence:
 if(ispc)
     slash = '\';
@@ -258,6 +264,59 @@ if( channel_rejection_params.rar && ~ exist('performReference.m', 'file'))
     addpath(genpath(strcat(folder, 'VisLab-EEG-Clean-Tools/')));
     delete(zip_name);
     display('Robust Average Referencing package successfully installed. Continuing preprocessing....');
+end
+
+%% Check if Artifact Subspace Reconstruction exists
+if( ~ exist('clean_artifacts.m', 'file'))
+    ques = 'clean_artifacts.m is necessary for Artifact Subspace Reconstruction. Do you want to download it now?';
+    ques_title = 'Artifact Subspace Reconstruction Requirement installation';
+    if(exist('questdlg2', 'file'))
+        res = questdlg2( ques , ques_title, 'No', 'Yes', 'Yes' );
+    else
+        res = questdlg( ques , ques_title, 'No', 'Yes', 'Yes' );
+    end
+    
+    if(strcmp(res, 'No'))
+       msg = 'Preprocessing failed as ASR package is not yet installed.';
+        if(exist('warndlg2', 'file'))
+            warndlg2(msg);
+        else
+            warndlg(msg);
+        end
+        return; 
+    end
+    
+    folder = pwd;
+    if(regexp(folder, 'gui'))
+        folder = ['..' slash 'matlab_scripts' slash];
+    elseif(regexp(folder, 'eeglab'))
+        folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
+    else
+      while(isempty(regexp(folder, 'gui', 'once')) && ...
+            isempty(regexp(folder, 'eeglab', 'once')))
+        
+        msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
+            ' the gui folder of the automagic: your_path/automagic/gui/'];
+        if(exist('warndlg2', 'file'))
+            warndlg2(msg);
+        else
+            warndlg(msg);
+        end
+        folder = uigetdir(pwd, msg);
+        
+        if(isempty(folder))
+            return;
+        end
+        
+      end
+    end
+    zip_name = [folder 'asr.zip'];  
+    
+    outfilename = websave(zip_name, asr_url);
+    unzip(outfilename,strcat(folder, 'artifact_subspace_reconstruction/'));
+    addpath(genpath(strcat(folder, 'artifact_subspace_reconstruction/')));
+    delete(zip_name);
+    display('Artifact Subspace Reconstruction package successfully installed. Continuing preprocessing....');
 end
 
 %% Determine the eeg system
@@ -472,66 +531,68 @@ filtered_data = perform_filter(data, filter_params);
 [~, EEG] = evalc('pop_select( filtered_data , ''channel'', channels)');
 
 % Map original channel lists to new ones
-[~, idx] = ismember(channel_rejection_params.exclude_chans, channels);
-channel_rejection_params.exclude_chans = idx(idx ~= 0);
 [~, idx] = ismember(eeg_system.ref_chan, channels);
 eeg_system.ref_chan = idx(idx ~= 0);
 
-% Reference channel for channel rejection
-if(eeg_system.ref_chan ~= -1)
-    channel_rejection_params.ref_chan = eeg_system.ref_chan; 
+
+% Robust Average Referecing
+rar_bads = [];
+if ( channel_rejection_params.rar )
+    display(sprintf('Running Robust Average Referencing...'));
+    rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
+    referenceIN.referenceChannels =  rar_chans;
+    referenceIN.evaluationChannels =  rar_chans;
+    referenceIN.rereference =  rar_chans;
+    referenceIN.referenceType =  'robust';
+    [~, ~, referenceOut] = evalc('performReference(EEG, referenceIN)');
+
+    rar_bads = referenceOut.badChannels;
 end
 
-rejected_chans = reject_channels(EEG, channel_rejection_params);
-eeg_size = size(EEG.data);
-if( length(rejected_chans) > eeg_size(1) / 2)
-    result = [];
-    fig = [];
-   return; 
-end
+% Removing bad channels
+display('Removing bad channels using Artifact Subspace Reconstruction...');
+[~, EEG_cleaned] = evalc(['clean_artifacts(EEG, '...
+    '''Highpass'', channel_rejection_params.highpass,' ...
+    '''ChannelCriterion'', channel_rejection_params.channel_criterion,' ...
+    '''LineNoiseCriterion'', channel_rejection_params.line_noise_criterion,' ...
+    '''BurstCriterion'', channel_rejection_params.burst_criterion,' ...
+    '''WindowCriterion'', channel_rejection_params.window_criterion)']);
 
 % Remove effect of EOG
 if( perform_eog_regression )
-    EEG_regressed = EOG_regression(EEG, EOG);
+    EEG_regressed = EOG_regression(EEG_cleaned, EOG);
 else
-    EEG_regressed = EEG;
+    EEG_regressed = EEG_cleaned;
 end
 
 % PCA or ICA
 if (ica_params.bool ) % If ICA is checked
-    % Remove the reference channel
-    data.data(eeg_system.ref_chan,:) = [];
-    data.nbchan = size(data.data,1);
-    refchanloc = data.chanlocs(eeg_system.ref_chan);
-    data.chanlocs(eeg_system.ref_chan) = [];
-    
     EEG_cleared = perform_ica(EEG_regressed, ica_params);
-    
-    % Add back the reference channel
-    data.data = [data.data(1:eeg_system.ref_chan-1,:); ...
-                zeros(1,size(data.data,2));...
-                data.data(eeg_system.ref_chan:end,:)];
-    data.nbchan = size(data.data,1);
-    data.chanlocs = [data.chanlocs(1:eeg_system.ref_chan-1), refchanloc, ...
-                    data.chanlocs(eeg_system.ref_chan:end)];
 else % If PCA is not checked either, the EEG_cleared will remain unchanged
     [EEG_cleared, noise] = perform_pca(EEG_regressed, pca_params);
 end
 
-% interpolate zero and artifact channels:
-if ~isempty(rejected_chans)
-    display('Interpolating...');
-    [~, interpolated] = evalc('eeg_interp(EEG_cleared , setdiff(rejected_chans, eeg_system.ref_chan) , interpolation_params.method)');
-else
-    interpolated = EEG_cleared;
-end
-interpolated.auto_badchans = rejected_chans;
 % detrending
-doubled_data = double(interpolated.data);
+doubled_data = double(EEG_cleared.data);
 res = bsxfun(@minus, doubled_data, mean(doubled_data, 2));
 singled_data = single(res);
-result = interpolated;
+
+result = EEG_cleared;
 result.data = singled_data;
+
+% Put back removed channels 
+removed_chans = sort(find(EEG_regressed.etc.clean_channel_mask==0));
+for chan_idx = 1:length(removed_chans);
+    chan_nb = removed_chans(chan_idx);
+    result.data = [result.data(1:chan_nb-1,:); ...
+                    zeros(1,size(data.data,2));...
+                    result.data(chan_nb:end,:)];
+    result.chanlocs = [result.chanlocs(1:chan_nb-1), EEG.chanlocs(chan_nb), ...
+                    result.chanlocs(chan_nb:end)];
+end
+result.nbchan = size(result.data,1);
+result.tobe_interpolated = setdiff([removed_chans, rar_bads], eeg_system.ref_chan);
+result.auto_badchans = result.tobe_interpolated;
 
 %% Creating the final figure to save
 fig = figure;
