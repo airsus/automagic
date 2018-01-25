@@ -250,39 +250,42 @@ function okcallback(PushButton, EventData)
 
     if( get(chancritcheck, 'Value') )
         chancrit_val = str2double(get(chancritin, 'String'));
+        if( isempty(chancrit_val) || isnan(chancrit_val))
+            chancrit_val = default_params.channel_rejection_params.channel_criterion;
+        end
     else
         chancrit_val = 'off';
     end
-    if( isempty(chancrit_val) || isnan(chancrit_val))
-       chancrit_val = default_params.channel_rejection_params.channel_criterion;
-    end
+
 
     if( get(linenosecritcheck, 'Value') )
         linenosecrit_val = str2double(get(linenosecritin, 'String'));
+        if( isempty(linenosecrit_val) || isnan(linenosecrit_val))
+            linenosecrit_val = default_params.channel_rejection_params.line_noise_criterion; ;
+        end
     else
         linenosecrit_val = 'off';
     end
-    if( isempty(linenosecrit_val) || isnan(linenosecrit_val))
-       linenosecrit_val = default_params.channel_rejection_params.line_noise_criterion; ;
-    end
+
 
     if( get(burstcritcheck, 'Value') )
         burstcrit_val = str2double(get(burstcritin, 'String'));
+        if( isempty(burstcrit_val) || isnan(burstcrit_val))
+            burstcrit_val = default_params.channel_rejection_params.burst_criterion;
+        end
     else
         burstcrit_val = 'off';
-    end
-    if( isempty(burstcrit_val) || isnan(burstcrit_val))
-       burstcrit_val = default_params.channel_rejection_params.burst_criterion;
     end
 
     if( get(windowcritcheck, 'Value') )
         windowcrit_val = str2double(get(windowcritin, 'String'));
+        if( isempty(windowcrit_val) || isnan(windowcrit_val))
+            windowcrit_val = default_params.channel_rejection_params.window_criterion;
+        end
     else
         windowcrit_val = 'off';
     end
-    if( isempty(windowcrit_val) || isnan(windowcrit_val))
-       windowcrit_val = default_params.channel_rejection_params.window_criterion;
-    end
+
 
     rar_bool = get(rarcheck, 'Value');
     
@@ -562,10 +565,12 @@ if(isempty(EEG_result))
 end
 
 auto_badchans =  EEG_result.auto_badchans;
+tobe_interpolated = EEG_result.tobe_interpolated;
 EEG = rmfield(EEG_result, 'auto_badchans');
+EEG = rmfield(EEG, 'tobe_interpolated');
 EEG.automagic.params = params;
 EEG.automagic.auto_badchans = auto_badchans;
-
+EEG.automagic.tobe_interpolated = tobe_interpolated;
 % return the string command
 % -------------------------
 com = sprintf('[EEG] = pop_parameters(EEG)');

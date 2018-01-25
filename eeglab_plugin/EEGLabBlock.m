@@ -105,9 +105,11 @@ methods
     function self = update_rating_info_from_file_if_any(self)
         % If the prefix indicates that the block has been already rated
         if( ~ isfield(self.EEG.automagic, 'rate'))
-            self.EEG.automagic.rate = self.CGV.ratings.NotRated;
-            self.EEG.automagic.tobe_interpolated = [];
-            self.EEG.automagic.auto_badchans = [];
+            if( ~isempty(self.EEG.automagic.tobe_interpolated))
+                self.EEG.automagic.rate = self.CGV.ratings.Interpolate;
+            else
+                self.EEG.automagic.rate = self.CGV.ratings.NotRated;
+            end
             self.EEG.automagic.man_badchans = [];
             self.EEG.automagic.is_interpolated = false;
         end
