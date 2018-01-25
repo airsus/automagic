@@ -307,7 +307,12 @@ classdef Project < handle
                 if( exist([block.image_address, '.tif'], 'file' ))
                     delete([block.image_address, '.tif']);
                 end
-                block.setRatingInfoAndUpdate( self.CGV.ratings.NotRated, [], [], false);
+                if(~ isempty(EEG.tobe_interpolated))
+                    rate = self.CGV.ratings.Interpolate;
+                else
+                    rate = self.CGV.ratings.NotRated;
+                end
+                block.setRatingInfoAndUpdate(rate , EEG.tobe_interpolated, [], false);
                 
                 % save results
                 set(fig,'PaperUnits','inches','PaperPosition',[0 0 10 8])
@@ -315,12 +320,12 @@ classdef Project < handle
                 close(fig);
 
                 reduced.data = downsample(EEG.data',self.ds_rate)';
-                rate = self.CGV.ratings.NotRated;
-                tobe_interpolated = [];
+                tobe_interpolated = EEG.tobe_interpolated;
                 auto_badchans =  EEG.auto_badchans;
                 man_badchans = [];
                 is_interpolated = false;
                 EEG = rmfield(EEG, 'auto_badchans');
+                EEG = rmfield(EEG, 'tobe_interpolated');
                 params = self.params;
                 
                 display('Saving results...');

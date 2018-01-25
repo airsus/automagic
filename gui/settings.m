@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 28-Aug-2017 12:08:07
+% Last Modified by GUIDE v2.5 25-Jan-2018 10:52:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -104,29 +104,36 @@ else
     set(handles.lowpassorderedit, 'String', params.filter_params.low_order);
 end
 
-if( params.channel_rejection_params.kurt_thresh ~= -1)
-    set(handles.kurtcheckbox, 'Value', 1);
-    set(handles.kurtthreshedit, 'String', params.channel_rejection_params.kurt_thresh);
+if( ~ strcmp(params.channel_rejection_params.channel_criterion, 'off'))
+    set(handles.channelcriterioncheckbox, 'Value', 1);
+    set(handles.channelcriterionedit, 'String', params.channel_rejection_params.channel_criterion);
 else
-    set(handles.kurtcheckbox, 'Value', 0);
-    set(handles.kurtthreshedit, 'String', CGV.default_params.channel_rejection_params.kurt_thresh);
+    set(handles.channelcriterioncheckbox, 'Value', 0);
+    set(handles.channelcriterionedit, 'String', CGV.default_params.channel_rejection_params.channel_criterion);
 end
 
-if( params.channel_rejection_params.spec_thresh ~= -1)
-    set(handles.speccheckbox, 'Value', 1);
-    set(handles.specthreshedit, 'String', params.channel_rejection_params.spec_thresh);
-    
+if( ~ strcmp(params.channel_rejection_params.line_noise_criterion, 'off'))
+    set(handles.linenoisecheckbox, 'Value', 1);
+    set(handles.linenoiseedit, 'String', params.channel_rejection_params.line_noise_criterion);
 else
-    set(handles.speccheckbox, 'Value', 0);
-    set(handles.specthreshedit, 'String', CGV.default_params.channel_rejection_params.spec_thresh);
+    set(handles.linenoisecheckbox, 'Value', 0);
+    set(handles.linenoiseedit, 'String', CGV.default_params.channel_rejection_params.line_noise_criterion);
 end
 
-if( params.channel_rejection_params.prob_thresh ~= -1)
-    set(handles.probcheckbox, 'Value', 1);
-    set(handles.probthreshedit, 'String', params.channel_rejection_params.prob_thresh);
+if( ~ strcmp(params.channel_rejection_params.burst_criterion, 'off'))
+    set(handles.burstcheckbox, 'Value', 1);
+    set(handles.burstedit, 'String', params.channel_rejection_params.burst_criterion);
 else
-    set(handles.probcheckbox, 'Value', 0);
-    set(handles.probthreshedit, 'String', CGV.default_params.channel_rejection_params.prob_thresh);
+    set(handles.burstcheckbox, 'Value', 0);
+    set(handles.burstedit, 'String', CGV.default_params.channel_rejection_params.burst_criterion);
+end
+
+if( ~ strcmp(params.channel_rejection_params.window_criterion, 'off'))
+    set(handles.windowcheckbox, 'Value', 1);
+    set(handles.windowedit, 'String', params.channel_rejection_params.window_criterion);
+else
+    set(handles.windowcheckbox, 'Value', 0);
+    set(handles.windowedit, 'String', CGV.default_params.channel_rejection_params.window_criterion);
 end
 
 if( params.channel_rejection_params.rar)
@@ -172,37 +179,37 @@ guidata(hObject, handles);
 % UIWAIT makes settings wait for user response (see UIRESUME)
 % uiwait(handles.settingsfigure);
 
-% --- Executes on button press in kurtcheckbox.
-function kurtcheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to kurtcheckbox (see GCBO)
+% --- Executes on button press in linenoisecheckbox.
+function linenoisecheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to linenoisecheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of kurtcheckbox
+% Hint: get(hObject,'Value') returns toggle state of linenoisecheckbox
 
 
-% --- Executes on button press in probcheckbox.
-function probcheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to probcheckbox (see GCBO)
+% --- Executes on button press in burstcheckbox.
+function burstcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to burstcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of probcheckbox
+% Hint: get(hObject,'Value') returns toggle state of burstcheckbox
 
 
-% --- Executes on button press in speccheckbox.
-function speccheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to speccheckbox (see GCBO)
+% --- Executes on button press in channelcriterioncheckbox.
+function channelcriterioncheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to channelcriterioncheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of speccheckbox
+% Hint: get(hObject,'Value') returns toggle state of channelcriterioncheckbox
 
 % --- Executes on button press in pcacheckbox.
 function pcacheckbox_Callback(hObject, eventdata, handles)
@@ -268,33 +275,46 @@ if(isnan(low_order))
     low_order = CGV.default_params.filter_params.high_order;
 end
 
-if( get(handles.kurtcheckbox, 'Value') )
-    kurt_val = str2double(get(handles.kurtthreshedit, 'String'));
+if( get(handles.linenoisecheckbox, 'Value') )
+    linenoise_val = str2double(get(handles.linenoiseedit, 'String'));
+    if( isempty(linenoise_val) || isnan(str2double(linenoise_val)))
+        linenoise_val = CGV.default_params.channel_rejection_params.line_noise_criterion; 
+    end
 else
-    kurt_val = -1;
-end
-if( isempty(kurt_val) || isnan(kurt_val))
-   kurt_val = CGV.default_params.channel_rejection_params.kurt_thresh; 
-end
-
-if( get(handles.speccheckbox, 'Value') )
-    spec_val = str2double(get(handles.specthreshedit, 'String'));
-else
-    spec_val = -1;
-end
-if( isempty(spec_val) || isnan(spec_val))
-   spec_val = CGV.default_params.channel_rejection_params.spec_thresh; 
+    linenoise_val = 'off';
 end
 
 
-if( get(handles.probcheckbox, 'Value') )
-    prob_val = str2double(get(handles.probthreshedit, 'String'));
+if( get(handles.channelcriterioncheckbox, 'Value') )
+    channel_criterion_val = str2double(get(handles.channelcriterionedit, 'String'));
+    if( isempty(channel_criterion_val) || isnan(str2double(channel_criterion_val)))
+        channel_criterion_val = CGV.default_params.channel_rejection_params.channel_criterion; 
+    end
 else
-    prob_val = -1;
+    channel_criterion_val = 'off';
 end
-if( isempty(prob_val) || isnan(prob_val))
-   prob_val = CGV.default_params.channel_rejection_params.prob_thresh; 
+
+
+
+if( get(handles.burstcheckbox, 'Value') )
+    burst_val = str2double(get(handles.burstedit, 'String'));
+    if( isempty(burst_val) || isnan(str2double(burst_val)))
+        burst_val = CGV.default_params.channel_rejection_params.burst_criterion; 
+    end
+else
+    burst_val = 'off';
 end
+
+
+if( get(handles.windowcheckbox, 'Value') )
+    window_val = str2double(get(handles.windowedit, 'String'));
+    if( isempty(window_val) || isnan(str2double(window_val)))
+        window_val = CGV.default_params.channel_rejection_params.window_criterion; 
+    end
+else
+    window_val = 'off';
+end
+
 
 rar_check = get(handles.rarcheckbox, 'Value');
 
@@ -326,9 +346,11 @@ method = methods{idx};
 
 handles.params.filter_params.high_order = high_order;
 handles.params.filter_params.low_order = low_order;
-handles.params.channel_rejection_params.kurt_thresh = kurt_val;
-handles.params.channel_rejection_params.spec_thresh = spec_val;
-handles.params.channel_rejection_params.prob_thresh = prob_val;
+handles.params.channel_rejection_params.line_noise_criterion = linenoise_val;
+handles.params.channel_rejection_params.channel_criterion = channel_criterion_val;
+handles.params.channel_rejection_params.burst_criterion = burst_val;
+handles.params.channel_rejection_params.window_criterion = window_val;
+handles.params.channel_rejection_params.highpass = CGV.default_params.channel_rejection_params.highpass;
 handles.params.channel_rejection_params.rar = rar_check;
 handles.params.pca_params.lambda = lambda;
 handles.params.pca_params.tol = tol;
@@ -351,30 +373,38 @@ set(handles.lowpassorderedit, 'String', ...
 
 set(handles.icacheckbox, 'Value', CGV.default_params.ica_params.bool);
 
-if( CGV.default_params.channel_rejection_params.kurt_thresh ~= -1)
-    set(handles.kurtcheckbox, 'Value', 1);
-    set(handles.kurtthreshedit, 'String', ...
-        CGV.default_params.channel_rejection_params.kurt_thresh);
+if( ~strcmp(CGV.default_params.channel_rejection_params.line_noise_criterion, 'off'))
+    set(handles.linenoisecheckbox, 'Value', 1);
+    set(handles.linenoiseedit, 'String', ...
+        CGV.default_params.channel_rejection_params.line_noise_criterion);
 else
-    set(handles.kurtcheckbox, 'Value', 0);
-    set(handles.kurtthreshedit, 'String', '');
+    set(handles.linenoisecheckbox, 'Value', 0);
+    set(handles.linenoiseedit, 'String', '');
 end
 
-if( CGV.default_params.channel_rejection_params.spec_thresh ~= -1)
-    set(handles.speccheckbox, 'Value', 1);
-    set(handles.specthreshedit, 'String', ...
-        CGV.default_params.channel_rejection_params.spec_thresh);
+if( ~strcmp(CGV.default_params.channel_rejection_params.channel_criterion, 'off'))
+    set(handles.channelcriterioncheckbox, 'Value', 1);
+    set(handles.channelcriterionedit, 'String', ...
+        CGV.default_params.channel_rejection_params.channel_criterion);
 else
-    set(handles.speccheckbox, 'Value', 0);
-    set(handles.specthreshedit, 'String', '');
+    set(handles.channelcriterioncheckbox, 'Value', 0);
+    set(handles.channelcriterionedit, 'String', '');
 end
-if( CGV.default_params.channel_rejection_params.prob_thresh ~= -1)
-    set(handles.probcheckbox, 'Value', 1);
-    set(handles.probthreshedit, 'String', ...
-        CGV.default_params.channel_rejection_params.prob_thresh);
+if( ~strcmp(CGV.default_params.channel_rejection_params.burst_criterion, 'off'))
+    set(handles.burstcheckbox, 'Value', 1);
+    set(handles.burstedit, 'String', ...
+        CGV.default_params.channel_rejection_params.burst_criterion);
 else
-    set(handles.probcheckbox, 'Value', 0);
-    set(handles.probthreshedit, 'String', '');
+    set(handles.burstcheckbox, 'Value', 0);
+    set(handles.burstedit, 'String', '');
+end
+if( ~strcmp(CGV.default_params.channel_rejection_params.window_criterion, 'off'))
+    set(handles.windowcheckbox, 'Value', 1);
+    set(handles.windowedit, 'String', ...
+        CGV.default_params.channel_rejection_params.window_criterion);
+else
+    set(handles.windowcheckbox, 'Value', 0);
+    set(handles.windowedit, 'String', '');
 end
 
 set(handles.rarcheckbox, 'Value',CGV.default_params.channel_rejection_params.rar);
@@ -426,28 +456,36 @@ else
         CGV.default_params.filter_params.low_order);
 end
 
-if( get(handles.kurtcheckbox, 'Value') )
-    set(handles.kurtthreshedit, 'enable', 'on');
+if( get(handles.linenoisecheckbox, 'Value') )
+    set(handles.linenoiseedit, 'enable', 'on');
 else
-    set(handles.kurtthreshedit, 'enable', 'off');
-    set(handles.kurtthreshedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.kurt_thresh));
+    set(handles.linenoiseedit, 'enable', 'off');
+    set(handles.linenoiseedit, 'String', ...
+        num2str(CGV.default_params.channel_rejection_params.line_noise_criterion));
 end
 
-if( get(handles.speccheckbox, 'Value') )
-    set(handles.specthreshedit, 'enable', 'on');
+if( get(handles.channelcriterioncheckbox, 'Value') )
+    set(handles.channelcriterionedit, 'enable', 'on');
 else
-    set(handles.specthreshedit, 'enable', 'off');
-    set(handles.specthreshedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.spec_thresh));
+    set(handles.channelcriterionedit, 'enable', 'off');
+    set(handles.channelcriterionedit, 'String', ...
+        num2str(CGV.default_params.channel_rejection_params.channel_criterion));
 end
 
-if( get(handles.probcheckbox, 'Value') )
-    set(handles.probthreshedit, 'enable', 'on');
+if( get(handles.burstcheckbox, 'Value') )
+    set(handles.burstedit, 'enable', 'on');
 else
-    set(handles.probthreshedit, 'enable', 'off');
-    set(handles.probthreshedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.prob_thresh));
+    set(handles.burstedit, 'enable', 'off');
+    set(handles.burstedit, 'String', ...
+        num2str(CGV.default_params.channel_rejection_params.burst_criterion));
+end
+
+if( get(handles.windowcheckbox, 'Value') )
+    set(handles.windowedit, 'enable', 'on');
+else
+    set(handles.windowedit, 'enable', 'off');
+    set(handles.windowedit, 'String', ...
+        num2str(CGV.default_params.channel_rejection_params.window_criterion));
 end
 
 if( get(handles.pcacheckbox, 'Value') )
@@ -687,18 +725,18 @@ end
 
 
 
-function kurtthreshedit_Callback(hObject, eventdata, handles)
-% hObject    handle to kurtthreshedit (see GCBO)
+function linenoiseedit_Callback(hObject, eventdata, handles)
+% hObject    handle to linenoiseedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of kurtthreshedit as text
-%        str2double(get(hObject,'String')) returns contents of kurtthreshedit as a double
+% Hints: get(hObject,'String') returns contents of linenoiseedit as text
+%        str2double(get(hObject,'String')) returns contents of linenoiseedit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function kurtthreshedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to kurtthreshedit (see GCBO)
+function linenoiseedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to linenoiseedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -710,18 +748,18 @@ end
 
 
 
-function probthreshedit_Callback(hObject, eventdata, handles)
-% hObject    handle to probthreshedit (see GCBO)
+function burstedit_Callback(hObject, eventdata, handles)
+% hObject    handle to burstedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of probthreshedit as text
-%        str2double(get(hObject,'String')) returns contents of probthreshedit as a double
+% Hints: get(hObject,'String') returns contents of burstedit as text
+%        str2double(get(hObject,'String')) returns contents of burstedit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function probthreshedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to probthreshedit (see GCBO)
+function burstedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to burstedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -733,18 +771,18 @@ end
 
 
 
-function specthreshedit_Callback(hObject, eventdata, handles)
-% hObject    handle to specthreshedit (see GCBO)
+function channelcriterionedit_Callback(hObject, eventdata, handles)
+% hObject    handle to channelcriterionedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of specthreshedit as text
-%        str2double(get(hObject,'String')) returns contents of specthreshedit as a double
+% Hints: get(hObject,'String') returns contents of channelcriterionedit as text
+%        str2double(get(hObject,'String')) returns contents of channelcriterionedit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function specthreshedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to specthreshedit (see GCBO)
+function channelcriterionedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to channelcriterionedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -762,3 +800,35 @@ function rarcheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of rarcheckbox
+
+
+% --- Executes on button press in windowcheckbox.
+function windowcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to windowcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles = switch_components(handles);
+% Hint: get(hObject,'Value') returns toggle state of windowcheckbox
+
+
+
+function windowedit_Callback(hObject, eventdata, handles)
+% hObject    handle to windowedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of windowedit as text
+%        str2double(get(hObject,'String')) returns contents of windowedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function windowedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to windowedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

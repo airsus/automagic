@@ -349,6 +349,7 @@ function okcallback(PushButton, EventData)
     params.channel_rejection_params.line_noise_criterion = linenosecrit_val;
     params.channel_rejection_params.burst_criterion = burstcrit_val;
     params.channel_rejection_params.window_criterion = windowcrit_val;
+    params.channel_rejection_params.highpass = default_params.channel_rejection_params.highpass;
     params.channel_rejection_params.rar = rar_bool;
     params.pca_params.lambda = lambda;
     params.pca_params.tol = tol;

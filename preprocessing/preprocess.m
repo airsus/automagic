@@ -14,6 +14,13 @@ function [result, fig] = preprocess(data, varargin)
 %   To learn more about 'filter_params', ica_params and 'pca_params' 
 %   please see their corresponding functions perform_filter.m, 
 %   perform_ica.m and perform_pca.m.
+%
+%   'channel_rejection_params' is an optional structure with five fields
+%   'highpass', 'channel_criterion', 'line_noise_criterion',
+%   'burst_criterion' and 'window_criterion'. For more information please
+%   see clean_artifacts() in Artefact Subspace Reconstruction. Note that
+%   channel_rejection_params.high_pass = 'off' in our setting as there is
+%   already filtering in the process.m before clean_artifacts() is called.
 %   
 %   'interpolation_params' is an optional structure with an optional field
 %   'method' which can be on of the following chars: 'spherical',
@@ -104,13 +111,6 @@ channel_rejection_params = p.Results.channel_rejection_params;
 pca_params = p.Results.pca_params;
 ica_params = p.Results.ica_params;
 interpolation_params = p.Results.interpolation_params;
-% TODO: Remove the next line
-channel_rejection_params = struct('highpass', DEFS.channel_rejection_params.highpass, ...
-                              'channel_criterion',DEFS.channel_rejection_params.channel_criterion, ...
-                              'line_noise_criterion', DEFS.channel_rejection_params.line_noise_criterion, ...
-                              'burst_criterion', DEFS.channel_rejection_params.burst_criterion, ...
-                              'window_criterion', DEFS.channel_rejection_params.window_criterion, ...
-                              'rar', DEFS.channel_rejection_params.rar);
 perform_eog_regression = p.Results.perform_eog_regression;
 perform_reduce_channels = p.Results.perform_reduce_channels;
 original_file_address = p.Results.original_file;
