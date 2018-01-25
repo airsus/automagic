@@ -45,7 +45,21 @@ end
 IndexC = strfind(parts, 'automagic');
 Index = not(cellfun('isempty', IndexC));
 automagic_path = parts{Index};
-addpath(genpath(automagic_path));
+automagic_path = genpath(automagic_path);
+if(ispc)
+    parts = strsplit(automagic_path, ';');
+else
+    parts = strsplit(automagic_path, ':');
+end
+IndexC = strfind(parts, 'matlab_scripts/eeglab');
+Index = not(cellfun('isempty', IndexC));
+parts(Index) = [];
+if(ispc)
+    automagic_path = strjoin(parts, ';');
+else
+    automagic_path = strjoin(parts, ':');
+end
+addpath(automagic_path);
 
 % Create the menu and its submenues
 % ------------------------------------
