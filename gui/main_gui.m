@@ -75,7 +75,10 @@ function main_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % Position of the gui
-set(handles.main_gui, 'units', 'normalized', 'position', [0.05 0.5 0.9 0.82])
+screen_size = get( groot, 'Screensize' );
+set(handles.main_gui, 'position', screen_size / 1.2)
+% set( findall( handles.main_gui, '-property', 'Units' ), 'Units', 'Normalized' )
+% set(handles.main_gui, 'units', 'normalized', 'position', [0.05 0.5 0.9 0.82])
 % children = handles.main_gui.Children;
 % for child_idx = 1:length(children)
 %     child = children(child_idx);
