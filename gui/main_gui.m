@@ -671,6 +671,8 @@ name = projects{idx};
 project = handles.project_list(name);
 
 if( ~ isempty(project))
+    clc;
+    commandwindow;
     project.preprocess_all();
 end
 
