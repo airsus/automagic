@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1163768405" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="2709233722" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
     <param.appname>Automagic</param.appname>
     <param.authnamewatermark>amirreza</param.authnamewatermark>
     <param.email>amirreza.bahreini@uzh.ch</param.email>
@@ -104,6 +104,36 @@
     <fileset.resources>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/GSN-HydroCel-129.sfp</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/GSN-HydroCel-257_be.sfp</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/asr-version.txt</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_artifacts.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_asr.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_channels.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_channels_nolocs.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_drifts.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_flatlines.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_rawdata.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/clean_windows.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/eegplugin_clean_rawdata.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/pop_clean_rawdata.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/asr_calibrate.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/asr_process.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/block_geometric_median.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/design_fir.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/design_kaiser.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/filter_fast.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/filtfilt_fast.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/findjobj.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/fit_eeg_distribution.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/geometric_median.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/hlp_handleerror.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/hlp_memfree.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/hlp_microcache.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/hlp_split.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/hlp_varargin2struct.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/sphericalSplineInterpolate.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/private/window_func.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/asr/clean_rawdata0.32/vis_artifacts.m</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/functions/@eegobj</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/functions/@memmapdata</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/functions/@mmo</file>
@@ -1124,8 +1154,33 @@
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>/Applications/MATLAB_R2017b.app</root>
-      <toolboxes />
+      <root>/Applications/MATLAB_R2015b.app</root>
+      <toolboxes>
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="matlabcoder" />
+      </toolboxes>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
     </matlab>
     <platform>
       <unix>true</unix>
