@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 07-Jun-2017 10:44:34
+% Last Modified by GUIDE v2.5 09-Feb-2018 10:07:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -104,7 +104,7 @@ set_gui_rating(handles);
 handles = update_next_and_previous_button(handles);
 
 % Load and show the first image
-[handles, data] = load_current(handles);
+[handles, data] = load_current(handles, 1);
 handles = show_current(data, handles);
 
 clear data;
@@ -171,21 +171,28 @@ end
 
 % --- Load the current "reduced" file to the work space (The file is 
 % downsampled to speed up the loading)
-function [handles, reduced] = load_current(handles) %#ok<STOUT>
+function [handles, data] = load_current(handles, get_reduced) %#ok<STOUT>
 % handles   structure with handles of the gui
 
 project = handles.project;
 if ( project.current == - 1 || is_filtered(handles, project.current))
-    reduced = [];
+    data = [];
 else
     block = get_current_block(handles);
     if(isa(block, 'Block'))
         block.update_addresses(project.data_folder, project.result_folder);
-        load(block.reduced_address); 
+        if(get_reduced)
+            load(block.reduced_address);
+            data = reduced;
+        else
+            load(block.result_address);
+            data.data = EEG.data;
+            data.srate = EEG.srate;
+        end
     elseif(isa(block, 'EEGLabBlock'))
-        reduced = block.get_reduced();
+        data = block.get_reduced();
     end
-    handles.project.maxX = max(project.maxX, size(reduced.data, 2));% fot the plot
+    handles.project.maxX = max(project.maxX, size(data.data, 2));% fot the plot
 end
 
 % --- Make the plot of the current file
@@ -1225,3 +1232,50 @@ function goodcheckbox_KeyPressFcn(hObject, eventdata, handles)
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in eegplotpush.
+function eegplotpush_Callback(hObject, eventdata, handles)
+% hObject    handle to eegplotpush (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if(ispc)
+    slash = '\';
+else
+    slash = '/';
+end
+
+% First add eeglab in path if not added yet
+if(~exist('pop_fileio', 'file'))
+    matlab_paths = genpath(['..' slash 'matlab_scripts' slash]);
+    if(ispc)
+        parts = strsplit(matlab_paths, ';');
+    else
+        parts = strsplit(matlab_paths, ':');
+    end
+    IndexC = strfind(parts, 'compat');
+    Index = not(cellfun('isempty', IndexC));
+    parts(Index) = [];
+    IndexC = strfind(parts, 'neuroscope');
+    Index = not(cellfun('isempty', IndexC));
+    parts(Index) = [];
+    if(ispc)
+        matlab_paths = strjoin(parts, ';');
+    else
+        matlab_paths = strjoin(parts, ':');
+    end
+    addpath(matlab_paths);
+    
+    % Add path for 10_20 system
+    IndexC = strfind(parts, 'BESA');
+    Index = not(cellfun('isempty', IndexC));
+end
+
+
+% Plot
+[~, data] = load_current(handles, 0);
+eegplot(data.data, 'srate', data.srate);
+
+
+
