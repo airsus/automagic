@@ -94,7 +94,7 @@ end
 display(defaults.run_message);
 options = [0 1 0 0 1];
 [~, ~, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
-    
+
 data = EEG_Mara;
 
 % Change back the labels to the original one
@@ -241,7 +241,7 @@ addpath('../matlab_scripts');
             [EEG LASTCOM] = pop_subcomp(EEG, []);
             eegh(LASTCOM);
         catch
-            eeglab_error
+            display('WARNING: ICA not possible on this file.');
         end
         g.gui = 'off';
         [ALLEEG EEG CURRENTSET LASTCOM] = pop_newset(ALLEEG, EEG, CURRENTSET, g); 

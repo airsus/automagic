@@ -763,6 +763,13 @@ if ~ get(handles.egiradio, 'Value')
         return;
     end
    
+    loc_type = eeg_system.file_loc_type;
+    if( isempty(loc_type) || ~ strcmp(loc_type(1), '.'))
+        waitfor(msgbox('Channel location: A correct file extension must be given.',...
+            'Error','error'));
+        return;
+    end
+
    handles.params.eeg_system = eeg_system;
 end
 handles.params.eeg_system.sys10_20 = get(handles.checkbox1020, 'Value');

@@ -319,6 +319,12 @@ classdef Project < handle
                 print(fig, block.image_address, '-djpeg', '-r100');
                 close(fig);
 
+                ica_rejected = [];
+                if(isfield(EEG, 'reject'))
+                    if(isfield(EEG.reject, 'gcompreject'))
+                        ica_rejected = EEG.reject.gcompreject;
+                    end
+                end
                 reduced.data = downsample(EEG.data',self.ds_rate)';
                 tobe_interpolated = EEG.tobe_interpolated;
                 auto_badchans =  EEG.auto_badchans;
@@ -332,7 +338,7 @@ classdef Project < handle
                 save(block.reduced_address, self.CGV.default_params.general_params.reduced_name, '-v6');
                 save(block.result_address, 'EEG', 'auto_badchans','man_badchans'...
                     , 'rate','tobe_interpolated', 'is_interpolated', ...
-                    'params', '-v7.3');
+                    'params', 'ica_rejected', '-v7.3');
 
                 self.not_rated_list = ...
                     [self.not_rated_list block.index];

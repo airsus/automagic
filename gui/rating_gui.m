@@ -188,6 +188,8 @@ else
             load(block.result_address);
             data.data = EEG.data;
             data.srate = EEG.srate;
+            data.chanlocs = EEG.chanlocs;
+            data.event = EEG.event;
         end
     elseif(isa(block, 'EEGLabBlock'))
         data = block.get_reduced();
@@ -1275,7 +1277,8 @@ end
 
 % Plot
 [~, data] = load_current(handles, 0);
-eegplot(data.data, 'srate', data.srate);
+eegplot(data.data, 'srate', data.srate, 'eloc_file', data.chanlocs,...
+    'dispchans', 55,'spacing', 20,'events', data.event,'winlength', 20);
 
 
 

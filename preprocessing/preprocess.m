@@ -570,7 +570,7 @@ if(isfield(EEG_cleaned, 'etc'))
            seconds = [seconds, length(removed)];
        end
        remove_range = [firsts; seconds]';
-       EOG = pop_select(EOG, 'nopoint', remove_range);
+       [~, EOG] = evalc('pop_select(EOG, ''nopoint'', remove_range)');
    end
 end
 % Remove effect of EOG
