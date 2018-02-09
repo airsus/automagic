@@ -558,6 +558,21 @@ display('Removing bad channels using Artifact Subspace Reconstruction...');
     '''BurstCriterion'', channel_rejection_params.burst_criterion,' ...
     '''WindowCriterion'', channel_rejection_params.window_criterion)']);
 
+if(isfield(EEG_cleaned, 'etc'))
+   if(isfield(EEG_cleaned.etc, 'clean_sample_mask'))
+       removed = EEG_cleaned.etc.clean_sample_mask;
+       firsts = find(diff(removed) == -1) + 1;
+       seconds = find(diff(removed) == 1);
+       if(removed(1) == 0)
+           firsts = [1, firsts];
+       end
+       if(removed(end) == 0)
+           seconds = [seconds, length(removed)];
+       end
+       remove_range = [firsts; seconds]';
+       EOG = pop_select(EOG, 'nopoint', remove_range);
+   end
+end
 % Remove effect of EOG
 if( perform_eog_regression )
     EEG_regressed = EOG_regression(EEG_cleaned, EOG);
@@ -585,7 +600,7 @@ removed_chans = sort(find(EEG_regressed.etc.clean_channel_mask==0));
 for chan_idx = 1:length(removed_chans);
     chan_nb = removed_chans(chan_idx);
     result.data = [result.data(1:chan_nb-1,:); ...
-                    zeros(1,size(data.data,2));...
+                    zeros(1,size(result.data,2));...
                     result.data(chan_nb:end,:)];
     result.chanlocs = [result.chanlocs(1:chan_nb-1), EEG.chanlocs(chan_nb), ...
                     result.chanlocs(chan_nb:end)];

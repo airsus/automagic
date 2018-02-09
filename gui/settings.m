@@ -277,7 +277,7 @@ end
 
 if( get(handles.linenoisecheckbox, 'Value') )
     linenoise_val = str2double(get(handles.linenoiseedit, 'String'));
-    if( isempty(linenoise_val) || isnan(str2double(linenoise_val)))
+    if( isempty(linenoise_val) || isnan(linenoise_val))
         linenoise_val = CGV.default_params.channel_rejection_params.line_noise_criterion; 
     end
 else
@@ -287,7 +287,7 @@ end
 
 if( get(handles.channelcriterioncheckbox, 'Value') )
     channel_criterion_val = str2double(get(handles.channelcriterionedit, 'String'));
-    if( isempty(channel_criterion_val) || isnan(str2double(channel_criterion_val)))
+    if( isempty(channel_criterion_val) || isnan(channel_criterion_val))
         channel_criterion_val = CGV.default_params.channel_rejection_params.channel_criterion; 
     end
 else
@@ -298,7 +298,7 @@ end
 
 if( get(handles.burstcheckbox, 'Value') )
     burst_val = str2double(get(handles.burstedit, 'String'));
-    if( isempty(burst_val) || isnan(str2double(burst_val)))
+    if( isempty(burst_val) || isnan(burst_val))
         burst_val = CGV.default_params.channel_rejection_params.burst_criterion; 
     end
 else
@@ -308,7 +308,7 @@ end
 
 if( get(handles.windowcheckbox, 'Value') )
     window_val = str2double(get(handles.windowedit, 'String'));
-    if( isempty(window_val) || isnan(str2double(window_val)))
+    if( isempty(window_val) || isnan(window_val))
         window_val = CGV.default_params.channel_rejection_params.window_criterion; 
     end
 else
