@@ -7,7 +7,7 @@
 
 ## What is Automagic ?
 
-**Automagic** is a MATLAB based toolbox for preprocessing of EEG-datasets. First, the toolbox *automagically* removes artifacts (e.g. eye movements, noisy electrodes, etc.) from your raw EEG-data. In a second step, **Automagic** lets you check visually the entire dataset for remaining artifacts. You will be able to select and remove these manually in an efficient way. Furthermore, you can rate the quality of individual EEG-files.
+**Automagic** is a MATLAB based toolbox for preprocessing of EEG-datasets. First, the toolbox *automagically* detects channels with artifacts (e.g. eye movements, noisy electrodes, etc.) from your raw EEG-data. In a second step, **Automagic** lets you check visually the entire dataset while indicating the detected channels. You will be able to select and interpolate these channels in an efficient way. Furthermore, you can rate the quality of individual EEG-files.
 
 ![alt tag](https://github.com/amirrezaw/automagic/blob/master/automagic_resources/main_gui.png)
 
@@ -20,10 +20,10 @@ You need MATLAB installed and activated on your system to use **Automagic**. **A
 
 There are four different ways of using the application.
 
-1. The easiest and recommended way is to simply install the application from the app installer file `automagic.mlappinstall`. Please see [GUI Manual](#2-gui-manual)
+1. The easiest and recommended way is to simply install the application from the [app installer](https://www.psychologie.uzh.ch/dam/jcr:ff5d0146-a477-4376-a330-ab78f3cd629b/Automagic.mlappinstall) file. This is the stable version. For more information please see [GUI Manual](#2-gui-manual)
 2. Automagic is also available as an **EEGLab** extension and you can use it to preprocess data loaded by **EEGLab** gui. See [Automagic as EEGLab extension](#3-automagic-as-eeglab-extension)
 3. You can also use the preprocessing files independent from the gui. See [Application structure](#4-application-structure) and [How to run the app from the code](#5-how-to-run-the-application-from-the-code)  
-4. Or if you wish to make any modifications to any part of the application, be it the gui or the preprocessing part, you can run the application from the code instead of the installer file.  See [Application structure](#3-application-structure) and [How to run the app from the code](#5-how-to-run-the-application-from-the-code)  
+4. Or if you wish to make any modifications to any part of the application, be it the gui or the preprocessing part, you can run the application from the code instead of the installer file. This version has always the latest modifications. See [Application structure](#3-application-structure) and [How to run the app from the code](#5-how-to-run-the-application-from-the-code)  
 
 
 ## 2. GUI Manual 
@@ -34,15 +34,14 @@ There are four different ways of using the application.
 You need MATLAB installed and activated on your system to use **Automagic**. **Automagic** was developed and tested in MATLAB R2015b and newer releases.
 
 #### 2.1.2. Installation
-1. Download the **Automagic** EEG Toolbox to a folder of your choice. 
-2. Navigate to `gui/` folder
-3. Double click the file named `Automagic` or `Automagic.mlappinstall`. Wait until MATLAB displays a dialogue box.
+1. Start MATLAB. 
+2. Download the **Automagic** EEG [installer](https://www.psychologie.uzh.ch/dam/jcr:ff5d0146-a477-4376-a330-ab78f3cd629b/Automagic.mlappinstall).
+2. Double click the file and Wait until MATLAB displays a dialogue box.
 4. Please select Install. You will be notified as soon as the installation is complete.
 
 #### 2.1.3. How to Run Automagic
-1. Start MATLAB. 
-2. Select the APPS tab. 
-3. Click on the Automagic icon. You might have to expand the APPS tab to see the **Automagic** icon by clicking the small triangle pointing down on the far right of the APPS tab.
+1. Select the APPS tab on MATLAB. 
+2. Click on the Automagic icon. You might have to expand the APPS tab to see the **Automagic** icon by clicking the small triangle pointing down on the far right of the APPS tab.
 
 ### 2.2. Basic Workflow
 In this section of the manual, only the basic functionality of **Automagic** will be explained. This covers the basic workflow from selecting a project to rating the data. Please refer to chapters 3 to 6 for detailed information all functions within the main GUI.
@@ -54,7 +53,7 @@ In this section of the manual, only the basic functionality of **Automagic** wil
 5. Repeat steps 3 and 4 until all data is rated.
    * NOTE: You can not close the main gui window during the preprocessing. If you wish to stop the preprocessing at any time, you can use `CTRL-C`. In this case, or if by any other reason the preprocessing is stopped before being completely finished, all preprocessed files to that moment will be saved, and you can resume the preprocessing only for the files which are not preprocessed yet. After having used `CTRL-C`, please load your project from the main gui, by reselecting it from the list of existing projects. This will update the gui with the new preprocessed files.
 
-* Note:	Since synchronisation is rather basic, people should never work on the same project simultaneously.
+* Note:	Since synchronisation is rather basic, people should never work on the same project simultaneously from different devices.
 
 ### 2.3. The Project Panel
 
@@ -73,10 +72,9 @@ In this section of the manual, only the basic functionality of **Automagic** wil
    * Please note that in case you choose *Other...* as your EEG system, no reduction in number of channels is automatically supported. You can still add manually the list of channels that you want to be discarded from the preprocessing in *Exclude Channels* field.
    * ICA is supported for *Other...* only in case your channel labels are as it is required by processMARA. They must be of the form FPz, F3, Fz, F4, Cz, Oz, etc. Otherwise the ICA is simply skipped. If only some of your labels have the required format, only those channels are considered for ICA.
    * If appropriate, check the *10-20 system*.
-   * A reference channel where all the values are 0s must be provided. If such a channel already exists in your dataset, please choose its index, otherwise, just check the *Add a new reference channel* and one new channel with 0s everywhere will be added as the last channel of your dataset. For **EGI** systems it's already assumed that this channel does not exist, hence once is created.
+   * A reference channel where all the values are 0s must be provided. If such a channel already exists in your dataset, please choose its index, otherwise, just check the *Add a new reference channel* and one new channel with 0s everywhere will be added as the last channel of your dataset. For **EGI** systems it's already assumed that this channel does not exist, hence one is created.
 6. You can select or deselect the EOG regression (It is recommended to select it). If you choose *Other...* for your EEG system then you need to specify the list of EOG channels as well. In the case of **EGI** automagic already knows the EOG channels and you don't need to specify anything. The list of EOG channels must be integers seperated by space or comma, e.g. `1 32 8 14 17 21 25 125 126 127 128`
 7. Set the downsampling rate on the manual rating panel. The downsampling only affects the visual representation of your data. A higher downsampling rate will shorten loading times. In general, a downsampling rate of 2 is a good choice. 
-   * Note:	You cannot alter paths, the filtering, or the downsampling rate after creating your project.
 8. Specify the path of your data folder. **Automagic** will scan all folders in your data folder for data files. Files and folders in the data folder will not be altered by **Automagic**.
    * Note: 	The data folder must contain a folder for each subject (subject folders). Your data folder should not contain any other kinds of folders since this will lead to a wrong number of subjects. 
 9. Specify the path of your project folder. If the specified folder does not yet exist, **Automagic** will create it for you. **Automagic** will save all processed data to your project folder. By default, **Automagic** opts for your data folder's path and adds `_results` to your data folder's name, e.g. `\PathDataFolder\MyDataFolder_results\`
@@ -90,8 +88,9 @@ In this section of the manual, only the basic functionality of **Automagic** wil
     * By default a High pass filtering is performed on data. You can change the freuqency or simply uncheck the High pass filtering. You can also choose to have a Low pass filtering. By default there is no Low pass filtering.
 11. [By clicking on the *Configurations...*](#237-customize-settings) button you can modify additional optional parameters of the preprocessing. This is not necessary, and you can leave it so that the default values are used.
 12. Click on *Create New* in the lower right corner of the project panel to create your new project. If the specified data and project folders do not yet exist, **Automagic** will now create them for you.
-
+   * Note:	You cannot alter paths, the filtering, or the downsampling rate after creating your project.
 #### 2.3.2. Loading an Existing Project
+If you already had created a project with **Automagic** and for some reasons re-installed your matlab or **Automagic** app, you can load that project and keep all the information. 
 There are two options to load an existing project. The first option can only be used to open projects that have been created on your system or that have been loaded before:
 
 1. Navigate to the drop-down list labelled *Select Project*.
@@ -114,6 +113,8 @@ To merge any number of existing projects without losing the individual projects,
 4. In **Automagic**: Create a new project using the newly created data and project folders.
 
 #### 2.3.4. Adding Data to an Existing Project
+If you would like to add some new subjects, or files to your existing project you could use this option.
+
 1. Add subject folders to your data folder using Finder (Mac), Explorer (Windows) or your Linux equivalent.
 2. Refresh the **Automagic** GUI using one of these options:
  * Start or restart **Automagic**.
@@ -137,16 +138,17 @@ To merge any number of existing projects without losing the individual projects,
 After clicking on *Configurations...* button a new window is opened where you can customize preprocessing steps:
 
 1. In the *Filtering* section you can choose the order of the filtering. The default value corresponds to the default value computed by `pop_eegfiltnew.m`.
-2. In the *Channel rejection criterias* you can select or deselect the three different criterias *Kurtosis*, *Probability* and *Spectrum* to reject channels (see `pop_rejchan.m`). The corresponding thresholds can also be customized.
+2. In the *Channel rejection criterias* you can select or deselect the four different criterias *Line Noise*, *Channel criterion*, *Burst Criterion* and *Window Criterion*. The first to criteria are used to detect noisy channels and the last two criterias to remove noisy time windoes. By default only the first two criteria are checked and noisy channels will be marked during the visualisation step, where you can choose to interpolate them. For more information about these criterias, please see `clean_artifacts.m` by **Artifact Subspace Reconstruction**.
    * You can additionally choose to have a channel rejection based on the **Robust Average Referencing** suggested in [PREP](https://github.com/VisLab/EEG-Clean-Tools) pipeline. Note that this is a very time consuming operation.
 3. *ICA* can be selected or deselected. Note that ICA and PCA can not be chosen together at the same time. The ICA uses the algorithm in MARA extension of MATLAB.
 4. *PCA* can be selected or deselected. The parameters correspond to paramters of `inexact_alm_rpca.m`. The default value *lambda* is ![alt tag](https://github.com/amirrezaw/automagic/blob/master/automagic_resources/sqrt.jpg) where m is the number of channels.
 5. The mode of interpolation can be determined. The default value is *spherical*.
+
    * Note:	The preprocessing parameters can be set only during project creation.
 
 ### 2.4. The Pre-Processing Panel
 
-Click on Run to start the pre-processing of your data. This is the first thing you should do after creating a new project or after adding data to an existing project. Pre-processing includes filtering, detection of bad channels, EOG regression, PCA, and automatic interpolation.
+Click on Run to start the pre-processing of your data. This is the first thing you should do after creating a new project or after adding data to an existing project. Pre-processing may include filtering, detection of bad channels, EOG regression, PCA or ICA, and detrending.
 
 Should the project folder already contain files (i.e. should some of the projects data already have been pre-processed), you will be able to choose whether existing files will be overwritten or skipped after clicking on Run.
 
@@ -162,7 +164,7 @@ A visualisation of the currently selected file is displayed. Time corresponds to
 
 You can rate the quality of the visualised data on the very right. You can choose between **Good**, **OK**, and **Bad**. These ratings are subjective and relative rather than absolute: The overall quality of your data should be used as point of reference. The colouring allows you to rate the quality of your data: Ideally, everything is green. Darker colours signify lower quality, i.e. artifacts etc. As a rule of thumb, horizontal artifacts are worse than vertical artifacts of the same size and colouring. After choosing a rating, you will automatically proceed to the next file. Please note that depending on your data and its signal to noise ratio, the color map may need to be modified. On the very bottom right of the window you can select the range of color map [-X, X] where X can be a positive integer between 25 < X < 150. The default range is [-100, 100].
 
-Should you spot bad channels (represented by horizontal lines which are darker than their surroundings), please select **Interpolate**. This will activate selection mode. Manually navigate to bad channels and select them by clicking on them. Click on *Turn off* after selecting all bad channels. Click on Next to proceed to the next file. In the next step you will start interpolationg these bad channels and finally you can come back to re-rate these files after interpolating all selected channels. 
+Detected bad channels during preprocessing are represented by horizontal lines which are darker than their surroundings. Should you also spot bad channels, please select **Interpolate**. This will activate selection mode. Manually navigate to bad channels and select them by clicking on them. Click on *Turn off* after selecting all bad channels. Click on Next to proceed to the next file. In the next step you will start interpolationg these bad channels and finally you can come back to re-rate these files after interpolating all selected channels. 
 
    * Note: 	Only pre-processed files will be shown for rating.
    * Note: 	Manual rating can be interrupted anytime by closing the rating GUI. No data will be lost and you can resume rating later.
@@ -211,7 +213,6 @@ There are four main folders (in total 6 folders):
    1. `main_gui.m` is the main function of the project which must be started to run the application.
    2. `rating_gui.m` is the gui that is accessed from within the `main_gui.m` and is used to rate subjects and files. You don't need to use this function directly.
    3. `settings.m` is the gui corresponsing to configuration button on the main gui. It allows to customize the preprocessing steps. Again you don't need to run this file directly.
-   4. `Automagic.mlappinstall` which is the app installer mentionned in [Installation](#2-1-2-Installation) section.
 3. **`automagic/src/`**
  This folder contains all source files regarding the entire structure of the application:
    * `Project.m`, `Subject.m` and `Block.m` are classes representing a project created in the gui, its corresponding subjects and the raw files of each subject, respectievly. `ConstantGlobalValues.m` contains constant variables used throughout the application to avoid duplications.
@@ -231,8 +232,13 @@ For this code to be able to run, functions from [**EEGLab**](https://sccn.ucsd.e
 
 1. Download the [**EEGLab**](https://sccn.ucsd.edu/eeglab/downloadtoolbox.php) library and put it in the `automagic/matlab_scripts` folder.
 2. Download the  **inexact ALM** ( containing the function `[A, E] = inexact_alm_rpca(D, ??)`) from [**(ALM) Method**](http://perception.csl.illinois.edu/matrix-rank/sample_code.html) and put it in the `automagic/matlab_scripts/` as well.
-    * Good News!: If you feel too lazy to download this extension and put it in  `automagic/matlab_scripts/`, **don't**. While using **Automagic**, if you choose to use PCA in preprocessing, you will be asked if you agree to download the package, if you answer *Yes*, the package will be downloaded *Automagically* in the right folder. Note that this feature is not yet implemented for the previous step, **EEGLab**.  
-3. Now you are able to run the code by running the `automagic/gui/main_gui.m`
+    * Good News!: If you feel too lazy to download this extension and put it in  `automagic/matlab_scripts/`, **don't**. While using **Automagic**, if you choose to use PCA in preprocessing, you will be asked if you agree to download the package, if you answer *Yes*, the package will be downloaded *Automagically* in the right folder. Note that this feature is not yet implemented for the previous step, **EEGLab**. 
+3. Download the  **Artefact Subspace Reconstruction** from EEGLAB Extensions and put it in the `automagic/matlab_scripts/` as well.
+    * Again if you feel too lazy to download this extension and put it in  `automagic/matlab_scripts/`, **don't**.  **Automagic** can download the package itself while using it in the same way as explained in the previous step.
+4. Now you are able to run the code by running the `automagic/gui/main_gui.m`
+
+  * Note that other possible packages will be also downloaded automatically in case they are needed for the preprocessing. For example if you choose to use **Robust Average Referencing**, the package will be downloaded at the beginning of the preprocessing.
+
 
 * NOTE: If your data is with `.fif` extension, you need to download [**fieldtrip**](http://www.fieldtriptoolbox.org/download) which is an **EEGLab** extension and put it in `matlab_scripts/eeglab13_6_5b/plugins/`.
 
