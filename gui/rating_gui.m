@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 09-Feb-2018 10:07:19
+% Last Modified by GUIDE v2.5 19-Feb-2018 11:06:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1279,6 +1279,3 @@ end
 [~, data] = load_current(handles, 0);
 eegplot(data.data, 'srate', data.srate, 'eloc_file', data.chanlocs,...
     'dispchans', 55,'spacing', 20,'events', data.event,'winlength', 20);
-
-
-
