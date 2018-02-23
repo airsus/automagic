@@ -18,7 +18,7 @@ classdef ConstantGlobalValues
     % along with this program.  If not, see <http://www.gnu.org/licenses/>.
     properties(Constant)
 
-        version = '1.4.5';
+        version = '1.4.6';
             
         DEFAULT_keyword = 'Default';
                 

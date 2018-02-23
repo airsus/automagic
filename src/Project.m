@@ -333,12 +333,12 @@ classdef Project < handle
                 EEG = rmfield(EEG, 'auto_badchans');
                 EEG = rmfield(EEG, 'tobe_interpolated');
                 params = self.params;
-                
+                automagic.version = self.CGV.version;
                 display('Saving results...');
                 save(block.reduced_address, self.CGV.default_params.general_params.reduced_name, '-v6');
                 save(block.result_address, 'EEG', 'auto_badchans','man_badchans'...
                     , 'rate','tobe_interpolated', 'is_interpolated', ...
-                    'params', 'ica_rejected', '-v7.3');
+                    'params', 'ica_rejected', 'automagic','-v7.3');
 
                 self.not_rated_list = ...
                     [self.not_rated_list block.index];

@@ -59,6 +59,11 @@ handles.project = project;
 handles.CGV = ConstantGlobalValues;
 
 set(handles.rating_gui, 'units', 'normalized', 'position', [0.05 0.3 0.8 0.8])
+
+% Set the title to the current version
+set(handles.rating_gui, 'Name', ['Automagic v.', handles.CGV.version, ...
+                                 ' Manual Rating']);
+
 % set checkboxes to be all selected on startup
 set(handles.interpolatecheckbox,'Value', 1)
 set(handles.badcheckbox,'Value', 1)

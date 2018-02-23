@@ -102,6 +102,9 @@ end
 handles.CGV = ConstantGlobalValues;
 handles.params = make_default_params(handles.CGV.default_params);
 
+% Set the title to the current version
+set(handles.main_gui, 'Name', ['Automagic v.', handles.CGV.version]);
+
 % Either pca or ica, not both together.
 assert( ( ~ isempty(handles.params.pca_params.lambda) && ...
     handles.params.pca_params.lambda == -1) || handles.params.ica_params.bool == 0);
