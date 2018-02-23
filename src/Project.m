@@ -676,7 +676,8 @@ classdef Project < handle
         
         function rated_count = get_rated_numbers(self)
             % Return number of files that has been already rated
-            rated_count = length(self.processed_list) - length(self.not_rated_list);
+            rated_count = length(self.processed_list) - ...
+                          (length(self.not_rated_list) + length(self.interpolate_list));
         end
         
         function count = to_be_interpolated_count(self)
