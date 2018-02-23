@@ -653,7 +653,14 @@ colormap jet
 caxis([-100 100])
 set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
-title('PCA corrected clean data')
+if (ica_params.bool )
+    title_text = 'ICA';
+elseif(pca_params.lambda ~= -1)
+    title_text = 'PCA';
+else
+    title_text = '';
+end
+title([title_text ' corrected clean data'])
 %figure;
 if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_params.lambda ~= -1))
     subplot(9,1,8:9)
