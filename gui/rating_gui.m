@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 19-Feb-2018 11:06:13
+% Last Modified by GUIDE v2.5 19-Feb-2018 12:06:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -104,8 +104,8 @@ set_gui_rating(handles);
 handles = update_next_and_previous_button(handles);
 
 % Load and show the first image
-[handles, data] = load_current(handles, 1);
-handles = show_current(data, handles);
+[handles, data] = load_current(handles, true);
+handles = show_current(data, false, handles);
 
 clear data;
 
@@ -198,9 +198,11 @@ else
 end
 
 % --- Make the plot of the current file
-function handles = show_current(reduced, handles)
+function handles = show_current(reduced, average_reference, handles)
 % handles  structure with handles of the gui
 % reduced  data file to be plotted
+% average_reference bool specifying if average referencing should be
+% performed or not
 
 if isfield(reduced, 'data')
     data = reduced.data;
@@ -218,11 +220,13 @@ axe = handles.axes;
 cla(axe);
 
 % Averange reference data before plotting
-data_size = size(data);
-data = data - repmat(mean(data, 1), data_size(1), 1);
+if( average_reference && ~isempty(data))
+    data_size = size(data);
+    data = data - repmat(nanmean(data, 1), data_size(1), 1);
+end
 
 im = imagesc(data, 'tag', 'im');
-set(im, 'ButtonDownFcn', {@on_selection,handles})
+set(im, 'ButtonDownFcn', {@on_selection,handles}, 'AlphaData',~isnan(data))
 set(gcf, 'Color', [1,1,1])
 colormap jet
 caxis([-colorScale colorScale])
@@ -416,7 +420,7 @@ function bool = is_filtered(handles, file)
 %          indicating the name of it
 project = handles.project;
 if( project.current == -1)
-    bool = true;
+    bool = false;
     return;
 end
 
@@ -889,12 +893,19 @@ else
     block = get_current_block(handles);
     new_rate = handles.rategroup.SelectedObject.String;
     switch new_rate
-        case {handles.CGV.ratings.Good, handles.CGV.ratings.OK, handles.CGV.ratings.Bad, handles.CGV.ratings.NotRated}
-            block.setRatingInfoAndUpdate(new_rate, [], block.man_badchans, block.is_interpolated);
+        case {handles.CGV.ratings.Good, handles.CGV.ratings.OK, ...
+                handles.CGV.ratings.Bad, handles.CGV.ratings.NotRated}
+            block.setRatingInfoAndUpdate(new_rate, ...
+                                        [], ...
+                                        block.man_badchans, ...
+                                        block.is_interpolated);
         case handles.CGV.ratings.Interpolate
-            % The interpolate_list is untouched at this step. There maybe even
-            % conflicts in it which are not checked.
-            block.setRatingInfoAndUpdate(new_rate, block.tobe_interpolated, block.man_badchans, block.is_interpolated);
+                % The interpolate_list is untouched at this step. There maybe even
+                % conflicts in it which are not checked.
+                block.setRatingInfoAndUpdate(new_rate, ...
+                block.tobe_interpolated, ...
+                block.man_badchans, ...
+                block.is_interpolated);
     end
 end
 
@@ -1276,6 +1287,25 @@ end
 
 
 % Plot
-[~, data] = load_current(handles, 0);
-eegplot(data.data, 'srate', data.srate, 'eloc_file', data.chanlocs,...
-    'dispchans', 55,'spacing', 20,'events', data.event,'winlength', 20);
+[~, data] = load_current(handles, false);
+if(~ isempty(data))
+    eegplot(data.data, 'srate', data.srate, 'eloc_file', data.chanlocs,...
+        'dispchans', 55,'spacing', 50,'events', data.event,'winlength', 20);
+end
+
+% --- Executes on button press in averagereftoggle.
+function averagereftoggle_Callback(hObject, eventdata, handles)
+% hObject    handle to averagereftoggle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if(get(hObject,'Value'))
+    [~, data] = load_current(handles, true);
+    show_current(data, true, handles);
+    set(hObject, 'String', sprintf('Average Referencing: On'))
+else
+    [~, data] = load_current(handles, true);
+    show_current(data, false, handles);
+    set(hObject, 'String', sprintf('Average Referencing: Off'))
+end
+clear data;

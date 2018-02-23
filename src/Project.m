@@ -428,9 +428,18 @@ classdef Project < handle
                         'channels has been chosen.'], 'Error','error'));
                     continue;
                 end
-                preprocessed.EEG = eeg_interp(EEG ,...
+                % Put NaN channels to zeros so that interpolation works
+                nanchans = find(all(isnan(EEG.data), 2));
+                EEG.data(nanchans, :) = 0;
+                
+                EEG = eeg_interp(EEG ,...
                     interpolate_chans , self.params.interpolation_params.method);
-                EEG = preprocessed.EEG;
+                
+                % Put the channels back to NaN if they were not to be interpolated
+                % originally
+                original_nans = setdiff(nanchans, interpolate_chans);
+                EEG.data(original_nans, :) = NaN;
+                preprocessed.EEG = EEG;
                 % Downsample the new file and save it
                 reduced.data = (downsample(EEG.data', self.ds_rate))';
                 save(block.reduced_address, self.CGV.default_params.general_params.reduced_name, '-v6');
@@ -440,7 +449,7 @@ classdef Project < handle
                 self.interpolate_list(self.interpolate_list == block.index) = [];
                 self.not_rated_list = ...
                         [self.not_rated_list block.index];
-                self.not_rated_list = sort(self.not_rated_list);
+                self.not_rated_list = sort(unique(self.not_rated_list));
                 block.saveRatingsToFile();
                 self.save_project();
             end

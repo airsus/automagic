@@ -660,6 +660,8 @@ projects = get(handles.existingpopupmenu, 'String');
 name = projects{idx};
 project = handles.project_list(name);
 
+clc;
+commandwindow;
 project.interpolate_selected();
 
 

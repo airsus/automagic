@@ -190,9 +190,15 @@ methods
                 'channels has been chosen.'], 'Error','error'));
             return;
         end
-
+        % Put NaN channels to zeros so that interpolation works
+        nanchans = find(all(isnan(self.EEG.data), 2));
+        self.EEG.data(nanchans, :) = 0;
         self.EEG = eeg_interp(self.EEG , interpolate_chans , mode);
-
+        
+        % Put the channels back to NaN if they were not to be interpolated
+        % originally
+        original_nans = setdiff(nanchans, interpolate_chans);
+        self.EEG.data(original_nans, :) = NaN;
         % Setting the new information
         self.setRatingInfoAndUpdate(self.CGV.ratings.NotRated, [], [self.man_badchans interpolate_chans], true);
         self.saveRatingsToFile();

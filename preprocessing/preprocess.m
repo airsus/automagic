@@ -573,6 +573,7 @@ if(isfield(EEG_cleaned, 'etc'))
        [~, EOG] = evalc('pop_select(EOG, ''nopoint'', remove_range)');
    end
 end
+
 % Remove effect of EOG
 if( perform_eog_regression )
     EEG_regressed = EOG_regression(EEG_cleaned, EOG);
@@ -599,9 +600,15 @@ result.data = singled_data;
 removed_chans = sort(find(EEG_regressed.etc.clean_channel_mask==0));
 for chan_idx = 1:length(removed_chans);
     chan_nb = removed_chans(chan_idx);
-    result.data = [result.data(1:chan_nb-1,:); ...
-                    zeros(1,size(result.data,2));...
-                    result.data(chan_nb:end,:)];
+    if( chan_nb == eeg_system.ref_chan)
+        result.data = [result.data(1:chan_nb-1,:); ...
+                        zeros(1,size(result.data,2));...
+                        result.data(chan_nb:end,:)];
+    else
+        result.data = [result.data(1:chan_nb-1,:); ...
+                        NaN(1,size(result.data,2));...
+                        result.data(chan_nb:end,:)];
+    end
     result.chanlocs = [result.chanlocs(1:chan_nb-1), EEG.chanlocs(chan_nb), ...
                     result.chanlocs(chan_nb:end)];
 end
