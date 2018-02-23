@@ -181,11 +181,18 @@ handles = update_and_load(handles);
 function handles = update_and_load(handles)
 % handles       main handles of this gui
 
+% Change the cursor to a watch while updating...
+set(handles.main_gui, 'pointer', 'watch')
+drawnow;
+
 % Update the project
 handles = update_selected_project(handles);
 
 % Load the project
 handles = load_selected_project(handles);
+
+% Change back the cursor to an arrow
+set(handles.main_gui, 'pointer', 'arrow')
 
 
 % --- Check if data structures are changed since last time and updates the
@@ -343,8 +350,9 @@ handles.current_project = Index;
 if ~ exist(project.state_address, 'file')
     if(  ~ exist(project.result_folder, 'dir') )
         % This can happen when data is on a server and connecton is lost
-        waitfor(msgbox('The project folder is unreachable or deleted.',...
-            'Error','error'));
+        waitfor(msgbox(['The project folder is unreachable or deleted. ' ...
+                        project.result_folder],...
+                        'Error','error'));
         
         set(handles.projectname, 'String', name);
         set(handles.datafoldershow, 'String', '');
@@ -644,6 +652,11 @@ function manualratingbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to manualratingbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Change the cursor to a watch while updating...
+set(handles.main_gui, 'pointer', 'watch')
+drawnow;
+
 idx = get(handles.existingpopupmenu, 'Value');
 projects = get(handles.existingpopupmenu, 'String');
 name = projects{idx};
@@ -652,6 +665,9 @@ project = handles.project_list(name);
 if(isa(project, 'Project'))
     rating_gui(project);
 end
+
+% Change back the cursor to an arrow
+set(handles.main_gui, 'pointer', 'arrow')
 
 % --- Start interpolation on selected files
 function interpolatebutton_Callback(hObject, eventdata, handles)
@@ -872,7 +888,13 @@ function main_gui_CloseRequestFcn(hObject, eventdata, handles)
 % hObject    handle to main_gui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Change the cursor to a watch while updating...
+set(handles.main_gui, 'pointer', 'watch')
+drawnow;
+
 save_state(handles);
+
 % Hint: delete(hObject) closes the figure
 delete(hObject);
 

@@ -49,6 +49,10 @@ function rating_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to rating_gui (see VARARGIN)
 
+% Change the cursor to a watch while updating...
+set(handles.rating_gui, 'pointer', 'watch')
+drawnow;
+
 if( nargin - 3 ~= 1 )
     error('wrong number of arguments. Project must be given as argument.')
 end
@@ -85,6 +89,8 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
+% Change back the cursor to an arrow
+set(handles.rating_gui, 'pointer', 'arrow')
 % UIWAIT makes rating_gui wait for user response (see UIRESUME)
 % uiwait(handles.rating_gui);
 
@@ -342,7 +348,6 @@ else
         end
     end
 end
-
 
 % --- Get the index of the previous file if any.
 % There are five different lists corresponding to different ratings. The
@@ -765,10 +770,18 @@ function previousbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to previousbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Change the cursor to a watch while updating...
+set(handles.rating_gui, 'pointer', 'watch')
+drawnow;
+
 handles = previous(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
+% Change back the cursor to an arrow
+set(handles.rating_gui, 'pointer', 'arrow')
 
 % --- Executes on button press in nextbutton.
 function nextbutton_Callback(hObject, eventdata, handles)
@@ -776,10 +789,17 @@ function nextbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Change the cursor to a watch while updating...
+set(handles.rating_gui, 'pointer', 'watch')
+drawnow;
+
 handles = next(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
+% Change back the cursor to an arrow
+set(handles.rating_gui, 'pointer', 'arrow')
 
 % --- Executes when selected object is changed in rategroup.
 function rategroup_SelectionChangedFcn(hObject, eventdata, handles)
@@ -846,6 +866,11 @@ function subjectsmenu_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Determine the selected data set.
+
+% Change the cursor to a watch while updating...
+set(handles.rating_gui, 'pointer', 'watch')
+drawnow;
+
 handles = save_state(handles);
 
 project = handles.project;
@@ -863,6 +888,9 @@ handles = load_project(handles);
 
 % Update handles structure
 guidata(hObject, handles);
+
+% Change back the cursor to an arrow
+set(handles.rating_gui, 'pointer', 'arrow')
 
 % --- Show the next file in the list
 function handles = next(handles)
@@ -1136,6 +1164,11 @@ function rating_gui_CloseRequestFcn(hObject, eventdata, handles)
 % hObject    handle to rating_gui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Change the cursor to a watch while updating...
+set(handles.rating_gui, 'pointer', 'watch')
+drawnow;
+
 save_state(handles);
 
 if(isa(handles.project, 'EEGLabProject'))
@@ -1152,6 +1185,9 @@ handle = guidata(h);
 handle.project_list(handles.project.name) = handles.project;
 guidata(handle.main_gui, handle);
 main_gui();
+
+% Change back the cursor to an arrow
+set(handles.rating_gui, 'pointer', 'arrow')
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);

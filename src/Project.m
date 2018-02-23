@@ -490,7 +490,9 @@ classdef Project < handle
             % If on the other hand, any files is deleted from any of those
             % two folders, they are not copied to the new data structures
             % and considered as deleted files in the project.
-            
+            h = waitbar(0,'Updating project. Please wait...');
+            h.Children.Title.Interpreter = 'none';
+
             if(isunix)
                 slash = '/';
             elseif(ispc)
@@ -512,7 +514,18 @@ classdef Project < handle
 
             files_count = 0;
             preprocessed_file_count = 0;
+            stop_flag = 0;
             for i = 1:length(subjects)
+                if(stop_flag)
+                    if(ishandle(h))
+                        close(h)
+                    end
+                    break;
+                end
+                if(ishandle(h))
+                    waitbar((i-1) / length(subjects), h)
+                end
+                
                 subject_name = subjects{i};
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
@@ -527,6 +540,11 @@ classdef Project < handle
                     file_name = splits{1};
                     unique_name = strcat(subject_name, '_', file_name);
 
+                    display(['...Adding file ', file_name]);
+                    if(ishandle(h))
+                        waitbar((i-1) / length(subjects), h, ...
+                            ['Setting up project. Please wait.', ' Adding file ', file_name, '...'])
+                    end
                     % Merge data and update block_list
                     if isKey(self.block_map, unique_name) % File has been here
                         block = self.block_map(unique_name);
@@ -550,7 +568,15 @@ classdef Project < handle
                                     list{files_count} = [];
                                     files_count = files_count - 1;
                                     remove(map, block.unique_name);
-                                    continue;
+                                    
+                                   choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                   'Continue preprocessing?', 'Yes', 'No','Yes');
+                                    switch choice
+                                        case 'Yes'
+                                            continue;
+                                        case 'No'
+                                            break;
+                                    end
                                 end
                             end
                         else
@@ -560,10 +586,20 @@ classdef Project < handle
                                 list{files_count} = [];
                                 files_count = files_count - 1;
                                 remove(map, block.unique_name);
-                                continue;
+                                
+                                choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                'Continue preprocessing?', 'Yes', 'No','Yes');
+                                switch choice
+                                    case 'Yes'
+                                        continue;
+                                    case 'No'
+                                        stop_flag = 1;
+                                        break;
+                                end
                             end
                         end
-                    else                                        % File is new
+                    else
+                        % File is new
                         % Block creation extracts and updates automatically the rating 
                         % information from the existing files, if any.
                         block = Block(subject, file_name, ext, self.ds_rate, self.params);
@@ -571,7 +607,16 @@ classdef Project < handle
                         % parameters just skip it.
                         if( isempty(block.rate))
                             files_count = files_count - 1;
-                            continue;
+                            
+                            choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                            'Continue preprocessing?', 'Yes', 'No','Yes');
+                            switch choice
+                                case 'Yes'
+                                    continue;
+                                case 'No'
+                                    stop_flag = 1;
+                                    break;
+                            end
                         end
                         map(block.unique_name) = block;
                         list{files_count} = block.unique_name;
@@ -602,6 +647,10 @@ classdef Project < handle
                 if (~isempty(raw_files) && temp == length(raw_files))
                     preprocessed_subject_count = preprocessed_subject_count + 1; 
                 end
+            end
+            if(ishandle(h))
+                waitbar(1)
+                close(h)
             end
             
             % Inform user if result folder has been modified
@@ -755,8 +804,9 @@ classdef Project < handle
             % data_folder, then tries to find the corresponding
             % preprocessed file in the result_folder, if any. Then updates
             % the data_structure based on the preprocessed result.
-            
-            
+            h = waitbar(0,'Setting up project. Please wait...');
+            h.Children.Title.Interpreter = 'none';
+           
             if(isunix)
                 slash = '/';
             elseif(ispc)
@@ -776,10 +826,21 @@ classdef Project < handle
             o_list = [];
             n_list = [];
 
+            
             files_count = 0;
             preprocessed_file_count = 0;
             preprocessed_subject_count = 0;
+            stop_flag = 0;
             for i = 1:length(subjects)
+                if(stop_flag)
+                    if(ishandle(h))
+                        close(h)
+                    end
+                    break;
+                end
+                if(ishandle(h))
+                    waitbar((i-1) / length(subjects), h)
+                end
                 subject_name = subjects{i};
                 display(['Adding subject ', subject_name]);
                 subject = Subject([self.data_folder subject_name], ...
@@ -794,6 +855,10 @@ classdef Project < handle
                     splits = strsplit(name_temp, ext);
                     file_name = splits{1};
                     display(['...Adding file ', file_name]);
+                    if(ishandle(h))
+                        waitbar((i-1) / length(subjects), h, ...
+                            ['Setting up project. Please wait.', ' Adding file ', file_name, '...'])
+                    end
                     % Block creation extracts and updates automatically the rating 
                     % information from the existing files, if any.
                     block = Block(subject, file_name, ext, self.ds_rate, self.params);
@@ -801,7 +866,16 @@ classdef Project < handle
                     % parameters just skip it.
                     if( isempty(block.rate))
                         files_count = files_count - 1;
-                        continue;
+                        
+                        choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                       'Continue preprocessing?', 'Yes', 'No','Yes');
+                        switch choice
+                            case 'Yes'
+                                continue;
+                            case 'No'
+                                stop_flag = 1;
+                                break;
+                        end
                     end
                     
                     map(block.unique_name) = block;
@@ -832,7 +906,11 @@ classdef Project < handle
                     preprocessed_subject_count = preprocessed_subject_count + 1; 
                 end
             end
-
+            if(ishandle(h))
+                waitbar(1)
+                close(h)
+            end
+            
             self.processed_list = p_list;
             self.processed_files = preprocessed_file_count;
             self.processed_subjects = preprocessed_subject_count; 
@@ -959,7 +1037,7 @@ classdef Project < handle
             % root_folder are changed since the last update. 
             % NOTE: This is a very naive way of checking if changes
             % happened. There could be changes in files, but not number of 
-            % files, which are not detected. Be careful when using this.
+            % files, which are not detected. Use with cautious.
             
             modified = false;
             subjects = Project.list_subjects(folder);
