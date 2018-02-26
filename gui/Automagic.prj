@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="3737382308" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="2400982212" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
     <param.appname>Automagic</param.appname>
     <param.authnamewatermark>amirreza</param.authnamewatermark>
     <param.email>amirreza.bahreini@uzh.ch</param.email>
@@ -507,7 +507,6 @@
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/README</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/besa2fieldtrip.m</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/bin</file>
-      <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/compat</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/connectivity</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/contrib</file>
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/eeglab13_6_5b/plugins/fieldtrip-20161108/edf2fieldtrip.m</file>
