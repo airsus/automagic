@@ -232,8 +232,8 @@ if( exist( project.result_folder, 'dir'))
         set(handles.main_gui, 'pointer', 'arrow')
     end
 else
-    waitfor(msgbox('The project folder does not exists or is not reachable.'...
-        , 'Error', 'error'));
+    popup_msg('The project folder does not exists or is not reachable.'...
+        , 'Error');
 end
 
 % --- Loads the current project selected by gui and set the gui accordingly
@@ -322,8 +322,8 @@ if(strcmp(name, handles.CGV.load_selected_project.LIST_NAME))
             self.update_addresses_form_state_file(project_path, data_path);
             handles.project_list(name) = self;
         else
-            waitfor(msgbox(['This project already exists. You can not ',...
-                'reload it unless it is deleted.'], 'Error','error'));
+            popup_msg(['This project already exists. You can not ',...
+                'reload it unless it is deleted.'], 'Error');
         end
         
         % Set the gui to this project and load this project
@@ -350,9 +350,8 @@ handles.current_project = Index;
 if ~ exist(project.state_address, 'file')
     if(  ~ exist(project.result_folder, 'dir') )
         % This can happen when data is on a server and connecton is lost
-        waitfor(msgbox(['The project folder is unreachable or deleted. ' ...
-                        project.result_folder],...
-                        'Error','error'));
+        popup_msg(['The project folder is unreachable or deleted. ' ...
+                        project.result_folder], 'Error');
         
         set(handles.projectname, 'String', name);
         set(handles.datafoldershow, 'String', '');
@@ -373,8 +372,8 @@ if ~ exist(project.state_address, 'file')
         return;
     else
         % If the state of is deleted, remove this project
-        waitfor(msgbox(['The state file does not exist anymore.',...
-            'You must create a new project.'], 'Error','error'));
+        popup_msg(['The state file does not exist anymore.',...
+            'You must create a new project.'], 'Error');
         remove(handles.project_list, name);
         handles.current_project = 1;
         set(handles.existingpopupmenu,...
@@ -657,6 +656,9 @@ function manualratingbutton_Callback(hObject, eventdata, handles)
 set(handles.main_gui, 'pointer', 'watch')
 drawnow;
 
+% Update the project in case of new changes
+handles = update_and_load(handles);
+
 idx = get(handles.existingpopupmenu, 'Value');
 projects = get(handles.existingpopupmenu, 'String');
 name = projects{idx};
@@ -674,21 +676,30 @@ function interpolatebutton_Callback(hObject, eventdata, handles)
 % hObject    handle to interpolatebutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Update the project in case of new changes
+handles = update_and_load(handles);
+
 idx = get(handles.existingpopupmenu, 'Value');
 projects = get(handles.existingpopupmenu, 'String');
 name = projects{idx};
 project = handles.project_list(name);
 
-clc;
-commandwindow;
-project.interpolate_selected();
-
+if(~ isempty(project))
+    clc;
+    commandwindow;
+    project.interpolate_selected();
+end
 
 % --- Run preprocessing on all subjects
 function runpreprocessbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to runpreprocessbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Update the project in case of new changes
+handles = update_and_load(handles);
+
 idx = get(handles.existingpopupmenu, 'Value');
 projects = get(handles.existingpopupmenu, 'String');
 name = projects{idx};
@@ -728,23 +739,23 @@ data_folder = get(handles.datafoldershow, 'String');
 if( strcmp(data_folder, handles.CGV.new_project.DATA_FOLDER) || ...
         strcmp(project_folder, handles.CGV.new_project.FOLDER) || ...
         strcmp(name, handles.CGV.new_project.NAME))
-    waitfor(msgbox('You must choose a name, project folder and data folder.',...
-        'Error','error'));
+    
+    popup_msg('You must choose a name, project folder and data folder.',...
+        'Error');
     return;
 end
 
 % Get the file extension
 ext = get(handles.extedit, 'String');
 if( isempty(ext) || ~ (strcmp(ext(1), '.') || strcmp(ext(1), '_')))
-    waitfor(msgbox('A correct file extension must be given.',...
-        'Error','error'));
+    popup_msg('A correct file extension must be given.', 'Error');
     return;
 end
 
 srate = str2num(get(handles.srateedit, 'String'));
 if(any(strcmp(ext, {handles.CGV.extensions.text})) && isempty(srate))
-    waitfor(msgbox('Sampling rate is required when the file extensions is .txt',...
-        'Error','error'));
+    popup_msg('Sampling rate is required when the file extensions is .txt',...
+        'Error');
     return;
 end
     
@@ -765,29 +776,29 @@ if ~ get(handles.egiradio, 'Value')
    eeg_system.ref_chan = str2num(get(handles.hasreferenceedit, 'String'));
             
    if( get(handles.eogregressioncheckbox, 'Value') && isempty(eeg_system.eog_chans))
-        waitfor(msgbox(['A list of channel indices seperated by space or',...
+        popup_msg(['A list of channel indices seperated by space or',...
             ' comma must be given to determine EOG channels'],...
-            'Error','error'));
+            'Error');
         return;
    end
    
     if( get(handles.excludecheckbox, 'Value') && isempty(eeg_system.tobe_excluded_chans))
-        waitfor(msgbox(['A list of channel indices seperated by space or',...
+        popup_msg(['A list of channel indices seperated by space or',...
             ' comma must be given to determine channels to be excluded'],...
-            'Error','error'));
+            'Error');
         return;
     end
     
     if( get(handles.hasreferenceradio, 'Value') && isempty(eeg_system.ref_chan))
-        waitfor(msgbox(['Please choose the index of the reference channel'],...
-            'Error','error'));
+        popup_msg('Please choose the index of the reference channel',...
+            'Error');
         return;
     end
    
     loc_type = eeg_system.file_loc_type;
     if( isempty(loc_type) || ~ strcmp(loc_type(1), '.'))
-        waitfor(msgbox('Channel location: A correct file extension must be given.',...
-            'Error','error'));
+        popup_msg('Channel location: A correct file extension must be given.',...
+            'Error');
         return;
     end
 
@@ -831,7 +842,10 @@ drawnow;
 
 choice = 'Over Write';
 if( exist(Project.make_state_address(project_folder), 'file'))
-    choice = questdlg(['Another project in this folder already ',...
+    handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+    main_pos = get(handle,'position');
+    screen_size = get( groot, 'Screensize' );
+    choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],['Another project in this folder already ',...
         'exist. Do you want to load it or overwrite it ?'], ...
         'Pre-existing project in the project folder.',...
         'Over Write', 'Load','Over Write');
@@ -877,8 +891,8 @@ switch choice
 end
 
 save_state(handles);
-waitfor(msgbox({'The project is successfully created.' ...
-    'Now you can start pre-processing.'}));
+popup_msg({'The project is successfully created.' ...
+    'Now you can start pre-processing.'}, 'New project');
 % Update handles structure
 guidata(hObject, handles);
 
@@ -904,8 +918,10 @@ function deleteprojectbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to deleteprojectbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-choice = questdlg(['Are you really sure to delete this project? The ',...
+handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+main_pos = get(handle,'position');
+screen_size = get( groot, 'Screensize' );
+choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],['Are you really sure to delete this project? The ',...
     'project will be deleted for all other users. NOTE: The ',...
     'data files and result files will not be deleted.'], ...
     'Take responsibility!',...

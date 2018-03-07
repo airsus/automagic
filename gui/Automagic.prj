@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="2400982212" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="547407399" file="/Users/amirreza/workspace/ppp/pipline/gui/Automagic.prj" location="/Users/amirreza/workspace/ppp/pipline/gui" name="Automagic" target="target.mlapps" target-name="Package App">
     <param.appname>Automagic</param.appname>
     <param.authnamewatermark>amirreza</param.authnamewatermark>
     <param.email>amirreza.bahreini@uzh.ch</param.email>
@@ -1146,6 +1146,9 @@
       <file>/Users/amirreza/workspace/ppp/pipline/matlab_scripts/inexact_alm_rpca</file>
       <file>/Users/amirreza/workspace/ppp/pipline/preprocessing</file>
       <file>/Users/amirreza/workspace/ppp/pipline/src</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/src/MFquestdlg.m</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/src/license.txt</file>
+      <file>/Users/amirreza/workspace/ppp/pipline/src/popup_msg.m</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>

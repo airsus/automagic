@@ -399,8 +399,8 @@ classdef Project < handle
             end
 
             if(isempty(self.interpolate_list))
-                waitfor(msgbox('No subjects to interpolate. Please first rate.',...
-                    'Error','error'));
+                popup_msg('No subjects to interpolate. Please first rate.',...
+                    'Error');
                 return;
             end
 
@@ -422,8 +422,8 @@ classdef Project < handle
                 EEG = preprocessed.EEG;
                 interpolate_chans = block.tobe_interpolated;
                 if(isempty(interpolate_chans))
-                    waitfor(msgbox(['The subject is rated to be interpolated but no',...
-                        'channels has been chosen.'], 'Error','error'));
+                    popup_msg(['The subject is rated to be interpolated but no',...
+                        'channels has been chosen.'], 'Error');
                     continue;
                 end
                 % Put NaN channels to zeros so that interpolation works
@@ -567,8 +567,12 @@ classdef Project < handle
                                     files_count = files_count - 1;
                                     remove(map, block.unique_name);
                                     
-                                   choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                   'Continue preprocessing?', 'Yes', 'No','Yes');
+                                    handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+                                    main_pos = get(handle,'position');
+                                    screen_size = get( groot, 'Screensize' );
+                                    choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
+                                                        'Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                                        'Continue preprocessing?', 'Yes', 'No','Yes');
                                     switch choice
                                         case 'Yes'
                                             continue;
@@ -585,8 +589,12 @@ classdef Project < handle
                                 files_count = files_count - 1;
                                 remove(map, block.unique_name);
                                 
-                                choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                'Continue preprocessing?', 'Yes', 'No','Yes');
+                                handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+                                main_pos = get(handle,'position');
+                                screen_size = get( groot, 'Screensize' );
+                                choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], ...
+                                                    'Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                                    'Continue preprocessing?', 'Yes', 'No','Yes');
                                 switch choice
                                     case 'Yes'
                                         continue;
@@ -605,9 +613,12 @@ classdef Project < handle
                         % parameters just skip it.
                         if( isempty(block.rate))
                             files_count = files_count - 1;
-                            
-                            choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                            'Continue preprocessing?', 'Yes', 'No','Yes');
+                            handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+                            main_pos = get(handle,'position');
+                            screen_size = get( groot, 'Screensize' );
+                            choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
+                                                'Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                                'Continue preprocessing?', 'Yes', 'No','Yes');
                             switch choice
                                 case 'Yes'
                                     continue;
@@ -654,34 +665,34 @@ classdef Project < handle
             % Inform user if result folder has been modified
             if( preprocessed_file_count > self.processed_files || preprocessed_subject_count > self.processed_subjects)
                 if( preprocessed_subject_count > self.processed_subjects)
-                    waitfor(msgbox('New preprocessed results have been added to the project folder.'));
+                    popup_msg('New preprocessed results have been added to the project folder.', 'More results');
                 else
-                    waitfor(msgbox('New preprocessed results have been added to the project folder.'));
+                    popup_msg('New preprocessed results have been added to the project folder.', 'More results');
                 end
             end
 
             if( preprocessed_file_count < self.processed_files || preprocessed_subject_count < self.processed_subjects)
                 if( preprocessed_subject_count < self.processed_subjects)
-                    waitfor(msgbox('Some preprocessed results have been deleted from the project folder.'));
+                    popup_msg('Some preprocessed results have been deleted from the project folder.', 'Less results');
                 else
-                    waitfor(msgbox('Some preprocessed results have been deleted from the project folder.'));
+                    popup_msg('Some preprocessed results have been deleted from the project folder.', 'Less results');
                 end
             end
 
             % Inform user if data folder has been modified
             if( files_count > self.file_count || s_count > self.subject_count)
                 if( s_count > self.subject_count)
-                    waitfor(msgbox('New subjects are added to data folder.'));
+                    popup_msg('New subjects are added to data folder.', 'New subjects');
                 else
-                    waitfor(msgbox('New files are added to data folder.'));
+                    popup_msg('New files are added to data folder.', 'New results');
                 end
             end
 
             if( files_count < self.file_count || s_count < self.subject_count)
                 if( s_count < self.subject_count)
-                    waitfor(msgbox('You have lost some data files.'));
+                    popup_msg('You have lost some data files.', 'Less data');
                 else
-                    waitfor(msgbox('You have lost some data cosubjects.'));
+                    popup_msg('You have lost some data cosubjects.', 'Less data');
                 end
             end
             self.processed_files = preprocessed_file_count;
@@ -865,8 +876,12 @@ classdef Project < handle
                     if( isempty(block.rate))
                         files_count = files_count - 1;
                         
-                        choice = questdlg('Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                       'Continue preprocessing?', 'Yes', 'No','Yes');
+                        handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+                        main_pos = get(handle,'position');
+                        screen_size = get( groot, 'Screensize' );
+                        choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
+                                            'Something went wrong. Would you like to continue for the remaining files and subject?', ...
+                                            'Continue preprocessing?', 'Yes', 'No','Yes');
                         switch choice
                             case 'Yes'
                                 continue;
@@ -934,8 +949,8 @@ classdef Project < handle
             
             % Name must be a valid file name
             if (~isempty(regexp(name, '[/\*:?"<>|]', 'once')))
-                waitfor(msgbox(['Please enter a valid name not containing any of the following: '...
-                       '/ \ * : ? " < > |'], 'Error','error'));
+                popup_msg(['Please enter a valid name not containing any of the following: '...
+                       '/ \ * : ? " < > |'], 'Error');
                 return;
             end
             self.name = name;
@@ -945,8 +960,8 @@ classdef Project < handle
             % Set the address of the data_folder
             
             if(~ exist(data_folder, 'dir') && isunix)
-                waitfor(msgbox(strcat('This data folder does not exist: ', data_folder),...
-                    'Error','error'));
+               popup_msg(strcat('This data folder does not exist: ', data_folder),...
+                    'Error');
                 return;
             end
             
@@ -969,7 +984,11 @@ classdef Project < handle
 
             skip = 1;
             if( self.processed_files > 0)
-                choice = questdlg(['Some files are already processed. Would ',... 
+                handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+                main_pos = get(handle,'position');
+                screen_size = get( groot, 'Screensize' );
+                choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], ...
+                                    ['Some files are already processed. Would ',... 
                                    'you like to overwrite them or skip them ?'], ...
                                    'Pre-existing files in the project folder.',...
                                    'Over Write', 'Skip','Over Write');

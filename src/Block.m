@@ -183,10 +183,10 @@ classdef Block < handle
             if( exist(self.potential_result_address(), 'file'))
                 preprocessed = matfile(self.potential_result_address());
                 if( ~ isequal(preprocessed.params, self.params))
-                    waitfor(msgbox(['Preprocessing parameters of the ',...
+                    popup_msg(['Preprocessing parameters of the ',...
                         self.file_name, ' does not correspond to the ',...
                         'preprocessing parameters of this project. This ',...
-                        'file can not be merged.'],'Error','error'));
+                        'file can not be merged.'],'Error');
                     self.rate = [];
                     return;
                 end 
@@ -468,7 +468,7 @@ classdef Block < handle
             prefix = splits{1};
             
             if( ~ Block.is_valid_prefix(prefix) )
-                waitfor(msgbox('Not a valid prefix.','Error','error'));
+                popup_msg('Not a valid prefix.','Error');
                 return;
             end
         end
