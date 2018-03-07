@@ -293,8 +293,6 @@ classdef Project < handle
                         self.write_to_log(block.source_address);
                        continue; 
                     end
-                    figure(fig);
-                    h = gcf;
                 end
                 
                 % Delete old results

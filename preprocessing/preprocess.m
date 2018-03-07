@@ -617,7 +617,7 @@ result.tobe_interpolated = setdiff([removed_chans, rar_bads], eeg_system.ref_cha
 result.auto_badchans = result.tobe_interpolated;
 
 %% Creating the final figure to save
-fig = figure;
+fig = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])
 hold on
 % eog figure
