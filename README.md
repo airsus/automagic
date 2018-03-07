@@ -20,7 +20,7 @@ You need MATLAB installed and activated on your system to use **Automagic**. **A
 
 There are four different ways of using the application.
 
-1. The easiest and recommended way is to simply install the application from the [app installer](https://www.psychologie.uzh.ch/dam/jcr:ff5d0146-a477-4376-a330-ab78f3cd629b/Automagic.mlappinstall) file. This is the stable version. For more information please see [GUI Manual](#2-gui-manual)
+1. The easiest and recommended way is to simply install the application from the [app installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html) file. This is the stable version. For more information please see [GUI Manual](#2-gui-manual)
 2. Automagic is also available as an **EEGLab** extension and you can use it to preprocess data loaded by **EEGLab** gui. See [Automagic as EEGLab extension](#3-automagic-as-eeglab-extension)
 3. You can also use the preprocessing files independent from the gui. See [Application structure](#4-application-structure) and [How to run the app from the code](#5-how-to-run-the-application-from-the-code)  
 4. Or if you wish to make any modifications to any part of the application, be it the gui or the preprocessing part, you can run the application from the code instead of the installer file. This version has always the latest modifications. See [Application structure](#3-application-structure) and [How to run the app from the code](#5-how-to-run-the-application-from-the-code)  
@@ -35,7 +35,7 @@ You need MATLAB installed and activated on your system to use **Automagic**. **A
 
 #### 2.1.2. Installation
 1. Start MATLAB. 
-2. Download the **Automagic** EEG [installer](https://www.psychologie.uzh.ch/dam/jcr:ff5d0146-a477-4376-a330-ab78f3cd629b/Automagic.mlappinstall).
+2. Download the **Automagic** EEG [installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html).
 2. Double click the file and Wait until MATLAB displays a dialogue box.
 4. Please select Install. You will be notified as soon as the installation is complete.
 
