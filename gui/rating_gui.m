@@ -1220,9 +1220,9 @@ shortcuts = handles.CGV.KEYBOARD_SHORTCUTS;
             set(handles.rategroup,'selectedobject',handles.notrate)
             handles = change_rating(handles);
         case {shortcuts.NEXT}
-            handles = previous(handles);
-        case {shortcuts.PREVIOUS}
             handles = next(handles);
+        case {shortcuts.PREVIOUS}
+            handles = previous(handles);
     end
 
 % --- Executes during object creation, after setting all properties.
