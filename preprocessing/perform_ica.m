@@ -93,9 +93,15 @@ end
 
 display(defaults.run_message);
 options = [0 1 0 0 1];
-[~, ~, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
-
+[~, ALLEEG, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
 data = EEG_Mara;
+% Get bak info before ica components were rejected
+[~, artcomps, MARAinfo] = evalc('MARA(ALLEEG(2))');
+data.prerejection.reject.MARAinfo = MARAinfo;
+data.prerejection.reject.gcompreject(artcomps) = 1;
+data.prerejection.icaact  = ALLEEG(2).icaact;
+data.prerejection.icawinv     = ALLEEG(2).icawinv;
+data.prerejection.icaweights  = ALLEEG(2).icaweights;
 
 % Change back the labels to the original one
 if( ~ isempty(chanloc_map))
