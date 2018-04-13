@@ -18,8 +18,8 @@ There are four different ways of using the application.
 2. Automagic is also available as an **EEGLab** extension and you can use it to preprocess data loaded by **EEGLab** gui. See [Automagic as EEGLab extension](#2-automagic-as-eeglab-extension)
 3. You can also use the preprocessing files independent from the gui. See [Application structure](#3-application-structure) and [How to run the app from the code](#4-how-to-run-the-application-from-the-code)  
 4. Or if you wish to make any modifications to any part of the application, be it the gui or the preprocessing part, you can run the application from the code instead of the installer file. This version has always the latest modifications. See [Application structure](#3-application-structure) and [How to run the app from the code](#4-how-to-run-the-application-from-the-code)  
-
-  * Important: Only the [app installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html) contains the *stable version* of the **Automagic**. Github code has the most recent changes and may contain some bugs.
+ 
+ * **Important**: Only the [app installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html) contains the *stable version* of the **Automagic**. Github code has the most recent changes and may contain some bugs.
   
  
 ## 2. Automagic as EEGLab extension
