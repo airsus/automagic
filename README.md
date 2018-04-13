@@ -14,7 +14,7 @@ You need MATLAB installed and activated on your system to use **Automagic**. **A
 
 There are four different ways of using the application.
 
-1. The easiest and recommended way is to simply install the application from the [app installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html) file. This is the stable version. For more information please see [GUI Manual](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html)
+1. The easiest and recommended way is to simply install the application from the [app installer](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html) file. This is the stable version. For more information please see [GUI Manual](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic/Manual.html)
 2. Automagic is also available as an **EEGLab** extension and you can use it to preprocess data loaded by **EEGLab** gui. See [Automagic as EEGLab extension](#2-automagic-as-eeglab-extension)
 3. You can also use the preprocessing files independent from the gui. See [Application structure](#3-application-structure) and [How to run the app from the code](#4-how-to-run-the-application-from-the-code)  
 4. Or if you wish to make any modifications to any part of the application, be it the gui or the preprocessing part, you can run the application from the code instead of the installer file. This version has always the latest modifications. See [Application structure](#3-application-structure) and [How to run the app from the code](#4-how-to-run-the-application-from-the-code)  
@@ -32,7 +32,7 @@ After this being done, on start-up, **EEGLab** will create a new menu item for *
 2. *Start Manual Rating...* which corresponds to manual rating of bad channels.
 3. *Start Interpolation...* which corresponds to interpolation of all manually selected channels.
 
-The behaviour of the the second and third step is exactly as explained in [GUI Manual](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic.html). The only difference happens for the first step where you can preprocess only the currently selected EEG structure instead of the list of all of your EEG structures loaded in **EEGLab**.
+The behaviour of the the second and third step is exactly as explained in [GUI Manual](http://www.psychologie.uzh.ch/de/bereiche/nec/plafor/automagic/Manual.html). The only difference happens for the first step where you can preprocess only the currently selected EEG structure instead of the list of all of your EEG structures loaded in **EEGLab**.
 
 Also please note that, when using **EEGLab**, there is no more the notion of having projects, or creating a new project,etc. In this case, you simply load your data from within **EEGLab**, preprocess, rate and interpolate them, and all the results are given back in `ALLEEG` structure of the **EEGLab**. From there you may want to save your result yourself.
 
