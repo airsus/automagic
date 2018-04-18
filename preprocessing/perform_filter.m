@@ -95,20 +95,29 @@ if( ~isempty(high) || ~isempty(low) || ~isempty(notch))
 
     if( ~isempty(high) )
         [~, data] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
-        data.automagic_params.filtering.highpass.freq = high.freq;
-        data.automagic_params.filtering.highpass.order = high.order;
+        data.automagic.filtering.highpass.performed = 'yes';
+        data.automagic.filtering.highpass.freq = high.freq;
+        data.automagic.filtering.highpass.order = high.order;
+    else
+        data.automagic.filtering.highpass.performed = 'no';
     end
 
     if( ~isempty(low) )
         [~, data] = evalc('pop_eegfiltnew(data, 0, low.freq, low.order)');
-        data.automagic_params.filtering.lowpass.freq = low.freq;
-        data.automagic_params.filtering.lowpass.order = low.order;
+        data.automagic.filtering.lowpass.performed = 'yes';
+        data.automagic.filtering.lowpass.freq = low.freq;
+        data.automagic.filtering.lowpass.order = low.order;
+    else
+        data.automagic.filtering.lowpass.performed = 'no';
     end
 
     if( ~isempty(notch))
         [~, data] = evalc(['pop_eegfiltnew(data, notch.freq - 3,'...
                            'notch.freq + 3, [], 1)']); % Band-stop filter
-        data.automagic_params.filtering.notch.freq = notch.freq;
+        data.automagic.filtering.notch.performed = 'yes';
+        data.automagic.filtering.notch.freq = notch.freq;
+    else
+        data.automagic.filtering.notch.performed = 'no';
     end
 end
 

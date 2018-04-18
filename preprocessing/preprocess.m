@@ -373,10 +373,11 @@ eeg_system.ref_chan = idx(idx ~= 0);
 [s, ~] = size(EEG.data);
 asr_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned = EEG;
+EEG_cleaned.automagic.asr.performed = 'no';
 if ( ~isempty(asr_params) )
     display('Removing bad channels using Artifact Subspace Reconstruction...');
     [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
-    
+    EEG_cleaned.automagic.asr.performed = 'yes';
     if(isfield(EEG_cleaned, 'etc'))
         % Get the removed channels list
         if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
@@ -402,39 +403,38 @@ if ( ~isempty(asr_params) )
     end
 end
 
-userData = struct('boundary', [], 'detrend', [], ...
-'lineNoise', [], 'reference', [], ...
-'report', [],  'postProcess', []);
-stepNames = fieldnames(userData);
-for k = 1:length(stepNames)
-    defaults = getPrepDefaults(EEG, stepNames{k});
-    [theseValues, errors] = checkStructureDefaults(p_params, ...
-        defaults);
-    if ~isempty(errors)
-        error('pop_prepPipeline:BadParameters', ['|' ...
-            sprintf('%s|', errors{:})]);
-    end
-    userData.(stepNames{k}) = theseValues;
-end
 % Robust Average Referecing
 [s, ~] = size(EEG.data);
 prep_removed_chans_mask = false(1, s); clear s;
+EEG_cleaned.automagic.prep.performed = 'no';
 if ( ~isempty(prep_params) )
     display(sprintf('Running Robust Average Referencing...'));
+    % Remove the ref_chan containing zeros from prep preprocessing
     rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
-    %TODO, make sure these params are necessary
-    prep_params.referenceChannels =  rar_chans;
-    prep_params.evaluationChannels =  rar_chans;
-    prep_params.rereference =  rar_chans;
-    prep_params.referenceType =  'robust';
+    if isfield(prep_params, 'referenceChannels')
+        prep_params.referenceChannels =  setdiff(prep_params.referenceChannels, eeg_system.ref_chan);
+    else
+        prep_params.referenceChannels = setdiff(rar_chans, eeg_system.ref_chan);
+    end
+    
+    if isfield(prep_params, 'evaluationChannels')
+        prep_params.evaluationChannels =  setdiff(prep_params.evaluationChannels, eeg_system.ref_chan);
+    else
+        prep_params.evaluationChannels = setdiff(rar_chans, eeg_system.ref_chan);
+    end
+    
+    if isfield(prep_params, 'rereference')
+        prep_params.rereference =  setdiff(prep_params.rereference, eeg_system.ref_chan);
+    else
+        prep_params.rereference = setdiff(rar_chans, eeg_system.ref_chan);
+    end
     [~, EEG_preped, ~] = evalc('prepPipeline(EEG, prep_params)');
     info = EEG_preped.etc.noiseDetection;
     prep_removed_chans = union(union(info.stillNoisyChannelNumbers, ...
                                      info.interpolatedChannelNumbers), ...
                                      info.removedChannelNumbers);
     prep_removed_chans_mask(prep_removed_chans) = true;
-    prep_ref = info.reference.referenceSignal;
-    
+    EEG_cleaned.automagic.prep.refchan = info.reference.referenceSignal;
     % Now convert the indices found in EEG to the corresponding indices
     % in EEG_cleaned which may have less channels as they are already 
     % removed by asr
@@ -444,6 +444,7 @@ if ( ~isempty(prep_params) )
     % And remove channels detected by prep which have not been detected by
     % asr
     [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove)');
+    EEG_cleaned.automagic.prep.performed = 'yes';
     clear EEG_preped to_remove info rar_chans prep_removed_chans;
 end
 
@@ -451,6 +452,8 @@ end
 asr_removed_chans = find(asr_removed_chans_mask);
 prep_removed_chans = find(prep_removed_chans_mask);
 removed_chans = union(asr_removed_chans, prep_removed_chans);
+EEG_cleaned.automagic.prep.removed_chans = prep_removed_chans;
+EEG_cleaned.automagic.asr.removed_chans = asr_removed_chans;
 clear prep_removed_chans_mask asr_removed_chans_mask;
 
 
@@ -460,6 +463,7 @@ EOG_filtered = perform_filter(EOG, filter_params);
 
 
 % Remove effect of EOG
+EEG_filtered.automagic.eog_regression.performed = 'no';
 if( eog_regression_params.perform_eog_regression )
     EEG_regressed = EOG_regression(EEG_filtered, EOG_filtered);
 else
@@ -468,6 +472,8 @@ end
 
 
 % PCA or ICA
+EEG_regressed.automagic.ica.performed = 'no';
+EEG_regressed.automagic.pca.performed = 'no';
 if ( ~isempty(ica_params) )
     EEG_cleared = perform_ica(EEG_regressed, ica_params);
 elseif ( ~isempty(pca_params))
@@ -504,8 +510,6 @@ clear chan_nb;
 result.nbchan = size(result.data,1);
 result.tobe_interpolated = setdiff(removed_chans, eeg_system.ref_chan);
 result.auto_badchans = result.tobe_interpolated;
-result.prep_badchans = setdiff(prep_removed_chans, eeg_system.ref_chan);
-result.asr_badchans = setdiff(asr_removed_chans, eeg_system.ref_chan);
 
 %% Creating the final figure to save
 fig = figure('visible', 'off');

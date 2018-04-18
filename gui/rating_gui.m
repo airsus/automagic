@@ -205,7 +205,7 @@ else
     elseif(isa(block, 'EEGLabBlock'))
         data = block.get_reduced();
     end
-    handles.project.maxX = max(project.maxX, size(data.data, 2));% fot the plot
+    handles.project.maxX = max(project.maxX, size(data.data, 2));% for the plot
 end
 
 % --- Make the plot of the current file

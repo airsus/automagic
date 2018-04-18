@@ -89,6 +89,7 @@ if(length(intersect_labels) < 3)
             end
         end
     end
+    data.automagic.ica.performed = 'no';
     return;
 end
 
@@ -99,11 +100,12 @@ options = [0 1 0 0 1]; %#ok<NASGU>
 data = EEG_Mara;
 % Get bak info before ica components were rejected
 [~, artcomps, MARAinfo] = evalc('MARA(ALLEEG(2))');
-data.prerejection.reject.MARAinfo = MARAinfo;
-data.prerejection.reject.gcompreject(artcomps) = 1;
-data.prerejection.icaact  = ALLEEG(2).icaact;
-data.prerejection.icawinv     = ALLEEG(2).icawinv;
-data.prerejection.icaweights  = ALLEEG(2).icaweights;
+data.automagic.ica.performed = 'yes';
+data.automagic.ica.prerejection.reject.MARAinfo = MARAinfo;
+data.automagic.ica.prerejection.reject.gcompreject(artcomps) = 1;
+data.automagic.ica.prerejection.icaact  = ALLEEG(2).icaact;
+data.automagic.ica.prerejection.icawinv     = ALLEEG(2).icawinv;
+data.automagic.ica.prerejection.icaweights  = ALLEEG(2).icaweights;
 
 %% Return
 % Change back the labels to the original one

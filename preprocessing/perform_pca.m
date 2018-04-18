@@ -71,4 +71,8 @@ sig  = A_hat'; % data
 data.data = sig;
 noise = E_hat';  % noise
 
+data.automagic.pca.performed = 'yes';
+data.automagic.pca.lambda = lambda;
+data.automagic.pca.tol = tol;
+data.automagic.pca.maxIter = maxIter;
 end

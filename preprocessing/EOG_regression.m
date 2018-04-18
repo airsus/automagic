@@ -29,4 +29,7 @@ eegclean =  eeg - eog * (eog \ eeg);
 regressed = EEG;
 regressed.data = eegclean';
 
+% Write back what has happened
+regressed.automagic.eog_regression.performed = 'yes';
+regressed.automagic.eog_regression.eog_channels = EOG.chanlocs;
 end

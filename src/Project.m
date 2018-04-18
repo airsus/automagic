@@ -325,6 +325,7 @@ classdef Project < handle
                     if(isfield(EEG.prerejection, 'reject'))
                         if(isfield(EEG.prerejection.reject, 'gcompreject'))
                             ica_rejected = find(EEG.prerejection.reject.gcompreject == 1);
+                            EEG.automagic.ica.ica_rejected = ica_rejected;
                         end
                     end
                 end
@@ -336,7 +337,8 @@ classdef Project < handle
                 EEG = rmfield(EEG, 'auto_badchans');
                 EEG = rmfield(EEG, 'tobe_interpolated');
                 params = self.params;
-                automagic.version = self.CGV.version;
+                EEG.automagic.version = self.CGV.version;
+                automagic = EEG.automagic;
                 display('Saving results...');
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
                 save(block.result_address, 'EEG', 'auto_badchans','man_badchans'...
