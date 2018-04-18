@@ -77,6 +77,7 @@ handles.output = hObject;
 % Position of the gui
 screen_size = get( groot, 'Screensize' );
 set(handles.main_gui, 'position', screen_size / 1.2)
+
 % set( findall( handles.main_gui, '-property', 'Units' ), 'Units', 'Normalized' )
 % set(handles.main_gui, 'units', 'normalized', 'position', [0.05 0.5 0.9 0.82])
 % children = handles.main_gui.Children;
@@ -100,14 +101,9 @@ end
 
 % Set Constant Values
 handles.CGV = ConstantGlobalValues;
-handles.params = make_default_params(handles.CGV.default_params);
 
 % Set the title to the current version
 set(handles.main_gui, 'Name', ['Automagic v.', handles.CGV.version]);
-
-% Either pca or ica, not both together.
-assert( ( ~ isempty(handles.params.pca_params.lambda) && ...
-    handles.params.pca_params.lambda == -1) || handles.params.ica_params.bool == 0);
 
 % Load the state and then the current project
 handles = load_state(handles);
@@ -247,22 +243,47 @@ name = names{Index};
 
 % Special case of New Project
 if(strcmp(name, handles.CGV.new_project.LIST_NAME))
+    handles.params = make_default_params(handles.CGV.default_params);
     set(handles.projectname, 'String', handles.CGV.new_project.NAME);
     set(handles.datafoldershow, 'String', handles.CGV.new_project.DATA_FOLDER);
     set(handles.projectfoldershow, 'String', handles.CGV.new_project.FOLDER);
+    if(~isempty(handles.params.filter_params.high))
+        set(handles.highfreqedit, 'String', ...
+            handles.params.filter_params.high.freq)
+        set(handles.highfreqedit, 'enable', 'on');
+        set(handles.highpasscheckbox, 'Value', 1);
+    else
+        set(handles.highfreqedit, 'String', '')
+        set(handles.highfreqedit, 'enable', 'off');
+        set(handles.highpasscheckbox, 'Value', 0);
+    end
     
-    set(handles.highpasscheckbox, 'Value', 1);
-    set(handles.highfreqedit, 'String', ...
-        handles.CGV.default_params.filter_params.high_freq)
-    set(handles.highfreqedit, 'enable', 'on');
+    if(~isempty(handles.params.filter_params.low))
+        set(handles.lowfreqedit, 'enable', 'on');
+        set(handles.lowpasscheckbox, 'Value', 1);
+        set(handles.lowfreqedit, 'String', ...
+            handles.params.filter_params.low.freq)
+    else
+        set(handles.lowfreqedit, 'enable', 'off');
+        set(handles.lowpasscheckbox, 'Value', 0);
+        set(handles.lowfreqedit, 'String', '')
+    end
     
-    set(handles.lowfreqedit, 'enable', 'off');
-    set(handles.lowpasscheckbox, 'Value', 0);
-    set(handles.lowfreqedit, 'String', handles.CGV.NONE_keyword)
-    
-    set(handles.notchpanel.Children(1), 'Value', 0);
-    set(handles.notchpanel.Children(2), 'Value', 1);
-    
+%     if(~isempty(handles.CGV.default_params.filter_params.notch))
+%         if(handles.CGV.default_params.filter_params.notch.freq == 50)
+%             set(handles.notchpanel.Children(1), 'Value', 0);
+%             set(handles.notchpanel.Children(2), 'Value', 1);
+%         elseif(handles.CGV.default_params.filter_params.notch.freq == 60)
+%             set(handles.notchpanel.Children(1), 'Value', 1);
+%             set(handles.notchpanel.Children(2), 'Value', 0);
+%         else
+%             
+%         end
+%     else
+%         set(handles.notchpanel.Children(1), 'Value', 0);
+%         set(handles.notchpanel.Children(2), 'Value', 1);
+%     end
+
     set(handles.subjectnumber, 'String', '')
     set(handles.filenumber, 'String', '')
     set(handles.preprocessednumber, 'String', '')
@@ -270,18 +291,15 @@ if(strcmp(name, handles.CGV.new_project.LIST_NAME))
     set(handles.ratednumber, 'String', '')
     set(handles.interpolatenumber, 'String', '')
     set(handles.eogregressioncheckbox, 'Value', ...
-        handles.CGV.default_params.eog_regression_params.perform_eog_regression);
+        handles.params.eog_regression_params.perform_eog_regression);
     set(handles.excludecheckbox, 'Value', ...
-        handles.CGV.default_params.channel_reduction_params.perform_reduce_channels);
+        handles.params.channel_reduction_params.perform_reduce_channels);
     set(handles.extedit, 'String', '')
     set(handles.srateedit, 'String', '')
     set(handles.checkbox1020, 'Value', 0)
-    handles = setEEGSystem(handles.CGV.default_params.eeg_system, handles);
-    
-    handles = setNotchFilter(handles.CGV.default_params.filter_params.notch_eu, handles);
-    
+    handles = setEEGSystem(handles.params, handles);
+    handles = setNotchFilter(handles.params.filter_params.notch, handles);
     handles.current_project = Index;
-    handles.params = make_default_params(handles.CGV.default_params);
     % Enable modifications
     switch_gui('on', 'off', handles);
     return;
@@ -371,8 +389,8 @@ if ~ exist(project.state_address, 'file')
         switch_gui('off', 'on', handles);
         return;
     else
-        % If the state of is deleted, remove this project
-        popup_msg(['The state file does not exist anymore.',...
+        % If the state_file is deleted, remove this project
+        popup_msg(['The state_file does not exist anymore.',...
             'You must create a new project.'], 'Error');
         remove(handles.project_list, name);
         handles.current_project = 1;
@@ -396,23 +414,29 @@ set(handles.preprocessednumber, 'String', ...
 set(handles.fpreprocessednumber, 'String', ...
     [num2str(project.processed_files), ' files already done'])
 
-if(project.params.filter_params.high_freq ~= -1)
-    set(handles.highfreqedit, 'String', num2str(project.params.filter_params.high_freq));
+if(~isempty(project.params.filter_params.high))
+    set(handles.highfreqedit, 'String', ...
+        project.params.filter_params.high.freq)
+    set(handles.highfreqedit, 'enable', 'on');
     set(handles.highpasscheckbox, 'Value', 1);
 else
-    set(handles.highfreqedit, 'String', handles.CGV.NONE_keyword);
+    set(handles.highfreqedit, 'String', '')
+    set(handles.highfreqedit, 'enable', 'off');
     set(handles.highpasscheckbox, 'Value', 0);
 end
 
-if(project.params.filter_params.low_freq ~= -1)
-    set(handles.lowfreqedit, 'String', num2str(project.params.filter_params.low_freq));
+if(~isempty(project.params.filter_params.low))
+    set(handles.lowfreqedit, 'enable', 'on');
     set(handles.lowpasscheckbox, 'Value', 1);
+    set(handles.lowfreqedit, 'String', ...
+        project.params.filter_params.low.freq)
 else
-    set(handles.lowfreqedit, 'String', handles.CGV.NONE_keyword);
+    set(handles.lowfreqedit, 'enable', 'off');
     set(handles.lowpasscheckbox, 'Value', 0);
+    set(handles.lowfreqedit, 'String', '')
 end
 
-handles = setNotchFilter(project.params.filter_params.notch_freq, handles);
+handles = setNotchFilter(project.params.filter_params.notch, handles);
 
 % Set the file extension
 set(handles.extedit, 'String', project.mask);
@@ -421,7 +445,7 @@ set(handles.extedit, 'String', project.mask);
 set(handles.srateedit, 'String', num2str(project.srate))
 
 % Set EEG system
-handles = setEEGSystem(project.params.eeg_system , handles);
+handles = setEEGSystem(project.params, handles);
 
 % Set 10-20 checkbox
 set(handles.checkbox1020, 'Value', project.params.eeg_system.sys10_20);
@@ -443,10 +467,10 @@ set(handles.interpolatenumber, 'String', ...
     [num2str(interpolate_count), ' subjects to interpolate'])
 
 % Set EOG regression checkox
-set(handles.eogregressioncheckbox, 'Value', project.params.perform_eog_regression);
+set(handles.eogregressioncheckbox, 'Value', project.params.eog_regression_params.perform_eog_regression);
 
 % Set reduce channel checkbox
-set(handles.excludecheckbox, 'Value', project.params.perform_reduce_channels);
+set(handles.excludecheckbox, 'Value', project.params.channel_reduction_params.perform_reduce_channels);
 
 % Disable modifications from gui
 switch_gui('off', 'on', handles);
@@ -761,35 +785,41 @@ end
     
 
 % Get reduce checkbox
-handles.params.perform_reduce_channels = get(handles.excludecheckbox, 'Value');
+handles.params.channel_reduction_params.perform_reduce_channels = ...
+    get(handles.excludecheckbox, 'Value');
+handles.params.channel_reduction_params.tobe_excluded_chans = ...
+    str2num(get(handles.excludeedit, 'String'));
+if( ~ get(handles.egiradio, 'Value') && ...
+        get(handles.excludecheckbox, 'Value') && ...
+        isempty(get(handles.excludeedit, 'String')))
+    popup_msg(['A list of channel indices seperated by space or',...
+        ' comma must be given to determine channels to be excluded'],...
+        'Error');
+    return;
+end
 
 % Get EOG regression
-handles.params.perform_eog_regression = get(handles.eogregressioncheckbox, 'Value');
+handles.params.eog_regression_params.perform_eog_regression = ...
+    get(handles.eogregressioncheckbox, 'Value');
+handles.params.eog_regression_params.eog_chans = ...
+    str2num(get(handles.eogchansedit, 'String'));
+if( ~get(handles.egiradio, 'Value') && ...
+        get(handles.eogregressioncheckbox, 'Value') && ...
+        isempty(get(handles.eogchansedit, 'String')))
+    popup_msg(['A list of channel indices seperated by space or',...
+        ' comma must be given to determine EOG channels'],...
+        'Error');
+    return;
+end
 
 % Get the EEG system
 if ~ get(handles.egiradio, 'Value')
    eeg_system.name = CGV.default_params.eeg_system.Others_name;
    eeg_system.loc_file = get(handles.chanlocedit, 'String');
-   eeg_system.eog_chans = str2num(get(handles.eogchansedit, 'String'));
-   eeg_system.tobe_excluded_chans = str2num(get(handles.excludeedit, 'String'));
    eeg_system.file_loc_type = get(handles.loctypeedit, 'String');
    eeg_system.ref_chan = str2num(get(handles.hasreferenceedit, 'String'));
-            
-   if( get(handles.eogregressioncheckbox, 'Value') && isempty(eeg_system.eog_chans))
-        popup_msg(['A list of channel indices seperated by space or',...
-            ' comma must be given to determine EOG channels'],...
-            'Error');
-        return;
-   end
-   
-    if( get(handles.excludecheckbox, 'Value') && isempty(eeg_system.tobe_excluded_chans))
-        popup_msg(['A list of channel indices seperated by space or',...
-            ' comma must be given to determine channels to be excluded'],...
-            'Error');
-        return;
-    end
-    
-    if( get(handles.hasreferenceradio, 'Value') && isempty(eeg_system.ref_chan))
+           
+   if( get(handles.hasreferenceradio, 'Value') && isempty(eeg_system.ref_chan))
         popup_msg('Please choose the index of the reference channel',...
             'Error');
         return;
@@ -814,24 +844,35 @@ ds = str2double(dsrates{idx});
 % Get filter_params params
 filter_params = handles.params.filter_params;
 
-filter_params.notch_freq = str2double(get(handles.notchedit, 'String'));
+if(isnan(str2double(get(handles.notchedit, 'String'))))
+    filter_params.notch = struct([]);
+else
+    filter_params.notch.freq = str2double(get(handles.notchedit, 'String'));
+end
+
 if ( get(handles.highpasscheckbox, 'Value') == 1)
     high_freq = str2double(get(handles.highfreqedit, 'String'));
-    if( ~isempty(high_freq) && ~isnan(high_freq))
-        filter_params.high_freq = high_freq;
+    if( ~isnan(high_freq))
+        filter_params.high.freq = high_freq;
+    else
+        popup_msg(['You must choose the frequency for high pass filtering'...
+            ' or simply disable high pass filtering'], 'Error');
+        return;
     end
 else
-    filter_params.high_freq = -1;
-    filter_params.high_order = -1;
+    filter_params.high = struct([]);
 end
 if( get(handles.lowpasscheckbox, 'Value') == 1)
     low_freq = str2double(get(handles.lowfreqedit, 'String'));
     if( ~isempty(low_freq) && ~isnan(low_freq) )
         filter_params.low_freq = low_freq;
+    else
+        popup_msg(['You must choose the frequency for low pass filtering'...
+            ' or simply disable low pass filtering'], 'Error');
+        return;
     end
 else
-    filter_params.low_freq = -1;
-    filter_params.low_order = -1;
+    filter_params.low = struct([]);
 end
 
 handles.params.filter_params = filter_params;
@@ -956,11 +997,21 @@ function lowpasscheckbox_Callback(hObject, eventdata, handles)
 
 if (get(hObject,'Value') == get(hObject,'Max'))
 	set(handles.lowfreqedit, 'enable', 'on');
-    set(handles.lowfreqedit, 'String', handles.CGV.default_params.filter_params.low_freq)
+    if(~isempty(handles.CGV.default_params.filter_params.low))
+        val = num2str((handles.CGV.default_params.filter_params.low.freq));
+    else
+        val = '';
+    end
+    set(handles.lowfreqedit, 'String', val)
+    handles.params.filter_params.low = struct('freq', val, 'order', []);
 else
 	set(handles.lowfreqedit, 'enable', 'off');
-    set(handles.lowfreqedit, 'String', handles.CGV.NONE_keyword)
+    set(handles.lowfreqedit, 'String', '')
+    handles.params.filter_params.low = struct([]);
 end
+
+% Update handles structure
+guidata(hObject, handles);
 
 
 
@@ -972,12 +1023,21 @@ function highpasscheckbox_Callback(hObject, eventdata, handles)
 
 if (get(hObject,'Value') == get(hObject,'Max'))
 	set(handles.highfreqedit, 'enable', 'on');
-    set(handles.highfreqedit, 'String', handles.CGV.default_params.filter_params.high_freq)
+    if(~isempty(handles.CGV.default_params.filter_params.high))
+        val = num2str((handles.CGV.default_params.filter_params.high.freq));
+    else
+        val = '';
+    end
+    set(handles.highfreqedit, 'String', val)
+    handles.params.filter_params.high = struct('freq', val, 'order', []);
 else
 	set(handles.highfreqedit, 'enable', 'off');
-    set(handles.highfreqedit, 'String', handles.CGV.NONE_keyword)
+    set(handles.highfreqedit, 'String', '');
+    handles.params.filter_params.high = struct([]);
 end
 
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in configbutton.
 function configbutton_Callback(hObject, eventdata, handles)
@@ -1119,20 +1179,24 @@ function highfreqedit_Callback(hObject, eventdata, handles)
 % hObject    handle to projectfoldershow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+val = str2double(get(hObject,'String'));
+handles.params.filter_params.high = struct('freq', val, 'order', []);
 % Hints: get(hObject,'String') returns contents of projectfoldershow as text
 %        str2double(get(hObject,'String')) returns contents of projectfoldershow as a double
-
+% Update handles structure
+guidata(hObject, handles);
 
 
 function lowfreqedit_Callback(hObject, eventdata, handles)
 % hObject    handle to lowfreqedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+val = str2double(get(hObject,'String'));
+handles.params.filter_params.low = struct('freq', val, 'order', []);
 % Hints: get(hObject,'String') returns contents of lowfreqedit as text
 %        str2double(get(hObject,'String')) returns contents of lowfreqedit as a double
-
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function lowfreqedit_CreateFcn(hObject, eventdata, handles)
@@ -1198,9 +1262,14 @@ end
 % the case of EGI the edit boxes for location file, file type and EOG
 % channels must be deactivated whereas for the case of 'Others' they must be
 % activated so that the user gives them as input.
-function handles = setEEGSystem(eeg_system, handles)
+% TODO: This function currently does not use the values from CGV, al values
+% are hardocded!
+function handles = setEEGSystem(params, handles)
 % system    char that can be either 'EGI' or 'Others'
 % handles   main handles of the gui
+eeg_system = params.eeg_system;
+eog_regression_params = params.eog_regression_params;
+channel_reduction_params = params.channel_reduction_params;
 
 switch eeg_system.name
     case 'EGI'
@@ -1222,7 +1291,7 @@ switch eeg_system.name
         set(handles.newreferenceradio, 'enable', 'off')
         set(handles.hasreferenceradio, 'enable', 'off')
         set(handles.hasreferenceedit, 'enable', 'off')
-        handles.params.perform_reduce_channels = 1;
+        handles.params.channel_reduction_params.perform_reduce_channels = 1;
     case 'Others'
         set(handles.othersysradio, 'Value', 1);
         set(handles.egiradio, 'Value', 0);
@@ -1230,16 +1299,20 @@ switch eeg_system.name
         set(handles.chanlocedit, 'String', eeg_system.loc_file);
         if(get(handles.eogregressioncheckbox, 'Value'))
             set(handles.eogchansedit, 'enable', 'on');
-            set(handles.eogchansedit, 'String', num2str(eeg_system.eog_chans));
+            set(handles.eogchansedit, 'String', ...
+                num2str(eog_regression_params.eog_chans));
         end
         if(get(handles.excludecheckbox, 'Value'))
            set(handles.excludeedit, 'enable', 'on'); 
-           set(handles.excludeedit, 'String', num2str(eeg_system.tobe_excluded_chans));
+           set(handles.excludeedit, 'String', ...
+               num2str(channel_reduction_params.tobe_excluded_chans));
         end
         set(handles.loctypeedit, 'enable', 'on');
         set(handles.loctypeedit, 'String', eeg_system.file_loc_type);
-        set(handles.excludeedit, 'String', num2str(eeg_system.tobe_excluded_chans));
-        set(handles.eogchansedit, 'String', num2str(eeg_system.eog_chans));
+        set(handles.excludeedit, 'String', ...
+            num2str(channel_reduction_params.tobe_excluded_chans));
+        set(handles.eogchansedit, 'String', ...
+            num2str(eog_regression_params.eog_chans));
         set(handles.choosechannelloc, 'enable', 'on');
         
         if(isempty(eeg_system.ref_chan))
@@ -1257,26 +1330,44 @@ switch eeg_system.name
         if(get(handles.hasreferenceradio, 'Value'))
             set(handles.hasreferenceedit, 'enable', 'on')
         end
-        handles.params.perform_reduce_channels = 0;
+        handles.params.channel_reduction_params.perform_reduce_channels = 0;
 end
 
-function handles = setNotchFilter(notch_freq, handles)
+function handles = setNotchFilter(notch, handles)
 
-filter_params = handles.CGV.default_params.filter_params;
-set(handles.notchedit, 'String', num2str(notch_freq))
-if(~ isempty(notch_freq) && notch_freq == filter_params.notch_eu)
+filter_constants = handles.CGV.preprocessing_constants.filter_constants;
+if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filter_constants.notch_eu)
     set(handles.euradiobutton, 'Value', 1)
-elseif(~ isempty(notch_freq) && notch_freq == filter_params.notch_us)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filter_constants.notch_us)
     set(handles.usradiobutton, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~isempty(notch))
+    set(handles.otherradiobutton, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
 else
     set(handles.otherradiobutton, 'Value', 1)
+    set(handles.notchedit, 'String', '')
 end
+handles.params.filter_params.notch = notch;
+
+function params = make_default_params(default_params)
+params.filter_params = default_params.filter_params;
+params.asr_params = default_params.asr_params;
+params.prep_params = default_params.prep_params;
+params.channel_reduction_params = default_params.channel_reduction_params;
+params.eog_regression_params = default_params.eog_regression_params;
+params.pca_params = default_params.pca_params;
+params.ica_params= default_params.ica_params;
+params.interpolation_params = default_params.interpolation_params;
+params.eeg_system = default_params.eeg_system;
+
 % --- Executes on button press in egiradio.
 function egiradio_Callback(hObject, eventdata, handles)
 % hObject    handle to egiradio (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = setEEGSystem(handles.CGV.default_params.eeg_system, handles);
+handles = setEEGSystem(handles.CGV.default_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of egiradio
@@ -1291,7 +1382,9 @@ new_pars = handles.CGV.default_params.eeg_system;
 new_pars.name = 'Others';
 new_pars.eog_chans = [];
 new_pars.tobe_excluded_chans = [];
-handles = setEEGSystem(new_pars, handles);
+new_params = handles.params;
+new_params.eeg_system = new_pars;
+handles = setEEGSystem(new_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of othersysradio
@@ -1402,10 +1495,13 @@ function usradiobutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filter_params = handles.CGV.default_params.filter_params;
+filter_constants = handles.CGV.preprocessing_constants.filter_constants;
 if(get(hObject, 'Value'))
-    set(handles.notchedit, 'String', num2str(filter_params.notch_us))
+    notch.freq = filter_constants.notch_us;
+    handles = setNotchFilter(notch, handles);
 end
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in euradiobutton.
 function euradiobutton_Callback(hObject, eventdata, handles)
@@ -1413,10 +1509,13 @@ function euradiobutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filter_params = handles.CGV.default_params.filter_params;
+filter_constants = handles.CGV.preprocessing_constants.filter_constants;
 if(get(hObject, 'Value'))
-    set(handles.notchedit, 'String', num2str(filter_params.notch_eu))
+    notch.freq = filter_constants.notch_eu;
+    handles = setNotchFilter(notch, handles);
 end
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in otherradiobutton.
 function otherradiobutton_Callback(hObject, eventdata, handles)
@@ -1424,19 +1523,23 @@ function otherradiobutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filter_params = handles.CGV.default_params.filter_params;
+filter_constants = handles.CGV.preprocessing_constants.filter_constants;
 if(get(hObject, 'Value'))
-    set(handles.notchedit, 'String', num2str(filter_params.notch_other))
+    notch.freq = filter_constants.notch_other;
+    handles = setNotchFilter(notch, handles);
 end
-
+% Update handles structure
+guidata(hObject, handles);
 
 
 function notchedit_Callback(hObject, eventdata, handles)
 % hObject    handle to notchedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-notch_freq = str2double(get(hObject,'String'));
-setNotchFilter(notch_freq, handles);
+notch.freq = str2double(get(hObject,'String'));
+handles = setNotchFilter(notch, handles);
+% Update handles structure
+guidata(hObject, handles);
 
 function excludeedit_Callback(hObject, eventdata, handles)
 % hObject    handle to excludeedit (see GCBO)
@@ -1476,33 +1579,6 @@ else
        set(handles.excludeedit, 'enable', 'off');
     end
 end
-
-function params = make_default_params(default_params)
-params.filter_params.high_freq = default_params.filter_params.high_freq;
-params.filter_params.high_order = default_params.filter_params.high_order;
-params.filter_params.low_freq = default_params.filter_params.low_freq;
-params.filter_params.low_order = default_params.filter_params.low_order;
-params.perform_reduce_channels = default_params.channel_reduction_params.perform_reduce_channels;
-params.channel_rejection_params.highpass = default_params.channel_rejection_params.highpass;
-params.channel_rejection_params.channel_criterion = default_params.channel_rejection_params.channel_criterion;
-params.channel_rejection_params.line_noise_criterion = default_params.channel_rejection_params.line_noise_criterion;
-params.channel_rejection_params.burst_criterion = default_params.channel_rejection_params.burst_criterion;
-params.channel_rejection_params.window_criterion = default_params.channel_rejection_params.window_criterion;
-params.channel_rejection_params.rar = default_params.channel_rejection_params.rar;
-params.perform_eog_regression = default_params.eog_regression_params.perform_eog_regression;
-params.pca_params.lambda = default_params.pca_params.lambda;
-params.pca_params.tol = default_params.pca_params.tol;
-params.pca_params.maxIter = default_params.pca_params.maxIter;
-params.ica_params.bool = default_params.ica_params.bool;
-params.interpolation_params.method = default_params.interpolation_params.method;
-params.eeg_system.name = default_params.eeg_system.name;
-params.eeg_system.sys10_20 = default_params.eeg_system.sys10_20;
-params.eeg_system.file_loc_type = default_params.eeg_system.file_loc_type;
-params.eeg_system.loc_file = default_params.eeg_system.loc_file;
-params.eeg_system.eog_chans = default_params.eog_regression_params.eog_chans;
-params.eeg_system.tobe_excluded_chans = default_params.channel_reduction_params.tobe_excluded_chans;
-params.eeg_system.ref_chan = default_params.eeg_system.ref_chan;
-
 
 % --- Executes during object creation, after setting all properties.
 function notchedit_CreateFcn(hObject, eventdata, handles)

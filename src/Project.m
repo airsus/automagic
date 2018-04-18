@@ -226,6 +226,9 @@ classdef Project < handle
                 IndexC = strfind(parts, 'neuroscope');
                 Index = not(cellfun('isempty', IndexC));
                 parts(Index) = [];
+                IndexC = strfind(parts, 'dpss');
+                Index = not(cellfun('isempty', IndexC));
+                parts(Index) = [];
                 if(ispc)
                     matlab_paths = strjoin(parts, ';');
                 else
@@ -333,7 +336,7 @@ classdef Project < handle
                 params = self.params;
                 automagic.version = self.CGV.version;
                 display('Saving results...');
-                save(block.reduced_address, self.CGV.default_params.general_params.reduced_name, '-v6');
+                save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
                 save(block.result_address, 'EEG', 'auto_badchans','man_badchans'...
                     , 'rate','tobe_interpolated', 'is_interpolated', ...
                     'params', 'ica_rejected', 'automagic','-v7.3');

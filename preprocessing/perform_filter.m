@@ -5,28 +5,25 @@ function data = perform_filter(data, varargin)
 %   where data is the EEGLAB data structure. filtered is the resulting 
 %   EEGLAB data structured after filtering. params is an optional
 %   parameter which must be a structure with optional parameters
-%   'notch_freq', 'high_freq', 'high_order', 'low_freq' and 'low_order'.
+%   'notch', 'high' and 'low', each of which a struct.
 %   
-%   'notch_freq' is the frequency for the Notch filter where from
+%   'notch.freq' is the frequency for the notch filter where from
 %   (notch_freq - 3) to (notch_freq + 3) is attenued.
 %
-%   'high_freq' and 'low_freq' are the frequencies for high pass filter and
+%   'high.freq' and 'high.order' are the frequency and filtering order for 
+%   high pass filter respectively.
+%
+%   'low.freq' and 'low.order' are the frequency and filtering order for 
 %   low pass filter respectively.
 %
-%   'high_order' and 'low_order' are orders of filtering for high pass
-%   filter and low pass filter respectively.
-%
 %   If params is ommited default values are used. If any field of params
-%   are ommited, corresponding default values are used. If 'notch_freq' ,
-%   'high_freq' or 'low_freq' are -1, notch filter, high pass filter or 
+%   are ommited or are [], corresponding default values are used. If 
+%   'params.notch = struct([])', 'params.high = struct([])' or 
+%   'params.low = struct([])' then notch filter, high pass filter or 
 %   low pass filter are not perfomed respectively.
 %
-%   Default values: by default there is no low_pass filter:
-%                   params.notch_freq = 50  (EU)
-%                   params.high_freq = 0.5
-%                   params.high_order = []  (Default value of pop_eegfiltnew)
-%                   params.low_freq = -1 % low pass filtering skipped
-%                   params.low_order = [] (Default value of pop_eegfiltnew)
+%   Default values are specified in DefaultParameters.m. If they are empty
+%   then defaults of inexact_alm_rpca.m are used.
 %
 % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
 % 
@@ -44,36 +41,75 @@ function data = perform_filter(data, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 defaults = DefaultParameters.filter_params;
+constants = PreprocessingConstants.filter_constants;
+if isempty(defaults)
+    warning('Wrong filtering argument. Filtering is skipped.');
+    return;
+end
+if ~isempty(defaults.high) && ~isfield(defaults.high, 'order')
+    defaults.high.order = [];
+end
+if ~isempty(defaults.low) && ~isfield(defaults.low, 'order')
+    defaults.low.order = [];
+end
+
+%% Parse parameters
 p = inputParser;
-addParameter(p,'notch_freq', defaults.notch_freq, @isnumeric);
-addParameter(p,'high_freq', defaults.high_freq, @isnumeric);
-addParameter(p,'high_order', defaults.high_order, @isnumeric);
-addParameter(p,'low_freq', defaults.low_freq, @isnumeric);
-addParameter(p,'low_order', defaults.low_order, @isnumeric);
+addParameter(p,'notch', defaults.notch, @isstruct);
+addParameter(p,'high', defaults.high, @isstruct);
+addParameter(p,'low', defaults.low, @isstruct);
 parse(p, varargin{:});
+notch = p.Results.notch;
+high = p.Results.high;
+low = p.Results.low;
 
-
-notch_freq = p.Results.notch_freq;
-high_freq = p.Results.high_freq;
-high_order = p.Results.high_order;
-low_freq = p.Results.low_freq;
-low_order = p.Results.low_order;
-
-if( high_freq ~= -1 || low_freq ~= -1 || notch_freq ~= -1)
-    display(defaults.run_message);
+if( ~isempty(high) )
+    if ~isfield(high, 'freq')
+    warning(['high.freq is not given but is required. Default parameters '...
+        'for high pass filtering will be used'])
+    high = defaults.high;
+    elseif ~isfield(high, 'order')
+        high.order = defaults.order;
+    end
 end
 
-if( high_freq ~= -1 )
-    [~, data] = evalc('pop_eegfiltnew(data, high_freq, 0, high_order)');
+if( ~isempty(low) )
+    if ~isfield(low, 'freq')
+    warning(['low.freq is not given but is required. Default parameters '...
+        'for low pass filtering will be used'])
+    low = defaults.low;
+    elseif ~isfield(low, 'order')
+        low.order = defaults.order;
+    end
 end
 
-
-if( low_freq ~= -1 )
-    [~, data] = evalc('pop_eegfiltnew(data, 0, low_freq, low_order)');
+if( ~isempty(notch) && ~isfield(notch, 'freq'))
+    warning(['Input argument to notch filter is not complete. notch.freq',...
+    'must be provided. The default will be used.'])
+    notch = defaults.notch;
 end
 
-if(notch_freq ~= -1)
-    [~, data] = evalc('pop_eegfiltnew(data, notch_freq - 3, notch_freq + 3, [], 1)'); % Band-stop filter
+%% Perform filtering
+if( ~isempty(high) || ~isempty(low) || ~isempty(notch))
+    display(constants.run_message);
+
+    if( ~isempty(high) )
+        [~, data] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
+        data.automagic_params.filtering.highpass.freq = high.freq;
+        data.automagic_params.filtering.highpass.order = high.order;
+    end
+
+    if( ~isempty(low) )
+        [~, data] = evalc('pop_eegfiltnew(data, 0, low.freq, low.order)');
+        data.automagic_params.filtering.lowpass.freq = low.freq;
+        data.automagic_params.filtering.lowpass.order = low.order;
+    end
+
+    if( ~isempty(notch))
+        [~, data] = evalc(['pop_eegfiltnew(data, notch.freq - 3,'...
+                           'notch.freq + 3, [], 1)']); % Band-stop filter
+        data.automagic_params.filtering.notch.freq = notch.freq;
+    end
 end
 
 end

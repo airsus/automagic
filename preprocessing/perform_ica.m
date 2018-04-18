@@ -2,9 +2,9 @@ function data = perform_ica(data, varargin)
 % perform_ica  perform Independent Component Analysis (ICA) on the data 
 %   data = perform_ica(data, params) where data is the EEGLAB data
 %   structure. params is an optional parameter which must be a structure
-%   with optional fields 'chanloc_map', and 'bool'. 
+%   with optional field 'chanloc_map'. 
 %   
-%   params.chanloc_map must be a map (of type containers.Map) what maps all
+%   params.chanloc_map must be a map (of type containers.Map) which maps all
 %   "possible" current channel labels to the standard channel labels given 
 %   by FPz, F3, Fz, F4, Cz, Oz, ... as required by processMARA. Please note
 %   that if the channel labels are already the same as the mentionned 
@@ -12,12 +12,10 @@ function data = perform_ica(data, varargin)
 %   none of the labels has the same sematic as required, no ICA will be
 %   applied. For more information please see processMARA.
 %   
-%   params.bool is a boolean. If False the ICA is not applied.
 %   If varargin is ommited, default values are used. If any fields of
 %   varargin is ommited, corresponsing default value is used.
 %
-%   Default values: params.bool = 1
-%                   params.chanloc_map = containers.Map (empty map)
+%   Default values: params.chanloc_map = containers.Map (empty map)
 %
 % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
 % 
@@ -35,40 +33,41 @@ function data = perform_ica(data, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 defaults = DefaultParameters.ica_params;
+constants = PreprocessingConstants.ica_constants;
+
+%% Parse and check parameters
 p = inputParser;
-addParameter(p,'chanloc_map', defaults.chanloc_map, @(x) isa(x, 'containers.Map'));
-addParameter(p,'bool', defaults.bool, @isnumeric);
+validate_param = @(x) isa(x, 'containers.Map');
+addParameter(p,'chanloc_map', defaults.chanloc_map, validate_param);
 parse(p, varargin{:});
-
 chanloc_map = p.Results.chanloc_map;
-bool = p.Results.bool;
 
-if (~bool)
-    return;
-end
-
-% Change channel labels to their corresponding ones as required by processMARA.
-% This is done only for those labels that are given in the map.
+% Change channel labels to their corresponding ones as required by 
+% processMARA. This is done only for those labels that are given in the map.
 if( ~ isempty(chanloc_map))
-    inverse_chanloc_map = containers.Map(chanloc_map.values, chanloc_map.keys);
+    inverse_chanloc_map = containers.Map(chanloc_map.values, ...
+                                         chanloc_map.keys);
     idx = find(ismember({data.chanlocs.labels}, chanloc_map.keys));
     for i = idx
        data.chanlocs(1,i).labels = chanloc_map(data.chanlocs(1,i).labels);
     end
     
-    % Temporarily change the name of all other labels
+    % Temporarily change the name of all other labels to make sure they
+    % don't create conflicts
     for i = 1:length(data.chanlocs)
        if(~ any(i == idx))
-          data.chanlocs(1,i).labels = strcat(data.chanlocs(1,i).labels, '_automagiced');
+          data.chanlocs(1,i).labels = strcat(data.chanlocs(1,i).labels, ...
+                                            '_automagiced');
        end
     end
 end
 
 % Check if the channel system is according to what Mara is expecting.
-intersect_labels = intersect(cellstr(defaults.req_chan_labels), {data.chanlocs.labels});
+intersect_labels = intersect(cellstr(constants.req_chan_labels), ...
+                            {data.chanlocs.labels});
 if(length(intersect_labels) < 3)
-    msg = ['The channel location system you are using is very probably ', ...
-    'wrong and ICA can not be used correctly.' sprintf('\n') 'ICA for this ', ... 
+    msg = ['The channel location system you are using is very probably ',...
+    'wrong and ICA can not be used correctly.' sprintf('\n') 'ICA for this ',... 
     'subject will be skipped, and next steps of preprocessing will resume.'];
     if(exist('warndlg2', 'file'))
         warndlg2(msg);
@@ -79,40 +78,46 @@ if(length(intersect_labels) < 3)
     % Change back the labels to the original one
     if( ~ isempty(chanloc_map))
         for i = idx
-           data.chanlocs(1,i).labels = inverse_chanloc_map(data.chanlocs(1,i).labels);
+           data.chanlocs(1,i).labels = inverse_chanloc_map(...
+                                                data.chanlocs(1,i).labels);
         end
         
         for i = 1:length(data.chanlocs)
             if(~ any(i == idx))
-                data.chanlocs(1,i).labels = strtok(data.chanlocs(1,i).labels, '_automagiced');
+                data.chanlocs(1,i).labels = strtok(...
+                    data.chanlocs(1,i).labels, '_automagiced');
             end
         end
     end
     return;
 end
 
-display(defaults.run_message);
-options = [0 1 0 0 1];
-[~, ~, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
-
+%% Perform ICA
+display(constants.run_message);
+options = [0 1 0 0 1]; %#ok<NASGU>
+[~, ~, EEG_Mara, ~] = ...
+    evalc('processMARA_with_no_popup(data, data, 1, options)');
 data = EEG_Mara;
 
+%% Return
 % Change back the labels to the original one
 if( ~ isempty(chanloc_map))
     for i = idx
-       data.chanlocs(1,i).labels = inverse_chanloc_map(data.chanlocs(1,i).labels);
+       data.chanlocs(1,i).labels = inverse_chanloc_map(...
+                                                data.chanlocs(1,i).labels);
     end
     
     for i = 1:length(data.chanlocs)
         if(~ any(i == idx))
-            data.chanlocs(1,i).labels = strtok(data.chanlocs(1,i).labels, '_automagiced');
+            data.chanlocs(1,i).labels = strtok(...
+                data.chanlocs(1,i).labels, '_automagiced');
         end
     end
 end
 
 end
 
-function [ALLEEG,EEG,CURRENTSET] = processMARA_with_no_popup(ALLEEG,EEG,CURRENTSET,varargin)
+function [ALLEEG,EEG,CURRENTSET] = processMARA_with_no_popup(ALLEEG,EEG,CURRENTSET,varargin) %#ok<DEFNU>
 % This is only an (almost) exact copy of the function processMARA where few
 % of the paramters are changed for our need. (Mainly to supress outputs)
 

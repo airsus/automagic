@@ -3,24 +3,21 @@ function [result, fig] = preprocess(data, varargin)
 %   [result, fig] = preprocess(data, varargin)
 %   where data is the EEGLAB data structure and varargin is an 
 %   optional parameter which must be a structure with optional fields 
-%   'filter_params', 'channel_rejection_params', 'pca_params', 'ica_params'
-%   'interpolation_params', 'perform_eog_regression', 'eeg_system', 
-%   'perform_reduce_channels' and 'original_file' to specify parameters for 
+%   'filter_params', 'asr_params', 'pca_params', 'ica_params'
+%   'interpolation_params', 'eog_regression_params', 'eeg_system', 
+%   'channel_reduction_params' and 'original_file' to specify parameters for 
 %   filtering, channel rejection, pca, ica, interpolation, EOG regression, 
 %   channel locations, reducing channels and original file address 
-%   respectively. This latter one is needed only if a .fif file is used,
+%   respectively. The latter one is needed only if a '*.fif' file is used,
 %   otherwise it can be omitted.
 %   
-%   To learn more about 'filter_params', ica_params and 'pca_params' 
+%   To learn more about 'filter_params', 'ica_params' and 'pca_params' 
 %   please see their corresponding functions perform_filter.m, 
 %   perform_ica.m and perform_pca.m.
 %
-%   'channel_rejection_params' is an optional structure with five fields
-%   'highpass', 'channel_criterion', 'line_noise_criterion',
-%   'burst_criterion' and 'window_criterion'. For more information please
-%   see clean_artifacts() in Artefact Subspace Reconstruction. Note that
-%   channel_rejection_params.high_pass = 'off' in our setting as there is
-%   already filtering in the process.m before clean_artifacts() is called.
+%   'asr_params' is an optional structure which has the same parameters as 
+%   required by clean_artifacts(). For more information please
+%   see clean_artifacts() in Artefact Subspace Reconstruction.
 %   
 %   'interpolation_params' is an optional structure with an optional field
 %   'method' which can be on of the following chars: 'spherical',
@@ -28,43 +25,48 @@ function [result, fig] = preprocess(data, varargin)
 %   interpolation_params.method = 'spherical'. To learn more about these
 %   three methods please see eeg_interp.m of EEGLAB.
 %   
-%   'perform_eog_regression' must be a boolean indication whether to
-%   perform EOG Regression or not. The default value is
-%   perform_eog_regression = 1.
+%   'eog_regression_params' has a field 'perform_eog_regression' that 
+%   must be a boolean indication whether to perform EOG Regression or not. 
+%   The default value is 'eog_regression_params.perform_eog_regression = 1'
+%   which performs eog regression. The other field 
+%   'eog_regression_params.eog_chans' must be an array of numbers 
+%   indicating indices of the EOG channels in the data.
 %   
-%   'perform_reduce_channels' must be a boolean indication whether to
-%   reduce the number of channels or not. The default value is
-%   'perform_reduce_channels' = 1.
-%
-%   'original_file' is necassary only in case of .fif files. In that case,
+%   'channel_reduction_params.perform_reduce_channels' must be a boolean 
+%   indicating whether to reduce the number of channels or not. The 
+%   default value is 'channel_reduction_params.perform_reduce_channels = 1'
+%   'channel_reduction_params.tobe_excluded_chans' must be an array of 
+%   numbers indicating indices of the channels to be excluded from the 
+%   analysis
+%   
+%   'original_file' is necassary only in case of '*.fif' files. In that case,
 %   this should be the address of the file where this EEG data is loaded
 %   from.
 %   
-%   eeg_system must be a structure with fields name, sys10_20, eog_chan, 
-%   tobe_excluded_chans, ref_chan, loc_file and file_loc_type. 
-%   eeg_system.name can be either 'EGI' or 'Others'. eeg_system.sys10_20 
-%   is a boolean indicating whether to use 10-20 system to find channel 
-%   locations or not. All other following fields are optional if 
-%   eeg_system.name='EGI' and can be left empty. But in the case of 
-%   eeg_system.name='Others':
-%   eeg_system.eog_chans must be an array of numbers indicating indices of 
-%   the EOG channels in the data, eeg_system.tobe_excluded_chans must be an
-%   array of numbers indicating indices of the channels to be excluded from 
-%   the analysis, eeg_system.ref_chan is the index of the reference channel
-%   in dataset. If it's left empty, a new reference channel will be added 
-%   as the last channel of the dataset where all values are zeros and this 
-%   new channel will be considered as the reference channel. If 
-%   eeg_system.ref_chan == -1 no reference channel is added and no channel 
-%   is considered as reference channel at all. eeg_system.loc_file must be 
-%   the name of the file located in 'matlab_scripts' folder that can be 
-%   used by pop_chanedit to find channel locations and finally 
-%   eeg_system.file_loc_type must be the type of that file. Please see 
-%   pop_chanedit for more information. Obviously only types supported by 
-%   pop_chanedit are supported.
+%   eeg_system must be a structure with fields 'name', 'sys10_20', 'ref_chan', 
+%   'loc_file' and 'file_loc_type'.  eeg_system.name can be either 'EGI' or 
+%   'Others'. eeg_system.sys10_20 is a boolean indicating whether to use 
+%   10-20 system to find channel locations or not. All other following 
+%   fields are optional if eeg_system.name='EGI' and can be left empty. 
+%   But in the case of eeg_system.name='Others':
+%   eeg_system.ref_chan is the index of the reference channel in dataset. 
+%   If it's left empty, a new reference channel will be added as the last 
+%   channel of the dataset where all values are zeros and this new channel 
+%   will be considered as the reference channel. If eeg_system.ref_chan == -1 
+%   no reference channel is added and no channel is considered as reference 
+%   channel at all. eeg_system.loc_file must be the name of the file located 
+%   in 'matlab_scripts' folder that can be used by pop_chanedit to find 
+%   channel locations and finally eeg_system.file_loc_type must be the type 
+%   of that file. Please see pop_chanedit for more information. Obviously 
+%   only types supported by pop_chanedit are supported.
 %   
 %   If varargin is ommited, default values are used. If any of the fields
-%   of varargin are ommited, corresponsing default values are used. Please
-%   note that there is no default value for eeg_system.
+%   of varargin are ommited, corresponsing default values are used. If a
+%   structure is given as 'struct([])' then the corresponding operation is
+%   omitted and is not performed; for example, ica_params = struct([])
+%   skips the ICA and does not perform any ICA. Wheras if ica_params =
+%   struct() if ica_params is simply not given, then the default value will
+%   be used.
 %
 % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
 % 
@@ -84,249 +86,81 @@ function [result, fig] = preprocess(data, varargin)
 result = [];
 fig = [];
 
-DEFS = DefaultParameters;
+%% Parse arguments
+defaults = DefaultParameters;
+constants = PreprocessingConstants;
 p = inputParser;
-addParameter(p,'eeg_system', struct('name', DEFS.eeg_system.name),@isstruct);
-addParameter(p,'filter_params', struct, @isstruct);
-addParameter(p,'channel_rejection_params', struct('highpass', DEFS.channel_rejection_params.highpass, ...
-                                                  'channel_criterion',DEFS.channel_rejection_params.channel_criterion, ...
-                                                  'line_noise_criterion', DEFS.channel_rejection_params.line_noise_criterion, ...
-                                                  'burst_criterion', DEFS.channel_rejection_params.burst_criterion, ...
-                                                  'window_criterion', DEFS.channel_rejection_params.window_criterion, ...
-                                                  'rar', DEFS.channel_rejection_params.rar), @isstruct);
-addParameter(p,'pca_params', struct, @isstruct);
-addParameter(p,'ica_params', struct('bool', DEFS.ica_params.bool, ...
-    'chanloc_map', containers.Map), @isstruct);
-addParameter(p,'interpolation_params', ...
-    struct('method', DEFS.interpolation_params.method), @isstruct);
-addParameter(p,'perform_eog_regression', ...
-    DEFS.eog_regression_params.perform_eog_regression, @isnumeric);
-addParameter(p,'perform_reduce_channels', ...
-     DEFS.channel_reduction_params.perform_reduce_channels, @isnumeric);
-addParameter(p,'original_file', DEFS.general_params.original_file, @ischar);
+addParameter(p,'eeg_system', defaults.eeg_system, @isstruct);
+addParameter(p,'filter_params', defaults.filter_params, @isstruct);
+addParameter(p,'prep_params', defaults.prep_params, @isstruct);
+addParameter(p,'asr_params', defaults.asr_params, @isstruct);
+addParameter(p,'pca_params', defaults.pca_params, @isstruct);
+addParameter(p,'ica_params', defaults.ica_params, @isstruct);
+addParameter(p,'interpolation_params', defaults.interpolation_params, @isstruct);
+addParameter(p,'eog_regression_params', defaults.eog_regression_params, @isstruct);
+addParameter(p,'channel_reduction_params', defaults.channel_reduction_params, @isstruct);
+addParameter(p,'original_file', constants.general_constants.original_file, @ischar);
 parse(p, varargin{:});
 eeg_system = p.Results.eeg_system;
 filter_params = p.Results.filter_params;
-channel_rejection_params = p.Results.channel_rejection_params;
+asr_params = p.Results.asr_params;
+prep_params = p.Results.prep_params;
 pca_params = p.Results.pca_params;
 ica_params = p.Results.ica_params;
-interpolation_params = p.Results.interpolation_params;
-perform_eog_regression = p.Results.perform_eog_regression;
-perform_reduce_channels = p.Results.perform_reduce_channels;
-original_file_address = p.Results.original_file;
-
-assert( isempty(fieldnames(pca_params)) || ( ~ isempty(pca_params.lambda) && pca_params.lambda == -1) ...
-         || ica_params.bool == 0);
-
-pca_url = DEFS.pca_params.pca_url;
-rar_url = DEFS.channel_rejection_params.rar_url;
-asr_url = DEFS.channel_rejection_params.asr_url;
-% System dependence:
-if(ispc)
-    slash = '\';
-else
-    slash = '/';
-end
-
-%% Add path if not added before
-eeg_system.sys10_20_file = DEFS.eeg_system.sys10_20_file;
+interpolation_params = p.Results.interpolation_params; %#ok<NASGU>
+eog_regression_params = p.Results.eog_regression_params;
+channel_reduction_params = p.Results.channel_reduction_params;
+original_file_address = p.Results.original_file; %#ok<NASGU>
+assert( isempty(ica_params) || isempty(pca_params), ...
+    'Can not perform both ICA and PCA.');
+clear p varargin;
+%% Add path and download required packages
+% Note that in each of the following cases a very naive approach is taken
+% to see if the library is in path or not: simply check if one of the files
+% exists or not.
+eeg_system.sys10_20_file = constants.eeg_system_constants.sys10_20_file;
 if(~exist('pop_fileio', 'file'))
-    matlab_paths = genpath(['..' slash 'matlab_scripts' slash]);
-    if(ispc)
-        parts = strsplit(matlab_paths, ';');
-    else
-        parts = strsplit(matlab_paths, ':');
-    end
-    IndexC = strfind(parts, 'compat');
-    Index = not(cellfun('isempty', IndexC));
-    parts(Index) = [];
-    IndexC = strfind(parts, 'neuroscope');
-    Index = not(cellfun('isempty', IndexC));
-    parts(Index) = [];
-    if(ispc)
-        matlab_paths = strjoin(parts, ';');
-    else
-        matlab_paths = strjoin(parts, ':');
-    end
-    addpath(matlab_paths);
-    
+    parts = add_eeglab_path();
     % Add path for 10_20 system
+    
+    % System dependence:
+    if(ispc)
+        slash = '\';
+    else
+        slash = '/';
+    end
+    
     IndexC = strfind(parts, 'BESA');
     Index = not(cellfun('isempty', IndexC));
-    eeg_system.sys10_20_file = ...
-        strcat(parts{Index}, slash, DEFS.eeg_system.sys10_20_file);
+    eeg_system.sys10_20_file = strcat(parts{Index}, slash, ...
+        constants.eeg_system_constants.sys10_20_file);
+    clear parts IndexC Index slash;
 end
 
-
-%% Check if PCA exists
-if((isempty(fieldnames(pca_params)) || (isempty(pca_params.lambda) || pca_params.lambda ~= -1)) && ...
-        (~exist('inexact_alm_rpca.m', 'file')))
-    ques = 'inexact_alm_rpca is necessary for PCA. Do you want to download it now?';
-    ques_title = 'PCA Requirement installation';
-    if(exist('questdlg2', 'file'))
-        res = questdlg2( ques , ques_title, 'No', 'Yes', 'Yes' );
-    else
-        res = questdlg( ques , ques_title, 'No', 'Yes', 'Yes' );
-    end
-    
-    if(strcmp(res, 'No'))
-       msg = 'Preprocessing failed as PCA package is not yet installed. Please either isntall it or choose not to use PCA.';
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        return; 
-    end
-    
-    folder = pwd;
-    if(regexp(folder, 'gui'))
-        folder = ['..' slash 'matlab_scripts' slash];
-    elseif(regexp(folder, 'eeglab'))
-        folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
-    else
-      while(isempty(regexp(folder, 'gui', 'once')) && ...
-            isempty(regexp(folder, 'eeglab', 'once')))
-        
-        msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
-            ' the gui folder of the automagic: your_path/automagic/gui/'];
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        folder = uigetdir(pwd, msg);
-        
-        if(isempty(folder))
-            return;
-        end
-        
-      end
-    end
-    zip_name = [folder 'inexact_alm_rpca.zip'];  
-    
-    outfilename = websave(zip_name,pca_url);
-    unzip(outfilename,folder);
-    addpath(genpath([folder 'inexact_alm_rpca' slash]));
-    delete(zip_name);
-    display('PCA package successfully installed. Continuing preprocessing....');
+% Check and download if PCA does not exist
+if( ~isempty(pca_params) && ~exist('inexact_alm_rpca.m', 'file'))
+    download_pca();
 end
 
-
-%% Check if Robust Average Referencing exists
-if( channel_rejection_params.rar && ~ exist('performReference.m', 'file'))
-    ques = 'performReference.m is necessary for Robust Average Referencing. Do you want to download it now?';
-    ques_title = 'Robust Average Referencing Requirement installation';
-    if(exist('questdlg2', 'file'))
-        res = questdlg2( ques , ques_title, 'No', 'Yes', 'Yes' );
-    else
-        res = questdlg( ques , ques_title, 'No', 'Yes', 'Yes' );
-    end
-    
-    if(strcmp(res, 'No'))
-       msg = 'Preprocessing failed as RAR package is not yet installed. Please either isntall it or choose not to use RAR.';
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        return; 
-    end
-    
-    folder = pwd;
-    if(regexp(folder, 'gui'))
-        folder = ['..' slash 'matlab_scripts' slash];
-    elseif(regexp(folder, 'eeglab'))
-        folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
-    else
-      while(isempty(regexp(folder, 'gui', 'once')) && ...
-            isempty(regexp(folder, 'eeglab', 'once')))
-        
-        msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
-            ' the gui folder of the automagic: your_path/automagic/gui/'];
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        folder = uigetdir(pwd, msg);
-        
-        if(isempty(folder))
-            return;
-        end
-        
-      end
-    end
-    zip_name = [folder 'VisLab-EEG-Clean-Tools.zip'];  
-    
-    outfilename = websave(zip_name, rar_url);
-    unzip(outfilename,strcat(folder, 'VisLab-EEG-Clean-Tools/'));
-    addpath(genpath(strcat(folder, 'VisLab-EEG-Clean-Tools/')));
-    delete(zip_name);
-    display('Robust Average Referencing package successfully installed. Continuing preprocessing....');
+% Check and download if Robust Average Referencing does not exist
+if( ~isempty(prep_params) && ~ exist('performReference.m', 'file'))
+    download_rar();
 end
 
-%% Check if Artifact Subspace Reconstruction exists
+% Check and download if Artifact Subspace Reconstruction does not exist
 if( ~ exist('clean_artifacts.m', 'file'))
-    ques = 'clean_artifacts.m is necessary for Artifact Subspace Reconstruction. Do you want to download it now?';
-    ques_title = 'Artifact Subspace Reconstruction Requirement installation';
-    if(exist('questdlg2', 'file'))
-        res = questdlg2( ques , ques_title, 'No', 'Yes', 'Yes' );
-    else
-        res = questdlg( ques , ques_title, 'No', 'Yes', 'Yes' );
-    end
-    
-    if(strcmp(res, 'No'))
-       msg = 'Preprocessing failed as ASR package is not yet installed.';
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        return; 
-    end
-    
-    folder = pwd;
-    if(regexp(folder, 'gui'))
-        folder = ['..' slash 'matlab_scripts' slash];
-    elseif(regexp(folder, 'eeglab'))
-        folder = ['plugins' slash 'automagic' slash 'matlab_scripts' slash];
-    else
-      while(isempty(regexp(folder, 'gui', 'once')) && ...
-            isempty(regexp(folder, 'eeglab', 'once')))
-        
-        msg = ['For the installation, please choose the root folder of the EEGLAB: your_path/eeglab or',...
-            ' the gui folder of the automagic: your_path/automagic/gui/'];
-        if(exist('warndlg2', 'file'))
-            warndlg2(msg);
-        else
-            warndlg(msg);
-        end
-        folder = uigetdir(pwd, msg);
-        
-        if(isempty(folder))
-            return;
-        end
-        
-      end
-    end
-    zip_name = [folder 'asr.zip'];  
-    
-    outfilename = websave(zip_name, asr_url);
-    unzip(outfilename,strcat(folder, 'artifact_subspace_reconstruction/'));
-    addpath(genpath(strcat(folder, 'artifact_subspace_reconstruction/')));
-    delete(zip_name);
-    display('Artifact Subspace Reconstruction package successfully installed. Continuing preprocessing....');
+    download_asr();
 end
 
 %% Determine the eeg system
 % Case of others where the location file must have been provided
-if (~isempty(eeg_system.name) && strcmp(eeg_system.name, DEFS.eeg_system.Others_name))
+if (~isempty(eeg_system.name) && strcmp(eeg_system.name, constants.eeg_system_constants.Others_name))
     
     all_chans = 1:data.nbchan;
-    tobe_excluded_chans = eeg_system.tobe_excluded_chans;
-    eog_channels = eeg_system.eog_chans;
+    tobe_excluded_chans = channel_reduction_params.tobe_excluded_chans;
+    eog_channels = eog_regression_params.eog_chans;
     channels = setdiff(all_chans, union(eog_channels, tobe_excluded_chans));
+    clear tobe_excluded_chans all_chans;
     
     if(isempty(eeg_system.ref_chan))
         data.data(end+1,:) = 0;
@@ -346,9 +180,9 @@ if (~isempty(eeg_system.name) && strcmp(eeg_system.name, DEFS.eeg_system.Others_
     end
 
 % Case of EGI
-elseif(~isempty(eeg_system.name) && strcmp(eeg_system.name, DEFS.eeg_system.EGI_name))
+elseif(~isempty(eeg_system.name) && strcmp(eeg_system.name, constants.eeg_system_constants.EGI_name))
     
-    if( perform_reduce_channels )
+    if( channel_reduction_params.perform_reduce_channels )
         chan128 = [2 3 4 5 6 7 9 10 11 12 13 15 16 18 19 20 22 23 24 26 27 ...
             28 29 30 31 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 50 51 ...
             52 53 54 55 57 58 59 60 61 62 64 65 66 67 69 70 71 72 74 75 76 ...
@@ -443,7 +277,7 @@ elseif(~isempty(eeg_system.name) && strcmp(eeg_system.name, DEFS.eeg_system.EGI_
             eegs = arrayfun(@(x) strncmp('EEG',x.labels, length('EEG')), data.chanlocs, 'UniformOutput', false);
             not_ecg = arrayfun(@(x) ~ strncmp('EEG063',x.labels, length('EEG063')), data.chanlocs, 'UniformOutput', false);
             not_wrong = arrayfun(@(x) ~ strncmp('EEG064',x.labels, length('EEG064')), data.chanlocs, 'UniformOutput', false);
-            channels = find(cell2mat(eegs) & cell2mat(not_ecg) & cell2mat(not_wrong));
+            channels = find(cell2mat(eegs) & cell2mat(not_ecg) & cell2mat(not_wrong)); %#ok<NASGU>
             [~, data] = evalc('pop_select( data , ''channel'', channels)');
             data.data = data.data * 1e6;% Change from volt to microvolt
             % Convert channel positions to EEG_lab format 
@@ -483,110 +317,165 @@ elseif(~isempty(eeg_system.name) && strcmp(eeg_system.name, DEFS.eeg_system.EGI_
             eog_channels = [channel1 channel2];
             channels = setdiff(channels, eog_channels); 
             eeg_system.ref_chan = data.nbchan;
+            clear channel1 channel2 eegs eog1 eog2 eeglab_pos fid hd_idx hd not_wrong not_ecg eegs;
         otherwise
             error('This number of channel is not supported.')
 
     end
-
-    %% Make ICA map of channels
-    switch data.nbchan
-        case 129
-            % Make the map for ICA
-            keySet = {'E17', 'E22', 'E9', 'E11', 'E24', 'E124', 'E33', 'E122', ...
-                'E129', 'E36', 'E104', 'E45', 'E108', 'E52', 'E92', 'E57', 'E100', ...
-                'E58', 'E96', 'E70', 'E75', 'E83', 'E62'};
-            valueSet =   {'NAS', 'Fp1', 'Fp2', 'Fz', 'F3', 'F4', 'F7', 'F8', 'Cz', ...
-                'C3', 'C4', 'T7', 'T8', 'P3', 'P4', 'LM', 'RM', 'P7', 'P8', 'O1', ...
-                'Oz', 'O2', 'Pz'};
-            ica_params.chanloc_map = containers.Map(keySet,valueSet);
-        case 257
-            keySet = {'E31', 'E37', 'E18', 'E21', 'E36', 'E224', 'E47', ...
-                'E2', 'E257', 'E59', 'E183', 'E69', 'E202', 'E87', 'E153', ...
-                'E94', 'E190', 'E96', 'E170', 'E116', 'E126', 'E150', 'E101'};
-            valueSet =   {'NAS', 'Fp1', 'Fp2', 'Fz', 'F3', 'F4', 'F7', 'F8', 'Cz', ...
-                'C3', 'C4', 'T7', 'T8', 'P3', 'P4', 'LM', 'RM', 'P7', 'P8', 'O1', ...
-                'Oz', 'O2', 'Pz'};
-            ica_params.chanloc_map = containers.Map(keySet,valueSet);
+    clear chan128 chan256;
+    % Make ICA map of channels
+    if (~isempty(ica_params))
+        switch data.nbchan
+            case 129
+                % Make the map for ICA
+                keySet = {'E17', 'E22', 'E9', 'E11', 'E24', 'E124', 'E33', 'E122', ...
+                    'E129', 'E36', 'E104', 'E45', 'E108', 'E52', 'E92', 'E57', 'E100', ...
+                    'E58', 'E96', 'E70', 'E75', 'E83', 'E62'};
+                valueSet =   {'NAS', 'Fp1', 'Fp2', 'Fz', 'F3', 'F4', 'F7', 'F8', 'Cz', ...
+                    'C3', 'C4', 'T7', 'T8', 'P3', 'P4', 'LM', 'RM', 'P7', 'P8', 'O1', ...
+                    'Oz', 'O2', 'Pz'};
+                ica_params.chanloc_map = containers.Map(keySet,valueSet);
+            case 257
+                keySet = {'E31', 'E37', 'E18', 'E21', 'E36', 'E224', 'E47', ...
+                    'E2', 'E257', 'E59', 'E183', 'E69', 'E202', 'E87', 'E153', ...
+                    'E94', 'E190', 'E96', 'E170', 'E116', 'E126', 'E150', 'E101'};
+                valueSet =   {'NAS', 'Fp1', 'Fp2', 'Fz', 'F3', 'F4', 'F7', 'F8', 'Cz', ...
+                    'C3', 'C4', 'T7', 'T8', 'P3', 'P4', 'LM', 'RM', 'P7', 'P8', 'O1', ...
+                    'Oz', 'O2', 'Pz'};
+                ica_params.chanloc_map = containers.Map(keySet,valueSet);
+        end
+        clear keySet valueSet;
     end
 else
    if(isempty(data.chanlocs) || isempty([data.chanlocs.X]) || ...
                     length(data.chanlocs) ~= data.nbchan)
-       disp('data.chanlocs is necessary for interpolation.');
-       return;
+       error('data.chanlocs is necessary for interpolation.');
    end
     all_chans = 1:data.nbchan;
-    eog_channels = eeg_system.eog_chans;
-    tobe_excluded_chans = eeg_system.tobe_excluded_chans;
+    eog_channels = eog_regression_params.eog_chans;
+    tobe_excluded_chans = channel_reduction_params.tobe_excluded_chans;
     channels = setdiff(all_chans, union(eog_channels, tobe_excluded_chans));
+    clear tobe_excluded_chans all_chans;
 end
 s = size(data.data);
 assert(data.nbchan == s(1)); clear s;
 
-%% Preprocess data
-% filtering on the whole dataset
-filtered_data = perform_filter(data, filter_params);
-
-% seperate EEG channels from EOG ones
-[~, EOG] = evalc('pop_select( filtered_data , ''channel'', eog_channels)');
-[~, EEG] = evalc('pop_select( filtered_data , ''channel'', channels)');
-
-% Map original channel lists to new ones
+%% Preprocessing
+% Seperate EEG channels from EOG channels
+[~, EOG] = evalc('pop_select( data , ''channel'', eog_channels)');
+[~, EEG] = evalc('pop_select( data , ''channel'', channels)');
+% Map original channel lists to new ones after the above separation
 [~, idx] = ismember(eeg_system.ref_chan, channels);
 eeg_system.ref_chan = idx(idx ~= 0);
 
 
+% Clean EEG using Artefact Supspace Reconstruction
+[s, ~] = size(EEG.data);
+asr_removed_chans_mask = false(1, s); clear s;
+EEG_cleaned = EEG;
+if ( ~isempty(asr_params) )
+    display('Removing bad channels using Artifact Subspace Reconstruction...');
+    [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
+    
+    if(isfield(EEG_cleaned, 'etc'))
+        % Get the removed channels list
+        if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
+            asr_removed_chans_mask(~asr_removed_chans_mask) = ...
+                ~EEG_cleaned.etc.clean_channel_mask;
+        end
+
+        % Remove the same time-windows from the EOG channels
+       if(isfield(EEG_cleaned.etc, 'clean_sample_mask'))
+           removed = EEG_cleaned.etc.clean_sample_mask;
+           firsts = find(diff(removed) == -1) + 1;
+           seconds = find(diff(removed) == 1);
+           if(removed(1) == 0)
+               firsts = [1, firsts];
+           end
+           if(removed(end) == 0)
+               seconds = [seconds, length(removed)];
+           end
+           remove_range = [firsts; seconds]'; %#ok<NASGU>
+           [~, EOG] = evalc('pop_select(EOG, ''nopoint'', remove_range)');
+           clear remove_range firsts seconds removed;
+       end
+    end
+end
+
+userData = struct('boundary', [], 'detrend', [], ...
+'lineNoise', [], 'reference', [], ...
+'report', [],  'postProcess', []);
+stepNames = fieldnames(userData);
+for k = 1:length(stepNames)
+    defaults = getPrepDefaults(EEG, stepNames{k});
+    [theseValues, errors] = checkStructureDefaults(p_params, ...
+        defaults);
+    if ~isempty(errors)
+        error('pop_prepPipeline:BadParameters', ['|' ...
+            sprintf('%s|', errors{:})]);
+    end
+    userData.(stepNames{k}) = theseValues;
+end
 % Robust Average Referecing
-rar_bads = [];
-if ( channel_rejection_params.rar )
+[s, ~] = size(EEG.data);
+prep_removed_chans_mask = false(1, s); clear s;
+if ( ~isempty(prep_params) )
     display(sprintf('Running Robust Average Referencing...'));
     rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
-    referenceIN.referenceChannels =  rar_chans;
-    referenceIN.evaluationChannels =  rar_chans;
-    referenceIN.rereference =  rar_chans;
-    referenceIN.referenceType =  'robust';
-    [~, ~, referenceOut] = evalc('performReference(EEG, referenceIN)');
-
-    rar_bads = referenceOut.badChannels;
+    %TODO, make sure these params are necessary
+    prep_params.referenceChannels =  rar_chans;
+    prep_params.evaluationChannels =  rar_chans;
+    prep_params.rereference =  rar_chans;
+    prep_params.referenceType =  'robust';
+    [~, EEG_preped, ~] = evalc('prepPipeline(EEG, prep_params)');
+    info = EEG_preped.etc.noiseDetection;
+    prep_removed_chans = union(union(info.stillNoisyChannelNumbers, ...
+                                     info.interpolatedChannelNumbers), ...
+                                     info.removedChannelNumbers);
+    prep_removed_chans_mask(prep_removed_chans) = true;
+    prep_ref = info.reference.referenceSignal;
+    
+    % Now convert the indices found in EEG to the corresponding indices
+    % in EEG_cleaned which may have less channels as they are already 
+    % removed by asr
+    to_remove = prep_removed_chans_mask & ~asr_removed_chans_mask;
+    to_remove = to_remove(~asr_removed_chans_mask); %#ok<NASGU>
+    
+    % And remove channels detected by prep which have not been detected by
+    % asr
+    [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove)');
+    clear EEG_preped to_remove info rar_chans prep_removed_chans;
 end
 
-% Removing bad channels
-display('Removing bad channels using Artifact Subspace Reconstruction...');
-[~, EEG_cleaned] = evalc(['clean_artifacts(EEG, '...
-    '''Highpass'', channel_rejection_params.highpass,' ...
-    '''ChannelCriterion'', channel_rejection_params.channel_criterion,' ...
-    '''LineNoiseCriterion'', channel_rejection_params.line_noise_criterion,' ...
-    '''BurstCriterion'', channel_rejection_params.burst_criterion,' ...
-    '''WindowCriterion'', channel_rejection_params.window_criterion)']);
+% Gather information from previous steps
+asr_removed_chans = find(asr_removed_chans_mask);
+prep_removed_chans = find(prep_removed_chans_mask);
+removed_chans = union(asr_removed_chans, prep_removed_chans);
+clear prep_removed_chans_mask asr_removed_chans_mask;
 
-if(isfield(EEG_cleaned, 'etc'))
-   if(isfield(EEG_cleaned.etc, 'clean_sample_mask'))
-       removed = EEG_cleaned.etc.clean_sample_mask;
-       firsts = find(diff(removed) == -1) + 1;
-       seconds = find(diff(removed) == 1);
-       if(removed(1) == 0)
-           firsts = [1, firsts];
-       end
-       if(removed(end) == 0)
-           seconds = [seconds, length(removed)];
-       end
-       remove_range = [firsts; seconds]';
-       [~, EOG] = evalc('pop_select(EOG, ''nopoint'', remove_range)');
-   end
-end
+
+% Filtering on the whole dataset
+EEG_filtered = perform_filter(EEG_cleaned, filter_params);
+EOG_filtered = perform_filter(EOG, filter_params);
+
 
 % Remove effect of EOG
-if( perform_eog_regression )
-    EEG_regressed = EOG_regression(EEG_cleaned, EOG);
+if( eog_regression_params.perform_eog_regression )
+    EEG_regressed = EOG_regression(EEG_filtered, EOG_filtered);
 else
-    EEG_regressed = EEG_cleaned;
+    EEG_regressed = EEG_filtered;
 end
 
+
 % PCA or ICA
-if (ica_params.bool ) % If ICA is checked
+if ( ~isempty(ica_params) )
     EEG_cleared = perform_ica(EEG_regressed, ica_params);
-else % If PCA is not checked either, the EEG_cleared will remain unchanged
-    [EEG_cleared, noise] = perform_pca(EEG_regressed, pca_params);
+elseif ( ~isempty(pca_params))
+    [EEG_cleared, pca_noise] = perform_pca(EEG_regressed, pca_params);
+else
+    EEG_cleared = EEG_regressed;
 end
+
 
 % detrending
 doubled_data = double(EEG_cleared.data);
@@ -595,9 +484,8 @@ singled_data = single(res);
 
 result = EEG_cleared;
 result.data = singled_data;
-
-% Put back removed channels 
-removed_chans = sort(find(EEG_regressed.etc.clean_channel_mask==0));
+clear doubled_data res singled_data;
+% Put back removed channels
 for chan_idx = 1:length(removed_chans);
     chan_nb = removed_chans(chan_idx);
     if( chan_nb == eeg_system.ref_chan)
@@ -612,9 +500,12 @@ for chan_idx = 1:length(removed_chans);
     result.chanlocs = [result.chanlocs(1:chan_nb-1), EEG.chanlocs(chan_nb), ...
                     result.chanlocs(chan_nb:end)];
 end
+clear chan_nb;
 result.nbchan = size(result.data,1);
-result.tobe_interpolated = setdiff([removed_chans, rar_bads], eeg_system.ref_chan);
+result.tobe_interpolated = setdiff(removed_chans, eeg_system.ref_chan);
 result.auto_badchans = result.tobe_interpolated;
+result.prep_badchans = setdiff(prep_removed_chans, eeg_system.ref_chan);
+result.asr_badchans = setdiff(asr_removed_chans, eeg_system.ref_chan);
 
 %% Creating the final figure to save
 fig = figure('visible', 'off');
@@ -622,7 +513,7 @@ set(gcf, 'Color', [1,1,1])
 hold on
 % eog figure
 subplot(9,1,1)
-imagesc(EOG.data);
+imagesc(EOG_filtered.data);
 colormap jet
 caxis([-100 100])
 XTicks = [] ;
@@ -632,7 +523,7 @@ set(gca,'XTickLabel', XTicketLabels)
 title('Filtered EOG data');
 %eeg figure
 subplot(9,1,2:3)
-imagesc(EEG.data);
+imagesc(EEG_filtered.data);
 colormap jet
 caxis([-100 100])
 set(gca,'XTick', XTicks)
@@ -653,9 +544,9 @@ colormap jet
 caxis([-100 100])
 set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
-if (ica_params.bool )
+if (~isempty(ica_params))
     title_text = 'ICA';
-elseif(pca_params.lambda ~= -1)
+elseif(~isempty(pca_params))
     title_text = 'PCA';
 else
     title_text = '';
@@ -664,7 +555,7 @@ title([title_text ' corrected clean data'])
 %figure;
 if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_params.lambda ~= -1))
     subplot(9,1,8:9)
-    imagesc(noise);
+    imagesc(pca_noise);
     colormap jet
     caxis([-100 100])
     XTicks = 0:length(EEG.data)/5:length(EEG.data) ;

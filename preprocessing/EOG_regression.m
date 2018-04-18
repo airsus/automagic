@@ -17,8 +17,8 @@ function regressed = EOG_regression(EEG, EOG)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-defaults = DefaultParameters.eog_regression_params;
-display(defaults.run_message);
+constants = PreprocessingConstants.eog_regression_constants;
+display(constants.run_message);
 
 eeg = EEG.data';
 eog = EOG.data';

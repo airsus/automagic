@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 25-Jan-2018 10:52:52
+% Last Modified by GUIDE v2.5 18-Apr-2018 12:04:12
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -84,65 +84,75 @@ end
 CGV = ConstantGlobalValues;
 params = varargin{1};
 assert(isa(params, 'struct'));
-assert(isa(CGV, 'ConstantGlobalValues'));
 handles.params = params;
 handles.CGV = CGV;
 
-% Either pca or ica, not both together.
-assert( ( ~ isempty(handles.params.pca_params.lambda) && ...
-    handles.params.pca_params.lambda == -1) || handles.params.ica_params.bool == 0);
+assert( isempty(handles.params.pca_params) || ...
+    isempty(handles.params.ica_params), ...
+    'Either pca or ica, not both together.');
 
-if( isempty( params.filter_params.high_order) )
-    set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
+if(~isempty(params.filter_params))
+    if(~isempty(params.filter_params.high))
+        if( isempty( params.filter_params.high.order) )
+            set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.highpassorderedit, 'String', params.filter_params.high.order);
+        end
+    else
+        set(handles.highpassorderedit, 'String', '');
+    end
+    
+    if(~isempty(params.filter_params.low))
+        if( isempty( params.filter_params.low.order) )
+            set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.lowpassorderedit, 'String', params.filter_params.low.order);
+        end
+    else
+        set(handles.lowpassorderedit, 'String', '');
+    end
 else
-    set(handles.highpassorderedit, 'String', params.filter_params.high_order);
+    set(handles.highpassorderedit, 'String', '');
+    set(handles.lowpassorderedit, 'String', '');
 end
 
-if( isempty( params.filter_params.low_order) )
-    set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
-else
-    set(handles.lowpassorderedit, 'String', params.filter_params.low_order);
+if ~isempty(params.asr_params)
+    if( ~strcmp(params.asr_params.ChannelCriterion, 'off'))
+        set(handles.channelcriterioncheckbox, 'Value', 1);
+    else
+        set(handles.channelcriterioncheckbox, 'Value', 0);
+    end
+    set(handles.channelcriterionedit, 'String', params.asr_params.ChannelCriterion);
+    
+    if( ~strcmp(params.asr_params.LineNoiseCriterion, 'off'))
+        set(handles.linenoisecheckbox, 'Value', 1);
+    else
+        set(handles.linenoisecheckbox, 'Value', 0);
+    end
+    set(handles.linenoiseedit, 'String', params.asr_params.LineNoiseCriterion);
+    
+    if( ~strcmp(params.asr_params.BurstCriterion, 'off'))
+        set(handles.burstcheckbox, 'Value', 1);
+    else
+        set(handles.burstcheckbox, 'Value', 0);
+    end
+    set(handles.burstedit, 'String', params.asr_params.BurstCriterion);
+    
+    if( ~strcmp(params.asr_params.WindowCriterion, 'off'))
+        set(handles.windowcheckbox, 'Value', 1);
+    else
+        set(handles.windowcheckbox, 'Value', 0);
+    end
+    set(handles.windowedit, 'String', params.asr_params.WindowCriterion);
 end
 
-if( ~ strcmp(params.channel_rejection_params.channel_criterion, 'off'))
-    set(handles.channelcriterioncheckbox, 'Value', 1);
-    set(handles.channelcriterionedit, 'String', params.channel_rejection_params.channel_criterion);
-else
-    set(handles.channelcriterioncheckbox, 'Value', 0);
-    set(handles.channelcriterionedit, 'String', CGV.default_params.channel_rejection_params.channel_criterion);
-end
-
-if( ~ strcmp(params.channel_rejection_params.line_noise_criterion, 'off'))
-    set(handles.linenoisecheckbox, 'Value', 1);
-    set(handles.linenoiseedit, 'String', params.channel_rejection_params.line_noise_criterion);
-else
-    set(handles.linenoisecheckbox, 'Value', 0);
-    set(handles.linenoiseedit, 'String', CGV.default_params.channel_rejection_params.line_noise_criterion);
-end
-
-if( ~ strcmp(params.channel_rejection_params.burst_criterion, 'off'))
-    set(handles.burstcheckbox, 'Value', 1);
-    set(handles.burstedit, 'String', params.channel_rejection_params.burst_criterion);
-else
-    set(handles.burstcheckbox, 'Value', 0);
-    set(handles.burstedit, 'String', CGV.default_params.channel_rejection_params.burst_criterion);
-end
-
-if( ~ strcmp(params.channel_rejection_params.window_criterion, 'off'))
-    set(handles.windowcheckbox, 'Value', 1);
-    set(handles.windowedit, 'String', params.channel_rejection_params.window_criterion);
-else
-    set(handles.windowcheckbox, 'Value', 0);
-    set(handles.windowedit, 'String', CGV.default_params.channel_rejection_params.window_criterion);
-end
-
-if( params.channel_rejection_params.rar)
+if( ~isempty(params.prep_params))
     set(handles.rarcheckbox, 'Value', 1);
 else
     set(handles.rarcheckbox, 'Value', 0);
 end
 
-if( isempty(params.pca_params.lambda) || params.pca_params.lambda ~= -1)
+if( ~isempty(params.pca_params))
     set(handles.pcacheckbox, 'Value', 1);
     if( isempty( params.pca_params.lambda ))
        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
@@ -153,13 +163,12 @@ if( isempty(params.pca_params.lambda) || params.pca_params.lambda ~= -1)
     set(handles.maxIteredit, 'String', params.pca_params.maxIter);
 else
     set(handles.pcacheckbox, 'Value', 0);
-    set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
-    set(handles.toledit, 'String', CGV.default_params.pca_params.tol);
-    set(handles.maxIteredit, 'String', CGV.default_params.pca_params.maxIter);
+    set(handles.lambdaedit, 'String', '');
+    set(handles.toledit, 'String', '');
+    set(handles.maxIteredit, 'String', '');
 end
 
-set(handles.icacheckbox, 'Value', params.ica_params.bool);
-
+set(handles.icacheckbox, 'Value', ~isempty(params.ica_params));
 
 IndexC = strcmp(handles.interpolationpopupmenu.String, params.interpolation_params.method);
 Index = find(IndexC == 1);
@@ -237,6 +246,8 @@ if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
 end
 
 handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in okpushbutton.
 function okpushbutton_Callback(hObject, eventdata, handles)
@@ -254,109 +265,111 @@ function handles = get_inputs(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-CGV = handles.CGV;
+defs = handles.CGV.default_params;
+params = handles.params;
 
-ica_bool = get(handles.icacheckbox, 'Value');
-
-high_order = [];
-if( get(main_gui_handle.highpasscheckbox, 'Value') )
-    high_order = str2double(get(handles.highpassorderedit, 'String'));
-end
-if(isnan(high_order) )
-    high_order = CGV.default_params.filter_params.high_order;
-end
-
-
-low_order = [];
-if( get(main_gui_handle.lowpasscheckbox, 'Value') )
-    low_order = str2double(get(handles.lowpassorderedit, 'String'));
-end
-if(isnan(low_order))
-    low_order = CGV.default_params.filter_params.high_order;
+ica_params = params.ica_params;
+if get(handles.icacheckbox, 'Value')
+    if isempty(params.ica_params)
+        ica_params = defs.ica_params; end
+else
+    ica_params = struct([]);
 end
 
+high = params.filter_params.high;
+if( get(main_gui_handle.highpasscheckbox, 'Value') && ~isempty(high))
+    res = str2double(get(handles.highpassorderedit, 'String'));
+    if ~isnan(res)
+        high.order = res; end
+end
+clear res;
+
+low = params.filter_params.low;
+if( get(main_gui_handle.lowpasscheckbox, 'Value') && ~isempty(low))
+    res = str2double(get(handles.lowpassorderedit, 'String'));
+    if ~isnan(res)
+        low.order = res; end
+end
+clear res;
+
+asr_params = params.asr_params;
 if( get(handles.linenoisecheckbox, 'Value') )
     linenoise_val = str2double(get(handles.linenoiseedit, 'String'));
-    if( isempty(linenoise_val) || isnan(linenoise_val))
-        linenoise_val = CGV.default_params.channel_rejection_params.line_noise_criterion; 
-    end
+    if( ~isnan(linenoise_val))
+        asr_params.LineNoiseCriterion = linenoise_val; end
 else
-    linenoise_val = 'off';
+    if ~isempty(asr_params)
+        asr_params.LineNoiseCriterion = 'off'; end
 end
 
 
 if( get(handles.channelcriterioncheckbox, 'Value') )
-    channel_criterion_val = str2double(get(handles.channelcriterionedit, 'String'));
-    if( isempty(channel_criterion_val) || isnan(channel_criterion_val))
-        channel_criterion_val = CGV.default_params.channel_rejection_params.channel_criterion; 
-    end
+    ChannelCriterion = str2double(get(handles.channelcriterionedit, 'String'));
+    if( ~isnan(ChannelCriterion))
+        asr_params.ChannelCriterion = ChannelCriterion; end
 else
-    channel_criterion_val = 'off';
+    if ~isempty(asr_params)
+        asr_params.ChannelCriterion = 'off'; end
 end
 
 
 
 if( get(handles.burstcheckbox, 'Value') )
-    burst_val = str2double(get(handles.burstedit, 'String'));
-    if( isempty(burst_val) || isnan(burst_val))
-        burst_val = CGV.default_params.channel_rejection_params.burst_criterion; 
-    end
+    BurstCriterion = str2double(get(handles.burstedit, 'String'));
+    if ~isnan(BurstCriterion)
+        asr_params.BurstCriterion = BurstCriterion; end
 else
-    burst_val = 'off';
+    if ~isempty(asr_params)
+        asr_params.BurstCriterion = 'off'; end
 end
 
 
 if( get(handles.windowcheckbox, 'Value') )
-    window_val = str2double(get(handles.windowedit, 'String'));
-    if( isempty(window_val) || isnan(window_val))
-        window_val = CGV.default_params.channel_rejection_params.window_criterion; 
-    end
+    WindowCriterion = str2double(get(handles.windowedit, 'String'));
+    if ~isnan(WindowCriterion)
+        asr_params.WindowCriterion = WindowCriterion; end
 else
-    window_val = 'off';
+    if ~isempty(asr_params)
+        asr_params.WindowCriterion = 'off'; end
 end
 
-
+prep_params = params.prep_params;
 rar_check = get(handles.rarcheckbox, 'Value');
+if (rar_check && isempty(prep_params))
+    prep_params = struct();
+elseif ~rar_check
+    prep_params = struct([]);
+end
 
+pca_params = params.pca_params;
 if( get(handles.pcacheckbox, 'Value') )
     lambda = str2double(get(handles.lambdaedit, 'String'));
     tol = str2double(get(handles.toledit, 'String'));
     maxIter = str2double(get(handles.maxIteredit, 'String'));
-    if(isnan(lambda) )
-        lambda = CGV.default_params.pca_params.lambda;
+    
+    if ~isnan(lambda) && ~isnan(tol) && ~isnan(maxIter)
+        if isempty(pca_params)
+            pca_params = struct(); end
+        pca_params.lambda = lambda;
+        pca_params.tol = tol;
+        pca_params.maxIter = maxIter;
     end
 else
-    lambda = -1;
-    tol = -1;
-    maxIter = -1;
+    pca_params = struct([]);
 end
-
-if(isempty(tol) || isnan(tol))
-    tol = CGV.default_params.pca_params.tol;
-end
-
-if( isempty(maxIter) || isnan(maxIter)) 
-    maxIter = CGV.default_params.pca_params.maxIter;
-end
-
 
 idx = get(handles.interpolationpopupmenu, 'Value');
 methods = get(handles.interpolationpopupmenu, 'String');
 method = methods{idx};
 
-handles.params.filter_params.high_order = high_order;
-handles.params.filter_params.low_order = low_order;
-handles.params.channel_rejection_params.line_noise_criterion = linenoise_val;
-handles.params.channel_rejection_params.channel_criterion = channel_criterion_val;
-handles.params.channel_rejection_params.burst_criterion = burst_val;
-handles.params.channel_rejection_params.window_criterion = window_val;
-handles.params.channel_rejection_params.highpass = CGV.default_params.channel_rejection_params.highpass;
-handles.params.channel_rejection_params.rar = rar_check;
-handles.params.pca_params.lambda = lambda;
-handles.params.pca_params.tol = tol;
-handles.params.pca_params.maxIter = maxIter;
-handles.params.ica_params.bool = ica_bool;
+handles.params.filter_params.high = high;
+handles.params.filter_params.low = low;
+handles.params.asr_params = asr_params;
+handles.params.prep_params = prep_params;
+handles.params.pca_params = pca_params;
+handles.params.ica_params = ica_params;
 handles.params.interpolation_params.method = method;
+
 
 % --- Executes on button press in defaultpushbutton.
 function defaultpushbutton_Callback(hObject, eventdata, handles)
@@ -364,68 +377,88 @@ function defaultpushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 CGV = handles.CGV;
+defs = CGV.default_params;
 params = handles.params;
 
-set(handles.highpassorderedit, 'String', ...
-    CGV.DEFAULT_keyword);
-set(handles.lowpassorderedit, 'String', ...
-    CGV.default_params.filter_params.low_order);
+if ~isempty(defs.filter_params)
+    if ~isempty(defs.filter_params.high) && ~isempty(params.filter_params.high)
+        if isempty(defs.filter_params.high.order)
+            set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.highpassorderedit, 'String', defs.filter_params.high.order);
+        end
+    else
+        set(handles.highpassorderedit, 'String', '')
+    end
 
-set(handles.icacheckbox, 'Value', CGV.default_params.ica_params.bool);
+    if ~isempty(defs.filter_params.low) && ~isempty(params.filter_params.low)
+        if isempty(defs.filter_params.low.order)
+            set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.lowpassorderedit, 'String', defs.filter_params.low.order);
+        end
+    else
+        set(handles.lowpassorderedit, 'String', '')
+    end
+else
+    set(handles.highpassorderedit, 'String', '')
+    set(handles.lowpassorderedit, 'String', '')
+end
 
-if( ~strcmp(CGV.default_params.channel_rejection_params.line_noise_criterion, 'off'))
-    set(handles.linenoisecheckbox, 'Value', 1);
+set(handles.icacheckbox, 'Value', ~isempty(defs.ica_params));
+
+if ~isempty(defs.asr_params)
+    if( ~strcmp(defs.asr_params.LineNoiseCriterion, 'off'))
+        set(handles.linenoisecheckbox, 'Value', 1);
+    else
+        set(handles.linenoisecheckbox, 'Value', 0);
+    end
     set(handles.linenoiseedit, 'String', ...
-        CGV.default_params.channel_rejection_params.line_noise_criterion);
-else
-    set(handles.linenoisecheckbox, 'Value', 0);
-    set(handles.linenoiseedit, 'String', '');
-end
-
-if( ~strcmp(CGV.default_params.channel_rejection_params.channel_criterion, 'off'))
-    set(handles.channelcriterioncheckbox, 'Value', 1);
+            defs.asr_params.LineNoiseCriterion);
+        
+    if( ~strcmp(defs.asr_params.ChannelCriterion, 'off'))
+        set(handles.channelcriterioncheckbox, 'Value', 1);
+    else
+        set(handles.channelcriterioncheckbox, 'Value', 0);
+    end
     set(handles.channelcriterionedit, 'String', ...
-        CGV.default_params.channel_rejection_params.channel_criterion);
-else
-    set(handles.channelcriterioncheckbox, 'Value', 0);
-    set(handles.channelcriterionedit, 'String', '');
-end
-if( ~strcmp(CGV.default_params.channel_rejection_params.burst_criterion, 'off'))
-    set(handles.burstcheckbox, 'Value', 1);
+            CGV.default_params.asr_params.ChannelCriterion);
+        
+    if( ~strcmp(defs.asr_params.BurstCriterion, 'off'))
+        set(handles.burstcheckbox, 'Value', 1);
+    else
+        set(handles.burstcheckbox, 'Value', 0);
+    end
     set(handles.burstedit, 'String', ...
-        CGV.default_params.channel_rejection_params.burst_criterion);
-else
-    set(handles.burstcheckbox, 'Value', 0);
-    set(handles.burstedit, 'String', '');
-end
-if( ~strcmp(CGV.default_params.channel_rejection_params.window_criterion, 'off'))
-    set(handles.windowcheckbox, 'Value', 1);
+            CGV.default_params.asr_params.BurstCriterion);
+        
+    if( ~strcmp(defs.asr_params.WindowCriterion, 'off'))
+        set(handles.windowcheckbox, 'Value', 1);
+    else
+        set(handles.windowcheckbox, 'Value', 0);
+    end
     set(handles.windowedit, 'String', ...
-        CGV.default_params.channel_rejection_params.window_criterion);
-else
-    set(handles.windowcheckbox, 'Value', 0);
-    set(handles.windowedit, 'String', '');
+            CGV.default_params.asr_params.WindowCriterion);
 end
+set(handles.rarcheckbox, 'Value', ~isempty(defs.prep_params));
 
-set(handles.rarcheckbox, 'Value',CGV.default_params.channel_rejection_params.rar);
-
-if( isempty(CGV.default_params.pca_params.lambda) || CGV.default_params.pca_params.lambda ~= -1)
+if ~isempty(defs.pca_params)
     set(handles.pcacheckbox, 'Value', 1);
-    set(handles.lambdaedit, 'String', ...
-        CGV.DEFAULT_keyword);
-    set(handles.toledit, 'String', ...
-        CGV.default_params.pca_params.tol);
-    set(handles.maxIteredit, 'String', ...
-        CGV.default_params.pca_params.maxIter);
+    if( isempty(defs.pca_params.lambda))
+        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
+    else
+        set(handles.lambdaedit, 'String', defs.pca_params.lambda);
+    end
+        set(handles.toledit, 'String', defs.pca_params.tol);
+        set(handles.maxIteredit, 'String', defs.pca_params.maxIter);
 else
     set(handles.pcacheckbox, 'Value', 0);
     set(handles.lambdaedit, 'String', '');
     set(handles.toledit, 'String', '');
     set(handles.maxIteredit, 'String', '');
 end
-
 IndexC = strfind(handles.interpolationpopupmenu.String, ...
-    CGV.default_params.interpolation_params.method);
+    defs.interpolation_params.method);
 index = find(not(cellfun('isempty', IndexC)));
 set(handles.interpolationpopupmenu, 'Value', index);
 
@@ -438,54 +471,46 @@ function handles = switch_components(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-CGV = handles.CGV;
-
 if( get(main_gui_handle.highpasscheckbox, 'Value') )
     set(handles.highpassorderedit, 'enable', 'on');
 else
     set(handles.highpassorderedit, 'enable', 'off');
-    set(handles.highpassorderedit, 'String', ...
-        CGV.default_params.filter_params.high_order);
+    set(handles.highpassorderedit, 'String', '');
 end
 
 if( get(main_gui_handle.lowpasscheckbox, 'Value') )
     set(handles.lowpassorderedit, 'enable', 'on');
 else
     set(handles.lowpassorderedit, 'enable', 'off');
-    set(handles.lowpassorderedit, 'String', ...
-        CGV.default_params.filter_params.low_order);
+    set(handles.lowpassorderedit, 'String', '');
 end
 
 if( get(handles.linenoisecheckbox, 'Value') )
     set(handles.linenoiseedit, 'enable', 'on');
 else
     set(handles.linenoiseedit, 'enable', 'off');
-    set(handles.linenoiseedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.line_noise_criterion));
+    set(handles.linenoiseedit, 'String', '');
 end
 
 if( get(handles.channelcriterioncheckbox, 'Value') )
     set(handles.channelcriterionedit, 'enable', 'on');
 else
     set(handles.channelcriterionedit, 'enable', 'off');
-    set(handles.channelcriterionedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.channel_criterion));
+    set(handles.channelcriterionedit, 'String', '');
 end
 
 if( get(handles.burstcheckbox, 'Value') )
     set(handles.burstedit, 'enable', 'on');
 else
     set(handles.burstedit, 'enable', 'off');
-    set(handles.burstedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.burst_criterion));
+    set(handles.burstedit, 'String', '');
 end
 
 if( get(handles.windowcheckbox, 'Value') )
     set(handles.windowedit, 'enable', 'on');
 else
     set(handles.windowedit, 'enable', 'off');
-    set(handles.windowedit, 'String', ...
-        num2str(CGV.default_params.channel_rejection_params.window_criterion));
+    set(handles.windowedit, 'String', '');
 end
 
 if( get(handles.pcacheckbox, 'Value') )
@@ -496,12 +521,15 @@ else
     set(handles.lambdaedit, 'enable', 'off');
     set(handles.toledit, 'enable', 'off');
     set(handles.maxIteredit, 'enable', 'off');
-    set(handles.lambdaedit, 'String', ...
-        num2str(CGV.DEFAULT_keyword));
-    set(handles.toledit, 'String', ...
-        num2str(CGV.default_params.pca_params.tol));
-    set(handles.maxIteredit, 'String', ...
-        num2str(CGV.default_params.pca_params.maxIter));
+    set(handles.lambdaedit, 'String', '');
+    set(handles.toledit, 'String', '');
+    set(handles.maxIteredit, 'String', '');
+end
+
+if( get(handles.rarcheckbox, 'Value'))
+    set(handles.preppushbutton, 'enable', 'on')
+else
+    set(handles.preppushbutton, 'enable', 'off')
 end
 
 % --- Executes on button press in cancelpushbutton.
@@ -798,8 +826,15 @@ function rarcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to rarcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    handles.params.prep_params = struct();
+else
+    handles.params.prep_params = struct([]);
+end
+handles = switch_components(handles);
 
-% Hint: get(hObject,'Value') returns toggle state of rarcheckbox
+% Update handles structure
+guidata(hObject, handles);
 
 
 % --- Executes on button press in windowcheckbox.
@@ -832,3 +867,192 @@ function windowedit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in preppushbutton.
+function preppushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to preppushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if(~exist('pop_fileio', 'file'))
+    add_eeglab_path();
+    % Add path for 10_20 system
+end
+
+% Check and download if Robust Average Referencing does not exist
+if( ~ exist('performReference.m', 'file'))
+    download_rar();
+end
+
+% Create a dummy EEG structure to trick prep default function!
+EEG = eeg_emptyset();
+EEG.srate = 1024; % Dummy number!
+EEG.data = zeros(1000, 1000); % Dummy dimensions!
+EEG.chanlocs = struct();
+EEG.chaninfo = struct();
+rar_params = handles.params.prep_params;
+                                    
+userData = struct('boundary', [], 'detrend', [], ...
+    'lineNoise', [], 'reference', [], ...
+    'report', [],  'postProcess', []);
+stepNames = fieldnames(userData);
+for k = 1:length(stepNames)
+    defaults = getPrepDefaults(EEG, stepNames{k});
+    [theseValues, errors] = checkStructureDefaults(rar_params, ...
+        defaults);
+    if ~isempty(errors)
+        error('pop_prepPipeline:BadParameters', ['|' ...
+            sprintf('%s|', errors{:})]);
+    end
+    userData.(stepNames{k}) = theseValues;
+end
+
+if ~isfield(rar_params, 'detrendChannels') || ...
+        (isfield(rar_params, 'detrendChannels') && rar_params.detrendChannels ~= userData.detrend.detrendChannels.value)
+    userData.detrend.detrendChannels.value = -1;
+end
+
+if ~isfield(rar_params, 'referenceChannels') || ...
+        (isfield(rar_params, 'referenceChannels') && rar_params.referenceChannels ~= userData.reference.referenceChannels.value)
+    userData.reference.referenceChannels.value = -1;
+end
+
+if ~isfield(rar_params, 'evaluationChannels') || ...
+        (isfield(rar_params, 'evaluationChannels') && rar_params.evaluationChannels ~= userData.reference.evaluationChannels.value)
+    userData.reference.evaluationChannels.value = -1;
+end
+
+if ~isfield(rar_params, 'rereferencedChannels') || ...
+        (isfield(rar_params, 'rereferencedChannels') && rar_params.rereferencedChannels ~= userData.reference.rereferencedChannels.value)
+    userData.reference.rereferencedChannels.value = -1;
+end
+
+if ~isfield(rar_params, 'lineNoiseChannels') || ...
+        (isfield(rar_params, 'lineNoiseChannels') && rar_params.lineNoiseChannels ~= userData.lineNoise.lineNoiseChannels.value)
+    userData.lineNoise.lineNoiseChannels.value = -1;
+end
+
+if ~isfield(rar_params, 'detrendCutoff') || ...
+        (isfield(rar_params, 'detrendCutoff') && rar_params.detrendCutoff ~= userData.detrend.detrendCutoff.value)
+    userData.detrend.detrendCutoff.value = [];
+end
+
+if ~isfield(rar_params, 'localCutoff') || ...
+        (isfield(rar_params, 'localCutoff') && rar_params.localCutoff ~= userData.globaltrend.localCutoff.value)
+    userData.globaltrend.localCutoff.value = [] ;
+end
+
+if ~isfield(rar_params, 'globalTrendChannels') || ...
+        (isfield(rar_params, 'globalTrendChannels') && rar_params.globalTrendChannels ~= userData.globaltrend.globalTrendChannels.value)
+    userData.globaltrend.globalTrendChannels.value = [];
+end
+
+if ~isfield(rar_params, 'Fs') || ...
+        (isfield(rar_params, 'Fs') && rar_params.Fs ~= userData.lineNoise.Fs.value)
+    userData.lineNoise.Fs.value = [];
+end
+
+if ~isfield(rar_params, 'lineFrequencies') || ...
+        (isfield(rar_params, 'lineFrequencies') && rar_params.lineFrequencies ~= userData.lineNoise.lineFrequencies.value)
+    userData.lineNoise.lineFrequencies.value = [];
+end
+
+if ~isfield(rar_params, 'fPassBand') || ...
+        (isfield(rar_params, 'fPassBand') && rar_params.fPassBand ~= userData.lineNoise.fPassBand.value)
+    userData.lineNoise.fPassBand.value = [];
+end
+
+if ~isfield(rar_params, 'srate') || ...
+        (isfield(rar_params, 'srate') && rar_params.srate ~= userData.reference.srate.value)
+    userData.reference.srate.value = [];
+end
+
+[~, rar_params, okay] = evalc('MasterGUI([],[],userData, EEG)');
+
+if okay
+    % This is not set by the gui anyways
+    if isfield(rar_params, 'samples')
+        rar_params = rmfield(rar_params, 'samples');
+    end
+    
+    % This is not set by the gui anyways
+    if isfield(rar_params, 'channelLocations')
+        rar_params = rmfield(rar_params, 'channelLocations');
+    end
+    
+    % This is not set by the gui anyways
+    if isfield(rar_params, 'channelInformation')
+        rar_params = rmfield(rar_params, 'channelInformation');
+    end
+    
+    % Lists that are -1 are not set by the gui
+    if isfield(rar_params, 'detrendChannels') && rar_params.detrendChannels == -1
+        rar_params = rmfield(rar_params, 'detrendChannels');
+    end
+    
+    % Lists that are -1 are not set by the gui
+    if isfield(rar_params, 'lineNoiseChannels') && rar_params.lineNoiseChannels == -1
+        rar_params = rmfield(rar_params, 'lineNoiseChannels');
+    end
+    
+    % Lists that are -1 are not set by the gui
+    if isfield(rar_params, 'referenceChannels') && rar_params.referenceChannels == -1
+        rar_params = rmfield(rar_params, 'referenceChannels');
+    end
+    
+    % Lists that are -1 are not set by the gui
+    if isfield(rar_params, 'evaluationChannels') && rar_params.evaluationChannels == -1
+        rar_params = rmfield(rar_params, 'evaluationChannels');
+    end
+    
+    % Lists that are -1 are not set by the gui
+    if isfield(rar_params, 'rereferencedChannels') && rar_params.rereferencedChannels == -1
+        rar_params = rmfield(rar_params, 'rereferencedChannels');
+    end
+    
+    if isfield(rar_params, 'detrendCutoff') && isempty(rar_params.detrendCutoff)
+        rar_params = rmfield(rar_params, 'detrendCutoff');
+    end
+    
+    if isfield(rar_params, 'localCutoff') && isempty(rar_params.localCutoff)
+        rar_params = rmfield(rar_params, 'localCutoff');
+    end
+    
+    if isfield(rar_params, 'globalTrendChannels') && isempty(rar_params.globalTrendChannels)
+        rar_params = rmfield(rar_params, 'globalTrendChannels');
+    end
+    
+    if isfield(rar_params, 'Fs') && isempty(rar_params.Fs)
+        rar_params = rmfield(rar_params, 'Fs');
+    end
+    
+    if isfield(rar_params, 'lineFrequencies') && isempty(rar_params.lineFrequencies)
+        rar_params = rmfield(rar_params, 'lineFrequencies');
+    end
+    
+    if isfield(rar_params, 'fPassBand') && isempty(rar_params.fPassBand)
+        rar_params = rmfield(rar_params, 'fPassBand');
+    end
+    
+    if isfield(rar_params, 'srate') && isempty(rar_params.srate)
+        rar_params = rmfield(rar_params, 'srate');
+    end
+end
+
+clear defaults;
+stepNames = fieldnames(userData);
+for k = 1:length(stepNames)
+    defaults = getPrepDefaults(EEG, stepNames{k});
+    [theseValues, errors] = checkDefaults(rar_params, rar_params, defaults);
+    if ~isempty(errors)
+        popup_msg(['Wrong parameters for prep: ', ...
+            sprintf('%s', errors{:})], 'Error');
+        return;
+    end
+    userData.(stepNames{k}) = theseValues;
+end
+
+handles.params.prep_params = rar_params;
+% Update handles structure
+guidata(hObject, handles);

@@ -7,13 +7,10 @@ function [data, noise] = perform_pca(data, varargin)
 %   these three parameters please see inexact_alm_rpca.m.
 %
 %   If varargin is ommited, default values are used. If any fields of
-%   varargin is ommited, corresponsing default value is used. If
-%   params.lambda = -1, PCA is not performed. Note that if 'maxIter' or 
-%   'tol' are given as arguments, then 'lambda' must be given as well.
+%   varargin is ommited or are [], corresponsing default value is used.
 %
-%   Default values: params.lambda = 1/sqrt(m) where m is number of channels
-%                   params.tol = 1e-7
-%                   params.maxIter = 1000
+%   Default values are specified in DefaultParameters.m. If they are empty
+%   then [] is given to inexact_alm_rpca.m which implies to use defaults.
 %
 % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
 % 
@@ -33,29 +30,42 @@ function [data, noise] = perform_pca(data, varargin)
 [~ , m] = size(data.data);
 
 defaults = DefaultParameters.pca_params;
+constants = PreprocessingConstants.pca_constants;
+% Check if defaults are not empty. If they are empty, override it with
+% defaults of inexact_alm_rpca.m: -1.
+if isempty(defaults)
+    defaults = struct('lambda', [], 'tol', -1, 'maxIter', -1);
+end
+if ~isfield(defaults, 'tol')
+    defaults.tol = -1;
+end
+if ~isfield(defaults, 'maxIter')
+    defaults.maxIter = -1;
+end
+if ~isfield(defaults, 'lambda')
+    defaults.lambda = [];
+end
+
+
 p = inputParser;
-addParameter(p,'lambda', 1 / sqrt(m), @isnumeric);
+addParameter(p,'lambda', defaults.lambda, @isnumeric);
 addParameter(p,'tol', defaults.tol, @isnumeric);
 addParameter(p,'maxIter', defaults.maxIter, @isnumeric);
 parse(p, varargin{:});
 
 lambda = p.Results.lambda;
-tol = p.Results.tol;
-maxIter = p.Results.maxIter;
+tol = p.Results.tol; %#ok<NASGU>
+maxIter = p.Results.maxIter; %#ok<NASGU>
 
 
 if( isempty( lambda) )
-    lambda = 1 / sqrt(m);
+    lambda = 1 / sqrt(m); %#ok<NASGU>
 end
 
-noise = [];
-if( lambda == -1)
-    return;
-end
+eeg = double(data.data)'; %#ok<NASGU>
 
-eeg = double(data.data)';
 % Run robust PCA
-display(defaults.run_message);
+display(constants.run_message);
 [~, A_hat, E_hat, ~] = evalc('inexact_alm_rpca(eeg, lambda, tol, maxIter)');
 sig  = A_hat'; % data
 data.data = sig;

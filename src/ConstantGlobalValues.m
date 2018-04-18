@@ -18,7 +18,7 @@ classdef ConstantGlobalValues
     % along with this program.  If not, see <http://www.gnu.org/licenses/>.
     properties(Constant)
 
-        version = '1.4.6';
+        version = '1.5.0';
             
         DEFAULT_keyword = 'Default';
                 
@@ -51,6 +51,8 @@ classdef ConstantGlobalValues
                                 'PREVIOUS', 'leftarrow')
                             
         default_params = DefaultParameters
+        
+        preprocessing_constants = PreprocessingConstants
     end
     
     methods
