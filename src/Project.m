@@ -321,9 +321,11 @@ classdef Project < handle
                 close(fig);
 
                 ica_rejected = [];
-                if(isfield(EEG, 'reject'))
-                    if(isfield(EEG.reject, 'gcompreject'))
-                        ica_rejected = EEG.reject.gcompreject;
+                if(isfield(EEG, 'prerejection'))
+                    if(isfield(EEG.prerejection, 'reject'))
+                        if(isfield(EEG.prerejection.reject, 'gcompreject'))
+                            ica_rejected = find(EEG.prerejection.reject.gcompreject == 1);
+                        end
                     end
                 end
                 reduced.data = downsample(EEG.data',self.ds_rate)';

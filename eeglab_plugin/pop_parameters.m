@@ -571,9 +571,11 @@ EEG = rmfield(EEG, 'tobe_interpolated');
 EEG.automagic.params = params;
 EEG.automagic.auto_badchans = auto_badchans;
 EEG.automagic.tobe_interpolated = tobe_interpolated;
-if(isfield(EEG, 'reject'))
-    if(isfield(EEG.reject, 'gcompreject'))
-        EEG.automagic.ica_rejected = EEG.reject.gcompreject;
+if(isfield(EEG, 'prerejection'))
+    if(isfield(EEG.prerejection, 'reject'))
+        if(isfield(EEG.prerejection.reject, 'gcompreject'))
+             EEG.automagic.ica_rejected = find(EEG.prerejection.reject.gcompreject == 1);
+        end
     end
 end
 % return the string command
