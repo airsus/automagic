@@ -447,7 +447,7 @@ classdef Project < handle
                 preprocessed.EEG = EEG;
                 % Downsample the new file and save it
                 reduced.data = (downsample(EEG.data', self.ds_rate))';
-                save(block.reduced_address, self.CGV.default_params.general_params.reduced_name, '-v6');
+                save(block.reduced_address, self.CGV.general_params.reduced_name, '-v6');
 
                 % Setting the new information
                 block.setRatingInfoAndUpdate(self.CGV.ratings.NotRated, [], [block.man_badchans interpolate_chans], true);
