@@ -771,7 +771,7 @@ end
 
 % Get the file extension
 ext = get(handles.extedit, 'String');
-if( isempty(ext) || ~ (strcmp(ext(1), '.') || strcmp(ext(1), '_')))
+if(isempty(ext))
     popup_msg('A correct file extension must be given.', 'Error');
     return;
 end
