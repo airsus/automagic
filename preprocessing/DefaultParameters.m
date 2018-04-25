@@ -34,7 +34,8 @@ classdef DefaultParameters
         
         pca_params = struct([]);                            % Deactivated
         
-        ica_params = struct('chanloc_map', containers.Map)
+        ica_params = struct('chanloc_map', containers.Map, ...
+                            'large_map', 0)
                     
         eog_regression_params = struct('perform_eog_regression', 1, ...
                                        'eog_chans', '');

@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 18-Apr-2018 12:04:12
+% Last Modified by GUIDE v2.5 25-Apr-2018 16:47:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -169,6 +169,9 @@ else
 end
 
 set(handles.icacheckbox, 'Value', ~isempty(params.ica_params));
+if ~isempty(params.ica_params)
+    set(handles.largemapcheckbox, 'Value', params.ica_params.large_map)
+end
 
 IndexC = strcmp(handles.interpolationpopupmenu.String, params.interpolation_params.method);
 Index = find(IndexC == 1);
@@ -270,8 +273,7 @@ params = handles.params;
 
 ica_params = params.ica_params;
 if get(handles.icacheckbox, 'Value')
-    if isempty(params.ica_params)
-        ica_params = defs.ica_params; end
+    ica_params.large_map = get(handles.largemapcheckbox, 'Value');
 else
     ica_params = struct([]);
 end
@@ -406,6 +408,11 @@ else
 end
 
 set(handles.icacheckbox, 'Value', ~isempty(defs.ica_params));
+if ~isempty(defs.ica_params)
+    set(handles.largemapcheckbox, 'Value', defs.ica_params.large_map)
+else
+    set(handles.largemapcheckbox, 'Value', 0)
+end
 
 if ~isempty(defs.asr_params)
     if( ~strcmp(defs.asr_params.LineNoiseCriterion, 'off'))
@@ -513,6 +520,11 @@ else
     set(handles.windowedit, 'String', '');
 end
 
+if( get(handles.icacheckbox, 'Value'))
+    set(handles.largemapcheckbox, 'enable', 'on');
+else
+    set(handles.largemapcheckbox, 'enable', 'off');
+end
 if( get(handles.pcacheckbox, 'Value') )
     set(handles.lambdaedit, 'enable', 'on');
     set(handles.toledit, 'enable', 'on');
@@ -1056,3 +1068,12 @@ end
 handles.params.prep_params = rar_params;
 % Update handles structure
 guidata(hObject, handles);
+
+
+% --- Executes on button press in largemapcheckbox.
+function largemapcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to largemapcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of largemapcheckbox

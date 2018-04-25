@@ -39,6 +39,7 @@ constants = PreprocessingConstants.ica_constants;
 p = inputParser;
 validate_param = @(x) isa(x, 'containers.Map');
 addParameter(p,'chanloc_map', defaults.chanloc_map, validate_param);
+addParameter(p,'large_map', defaults.large_map);
 parse(p, varargin{:});
 chanloc_map = p.Results.chanloc_map;
 
