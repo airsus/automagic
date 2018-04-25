@@ -307,10 +307,12 @@ end
 
 % Special case of Load Project
 if(strcmp(name, handles.CGV.load_selected_project.LIST_NAME))
-    [name, project_path, ~] = uigetfile('load');
-    
+    [data_path, state_path] = load_gui();
+    splt = strsplit(state_path, '/');
+    jne = strjoin(splt(1:end-1), '/');
+    project_path = strcat(jne, '/');
     % If user cancelled the process, choose the previous project
-    if( name == 0 )
+    if( isempty(data_path) || isempty(state_path) )
         set(handles.existingpopupmenu,...
             'String',handles.project_list.keys,...
             'Value', handles.current_project);
@@ -318,18 +320,9 @@ if(strcmp(name, handles.CGV.load_selected_project.LIST_NAME))
         return;
     end
     
-    data_path = uigetdir('', 'Please choose the folder where the raw data is...');
-    
-    % If user cancelled the process, choose the previous project
-    if( data_path == 0 )
-        set(handles.existingpopupmenu,...
-            'String',handles.project_list.keys,...
-            'Value', handles.current_project);
-        load_selected_project(handles);
-        return;
+    if exist(state_path, 'file') == 2
+        load(state_path);
     end
-    
-    load(strcat(project_path, name));
     if(exist('self', 'var') && isdir(data_path))
         name = self.name;
         
