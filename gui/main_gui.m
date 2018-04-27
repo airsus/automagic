@@ -858,7 +858,7 @@ end
 if( get(handles.lowpasscheckbox, 'Value') == 1)
     low_freq = str2double(get(handles.lowfreqedit, 'String'));
     if( ~isempty(low_freq) && ~isnan(low_freq) )
-        filter_params.low_freq = low_freq;
+        filter_params.low.freq = low_freq;
     else
         popup_msg(['You must choose the frequency for low pass filtering'...
             ' or simply disable low pass filtering'], 'Error');
