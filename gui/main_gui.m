@@ -639,6 +639,10 @@ if(folder ~= 0)
     set(handles.subjectnumber, 'String', ...
         [num2str(subject_count) ' subjects...'])
     set(handles.filenumber, 'String', [num2str(file_count) ' files...'])
+    
+    if( file_count == 0)
+        popup_msg('There are no files in this folder. Make sure it is the right data folder', 'No data detected')
+    end
 end
 
 
