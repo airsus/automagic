@@ -421,6 +421,25 @@ EEG_cleaned.automagic.asr.performed = 'no';
 if ( ~isempty(asr_params) )
     display('Removing bad channels using Artifact Subspace Reconstruction...');
     [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
+    
+    % If only channels are removed, remove them from the original EEG so
+    % that the effect of high pass filtering is not there anymore
+    if(strcmp(asr_params.BurstCriterion, 'off') && strcmp(asr_params.WindowCriterion, 'off'))
+        etcfield = struct;
+        if(isfield(EEG_cleaned, 'etc'))
+            etcfield = EEG_cleaned.etc;
+            
+            if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
+                remove_mask = ~EEG_cleaned.etc.clean_channel_mask;
+                to_remove = find(remove_mask);
+            end
+        end
+        
+        [~, EEG_cleaned] = evalc('pop_select(EEG, ''nochannel'', to_remove)');
+        EEG_cleaned.etc = etcfield;
+        clear etcfield to_remove remove_mask;
+    end
+    
     EEG_cleaned.automagic.asr.performed = 'yes';
     if(isfield(EEG_cleaned, 'etc'))
         % Get the removed channels list
@@ -487,7 +506,7 @@ if ( ~isempty(prep_params) )
     
     % And remove channels detected by prep which have not been detected by
     % asr
-    [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove)');
+    [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove))');
     EEG_cleaned.automagic.prep.performed = 'yes';
     clear EEG_preped to_remove info rar_chans prep_removed_chans;
 end
