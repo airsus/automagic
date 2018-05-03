@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 19-Feb-2018 12:06:21
+% Last Modified by GUIDE v2.5 03-May-2018 16:16:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1350,3 +1350,29 @@ else
     set(hObject, 'String', sprintf('Average Referencing: Off'))
 end
 clear data;
+
+
+% --- Executes on button press in detectedpushbutton.
+function detectedpushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to detectedpushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+block = get_current_block(handles);
+interpolated = block.final_badchans;
+tobe_interpolated = block.tobe_interpolated;
+autos = block.auto_badchans;
+autos = setdiff(autos, interpolated);
+tobe_interpolated = union(tobe_interpolated, autos);
+if(~isempty(tobe_interpolated))
+    rate = handles.CGV.ratings.Interpolate;
+else
+    rate = block.rate;
+end
+block.setRatingInfoAndUpdate(rate, tobe_interpolated', block.final_badchans, block.is_interpolated);
+
+% Update handles structure
+guidata(hObject, handles);
+
+draw_lines(handles)
+set_gui_rating(handles);
