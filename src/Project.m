@@ -292,8 +292,9 @@ classdef Project < handle
                         self.params = rmfield(self.params, 'original_file');
                     end
                     
-                    if( isempty(EEG) )
-                        self.write_to_log(block.source_address);
+                    if( isempty(EEG) || isfield(EEG.automagic, 'error_msg'))
+                        message = EEG.automagic.error_msg;
+                        self.write_to_log(block.source_address, message);
                        continue; 
                     end
                 end
@@ -999,14 +1000,14 @@ classdef Project < handle
             end
         end
         
-        function write_to_log(self, source_address)
+        function write_to_log(self, source_address, msg)
             log_file_address = [self.result_folder 'preprocessing.log'];
             if( exist(log_file_address, 'file'))
                 fileID = fopen(log_file_address,'a');
             else
                 fileID = fopen(log_file_address,'w');
             end
-            fprintf(fileID, ['The data file ' source_address ' could not be preprocessed due to a lot of noise.']);
+            fprintf(fileID, ['The data file ' source_address ' could not be preprocessed:' msg]);
             fclose(fileID);
         end
     end

@@ -519,7 +519,17 @@ end
 EEG_regressed.automagic.ica.performed = 'no';
 EEG_regressed.automagic.pca.performed = 'no';
 if ( ~isempty(ica_params) )
-    EEG_cleared = perform_ica(EEG_regressed, ica_params);
+    try
+        MException
+        EEG_cleared = perform_ica(EEG_regressed, ica_params);
+    catch ME
+        message = ['ICA is not done on this subject, continue with the next steps: ' ...
+            ME.message];
+        warning(message)
+        EEG_cleared = EEG_regressed;
+        EEG_cleared.automagic.ica.performed = 'FAILED';
+        EEG_cleared.automagic.error_msg = message;
+    end
 elseif ( ~isempty(pca_params))
     [EEG_cleared, pca_noise] = perform_pca(EEG_regressed, pca_params);
 else
