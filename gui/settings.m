@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 25-Apr-2018 16:47:28
+% Last Modified by GUIDE v2.5 03-May-2018 17:14:49
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -117,6 +117,13 @@ else
 end
 
 if ~isempty(params.asr_params)
+   if( ~strcmp(params.asr_params.Highpass, 'off'))
+        set(handles.asrhighcheckbox, 'Value', 1);
+    else
+        set(handles.asrhighcheckbox, 'Value', 0);
+    end
+    set(handles.asrhighedit, 'String', mat2str(params.asr_params.Highpass));
+    
     if( ~strcmp(params.asr_params.ChannelCriterion, 'off'))
         set(handles.channelcriterioncheckbox, 'Value', 1);
     else
@@ -258,7 +265,11 @@ function okpushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles = get_inputs(handles);
+try
+    handles = get_inputs(handles);
+catch
+    return;
+end
 % Update handles structure
 guidata(hObject, handles);
 
@@ -294,6 +305,19 @@ end
 clear res;
 
 asr_params = params.asr_params;
+if( get(handles.asrhighcheckbox, 'Value') )
+    highpass_val = str2num(get(handles.asrhighedit, 'String'));
+    if(length(highpass_val) ~= 2)
+        popup_msg('High pass parameter for ASR must be an array of length 2 like [0.25 0.75]', 'Error');
+        error('High pass parameter for ASR must be an array of length 2 like [0.25 0.75]');
+    end
+    if( ~isnan(highpass_val))
+        asr_params.Highpass = highpass_val; end
+else
+    if ~isempty(asr_params)
+        asr_params.Highpass = 'off'; end
+end
+
 if( get(handles.linenoisecheckbox, 'Value') )
     linenoise_val = str2double(get(handles.linenoiseedit, 'String'));
     if( ~isnan(linenoise_val))
@@ -414,6 +438,14 @@ else
 end
 
 if ~isempty(defs.asr_params)
+    if( ~strcmp(defs.asr_params.Highpass, 'off'))
+        set(handles.asrhighcheckbox, 'Value', 1);
+    else
+        set(handles.asrhighcheckbox, 'Value', 0);
+    end
+    set(handles.asrhighedit, 'String', ...
+            str2mat(defs.asr_params.Highpass));
+        
     if( ~strcmp(defs.asr_params.LineNoiseCriterion, 'off'))
         set(handles.linenoisecheckbox, 'Value', 1);
     else
@@ -503,6 +535,14 @@ if( get(main_gui_handle.lowpasscheckbox, 'Value') )
 else
     set(handles.lowpassorderedit, 'enable', 'off');
     set(handles.lowpassorderedit, 'String', '');
+end
+
+if( get(handles.asrhighcheckbox, 'Value') )
+    set(handles.asrhighedit, 'enable', 'on');
+    set(handles.asrhighedit, 'String', mat2str(recs.asr_params.Highpass));
+else
+    set(handles.asrhighedit, 'enable', 'off');
+    set(handles.asrhighedit, 'String', '');
 end
 
 if( get(handles.linenoisecheckbox, 'Value') )
@@ -1101,3 +1141,37 @@ function largemapcheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of largemapcheckbox
+
+
+% --- Executes on button press in asrhighcheckbox.
+function asrhighcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to asrhighcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of asrhighcheckbox
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+
+
+function asrhighedit_Callback(hObject, eventdata, handles)
+% hObject    handle to asrhighedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of asrhighedit as text
+%        str2double(get(hObject,'String')) returns contents of asrhighedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function asrhighedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to asrhighedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
