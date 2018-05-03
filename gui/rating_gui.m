@@ -930,14 +930,14 @@ else
                 handles.CGV.ratings.Bad, handles.CGV.ratings.NotRated}
             block.setRatingInfoAndUpdate(new_rate, ...
                                         [], ...
-                                        block.man_badchans, ...
+                                        block.final_badchans, ...
                                         block.is_interpolated);
         case handles.CGV.ratings.Interpolate
                 % The interpolate_list is untouched at this step. There maybe even
                 % conflicts in it which are not checked.
                 block.setRatingInfoAndUpdate(new_rate, ...
                 block.tobe_interpolated, ...
-                block.man_badchans, ...
+                block.final_badchans, ...
                 block.is_interpolated);
     end
 end
@@ -1053,7 +1053,7 @@ else
     list = [list y];
     draw_line(y, handles.project.maxX, handles, 'b');
 end
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.man_badchans, block.is_interpolated);
+block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated);
 set(handles.channellistbox,'String',list)
 
 % --- Redraw all lines
@@ -1083,7 +1083,7 @@ delete(p);
 block = get_current_block(handles);
 list = block.tobe_interpolated;
 list = list(list ~= y);
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.man_badchans, block.is_interpolated);
+block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated);
 set(handles.channellistbox,'String',list)
 
 % --- Save the state of the project

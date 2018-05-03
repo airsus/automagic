@@ -107,7 +107,7 @@ data.automagic.ica.prerejection.reject.gcompreject(artcomps) = 1;
 data.automagic.ica.prerejection.icaact  = ALLEEG(2).icaact;
 data.automagic.ica.prerejection.icawinv     = ALLEEG(2).icawinv;
 data.automagic.ica.prerejection.icaweights  = ALLEEG(2).icaweights;
-
+data.automagic.ica.ica_rejected = find(data.automagic.ica.prerejection.reject.gcompreject == 1);
 %% Return
 % Change back the labels to the original one
 if( ~ isempty(chanloc_map))

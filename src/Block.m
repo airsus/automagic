@@ -140,7 +140,7 @@ classdef Block < handle
         % inspection in interpolate_selected. Note that this is not a set,
         % If a channel is interpolated n times, there will be n instances 
         % of this channel in the list.  
-        man_badchans
+        final_badchans
         
         % List of the channels that have been selected as bad channels during
         % the preprocessing. Note that they are not necessarily interpolated.
@@ -182,7 +182,8 @@ classdef Block < handle
             
             if( exist(self.potential_result_address(), 'file'))
                 preprocessed = matfile(self.potential_result_address());
-                if( ~ isequal(preprocessed.params, self.params))
+                automagic = preprocessed.automagic;
+                if( ~ isequal(automagic.params, self.params))
                     popup_msg(['Preprocessing parameters of the ',...
                         self.file_name, ' does not correspond to the ',...
                         'preprocessing parameters of this project. This ',...
@@ -198,17 +199,17 @@ classdef Block < handle
             % If the prefix indicates that the block has been already rated
             if(self.has_information(extracted_prefix))
                 preprocessed = matfile(self.potential_result_address());
-                
-                self.rate = preprocessed.rate;
-                self.tobe_interpolated = preprocessed.tobe_interpolated;
+                automagic = preprocessed.automagic;
+                self.rate = automagic.rate;
+                self.tobe_interpolated = automagic.tobe_interpolated;
                 self.is_interpolated = (length(extracted_prefix) == 3);
-                self.auto_badchans = preprocessed.auto_badchans;
-                self.man_badchans = preprocessed.man_badchans;
+                self.auto_badchans = automagic.auto_badchans;
+                self.final_badchans = automagic.final_badchans;
             else
                 self.rate = ConstantGlobalValues.ratings.NotRated;
                 self.tobe_interpolated = [];
                 self.auto_badchans = [];
-                self.man_badchans = [];
+                self.final_badchans = [];
                 self.is_interpolated = false;
             end
             
@@ -253,12 +254,12 @@ classdef Block < handle
             self = self.update_prefix_and_result_address();
         end
         
-        function self = setRatingInfoAndUpdate(self, rate, list, man_badchans, is_interpolated)
+        function self = setRatingInfoAndUpdate(self, rate, list, final_badchans, is_interpolated)
             % Set the new rating information
             
             self.rate = rate;
             self.tobe_interpolated = list;
-            self.man_badchans = man_badchans;
+            self.final_badchans = final_badchans;
             self.is_interpolated = is_interpolated;
             
             % Update the result address and rename if necessary
@@ -270,13 +271,15 @@ classdef Block < handle
             % file
             
             preprocessed = matfile(self.result_address,'Writable',true);
-            preprocessed.tobe_interpolated = self.tobe_interpolated;
-            preprocessed.rate = self.rate;
-            preprocessed.auto_badchans = self.auto_badchans;
-            preprocessed.is_interpolated = self.is_interpolated;
+            automagic = preprocessed.automagic;
+            automagic.tobe_interpolated = self.tobe_interpolated;
+            automagic.rate = self.rate;
+            automagic.auto_badchans = self.auto_badchans;
+            automagic.is_interpolated = self.is_interpolated;
             
             % It keeps track of the history of all interpolations.
-            preprocessed.man_badchans = self.man_badchans;
+            automagic.final_badchans = self.final_badchans;
+            preprocessed.automagic = automagic;
         end
         
         function img_address = get.image_address(self)

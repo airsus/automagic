@@ -89,6 +89,7 @@ fig = [];
 %% Parse arguments
 defaults = DefaultParameters;
 constants = PreprocessingConstants;
+params = varargin{:};
 p = inputParser;
 addParameter(p,'eeg_system', defaults.eeg_system, @isstruct);
 addParameter(p,'filter_params', defaults.filter_params, @isstruct);
@@ -323,6 +324,7 @@ elseif(~isempty(eeg_system.name) && strcmp(eeg_system.name, constants.eeg_system
 
     end
     clear chan128 chan256;
+    
     % Make ICA map of channels
     if (~isempty(ica_params))
         switch data.nbchan
@@ -397,6 +399,10 @@ else
 end
 s = size(data.data);
 assert(data.nbchan == s(1)); clear s;
+data.automagic.eeg_sytem.params = eeg_system;
+data.automagic.channel_reduction.params = channel_reduction_params;
+data.automagic.channel_reduction.used_eeg_channels = channels;
+data.automagic.channel_reduction.used_eog_channels = eog_channels;
 
 %% Preprocessing
 % Seperate EEG channels from EOG channels
@@ -405,7 +411,7 @@ assert(data.nbchan == s(1)); clear s;
 % Map original channel lists to new ones after the above separation
 [~, idx] = ismember(eeg_system.ref_chan, channels);
 eeg_system.ref_chan = idx(idx ~= 0);
-
+data.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
 
 % Clean EEG using Artefact Supspace Reconstruction
 [s, ~] = size(EEG.data);
@@ -546,9 +552,10 @@ for chan_idx = 1:length(removed_chans);
 end
 clear chan_nb;
 result.nbchan = size(result.data,1);
-result.tobe_interpolated = setdiff(removed_chans, eeg_system.ref_chan);
-result.auto_badchans = result.tobe_interpolated;
 
+% Write back output
+result.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
+result.automagic.params = params;
 %% Creating the final figure to save
 fig = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])

@@ -308,42 +308,29 @@ classdef Project < handle
                 if( exist([block.image_address, '.tif'], 'file' ))
                     delete([block.image_address, '.tif']);
                 end
-                if(~ isempty(EEG.tobe_interpolated))
+                
+                automagic = EEG.automagic;
+                automagic.tobe_interpolated = automagic.auto_badchans;
+                automagic.final_badchans = [];
+                automagic.is_interpolated = false;
+                automagic.version = self.CGV.version;
+                if(~ isempty(automagic.tobe_interpolated))
                     rate = self.CGV.ratings.Interpolate;
                 else
                     rate = self.CGV.ratings.NotRated;
                 end
-                block.setRatingInfoAndUpdate(rate , EEG.tobe_interpolated, [], false);
-                
+                automagic.rate = rate;
+                block.setRatingInfoAndUpdate(rate , automagic.tobe_interpolated, [], false);
+                EEG = rmfield(EEG, 'automagic');
                 % save results
                 set(fig,'PaperUnits','inches','PaperPosition',[0 0 10 8])
                 print(fig, block.image_address, '-djpeg', '-r100');
                 close(fig);
 
-                ica_rejected = [];
-                if(isfield(EEG, 'prerejection'))
-                    if(isfield(EEG.prerejection, 'reject'))
-                        if(isfield(EEG.prerejection.reject, 'gcompreject'))
-                            ica_rejected = find(EEG.prerejection.reject.gcompreject == 1);
-                            EEG.automagic.ica.ica_rejected = ica_rejected;
-                        end
-                    end
-                end
                 reduced.data = downsample(EEG.data',self.ds_rate)';
-                tobe_interpolated = EEG.tobe_interpolated;
-                auto_badchans =  EEG.auto_badchans;
-                man_badchans = [];
-                is_interpolated = false;
-                EEG = rmfield(EEG, 'auto_badchans');
-                EEG = rmfield(EEG, 'tobe_interpolated');
-                params = self.params;
-                EEG.automagic.version = self.CGV.version;
-                automagic = EEG.automagic;
                 display('Saving results...');
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
-                save(block.result_address, 'EEG', 'auto_badchans','man_badchans'...
-                    , 'rate','tobe_interpolated', 'is_interpolated', ...
-                    'params', 'ica_rejected', 'automagic','-v7.3');
+                save(block.result_address, 'EEG', 'automagic','-v7.3');
 
                 self.not_rated_list = ...
                     [self.not_rated_list block.index];
@@ -427,6 +414,7 @@ classdef Project < handle
                 % Interpolate and save to results
                 preprocessed = matfile(block.result_address,'Writable',true);
                 EEG = preprocessed.EEG;
+                automagic = preprocessed.automagic;
                 interpolate_chans = block.tobe_interpolated;
                 if(isempty(interpolate_chans))
                     popup_msg(['The subject is rated to be interpolated but no',...
@@ -440,17 +428,20 @@ classdef Project < handle
                 EEG = eeg_interp(EEG ,...
                     interpolate_chans , self.params.interpolation_params.method);
                 
+                automagic.interpolation.channels = interpolate_chans;
+                automagic.interpolation.params = self.params.interpolation_params;
                 % Put the channels back to NaN if they were not to be interpolated
                 % originally
                 original_nans = setdiff(nanchans, interpolate_chans);
                 EEG.data(original_nans, :) = NaN;
                 preprocessed.EEG = EEG;
+                preprocessed.automagic = automagic;
                 % Downsample the new file and save it
                 reduced.data = (downsample(EEG.data', self.ds_rate))';
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
 
                 % Setting the new information
-                block.setRatingInfoAndUpdate(self.CGV.ratings.NotRated, [], [block.man_badchans interpolate_chans], true);
+                block.setRatingInfoAndUpdate(self.CGV.ratings.NotRated, [], [block.final_badchans interpolate_chans], true);
                 self.interpolate_list(self.interpolate_list == block.index) = [];
                 self.not_rated_list = ...
                         [self.not_rated_list block.index];
