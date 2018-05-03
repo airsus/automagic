@@ -52,6 +52,8 @@ classdef ConstantGlobalValues
                             
         default_params = DefaultParameters
         
+        rec_params = RecommendedParameters
+        
         preprocessing_constants = PreprocessingConstants
     end
     

@@ -1,6 +1,10 @@
-classdef DefaultParameters
-    %DefaultParameters is a class containing default parameters for
-    %   different preprocessing steps.
+classdef RecommendedParameters
+    %RecommendedParameters is a class containing recommended parameters for
+    %   different preprocessing steps. This is different from the
+    %   DefaultParameters.m in the sense that there is a recommended value
+    %   even for preprocessing steps that are not used by default. Note
+    %   that when a step is not used, simply it has an empty structure as
+    %   parameter, wheras here no empty parameter exists.
     %
     % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
     % 
@@ -20,19 +24,22 @@ classdef DefaultParameters
        filter_params = struct('notch',    struct('freq', 50),...
                               'high',     struct('freq', 0.5,...
                                                  'order', []),... % Default
-                              'low',      struct([]))      % Deactivated
+                              'low',      struct('freq', 30,...
+                                                 'order', []))      % Deactivated
                             
         asr_params = struct('ChannelCriterion',     0.85,...
                             'LineNoiseCriterion',   4,...
-                            'BurstCriterion',       'off',...
-                            'WindowCriterion',      'off', ...
+                            'BurstCriterion',       5,...
+                            'WindowCriterion',      0.25, ...
                             'Highpass',             [0.25 0.75]);
         
-        prep_params = struct([]);                           % Deactivated
+        prep_params = struct();                           % Default by prep
         
         interpolation_params = struct('method', 'spherical');
         
-        pca_params = struct([]);                            % Deactivated
+        pca_params = struct('lambda', [], ...  % Default lambda by alm_rpca
+                            'tol', 1e-7, ...
+                            'maxIter', 1000);
         
         ica_params = struct('chanloc_map', containers.Map, ...
                             'large_map', 0)

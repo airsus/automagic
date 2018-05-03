@@ -42,15 +42,9 @@ function data = perform_filter(data, varargin)
 
 defaults = DefaultParameters.filter_params;
 constants = PreprocessingConstants.filter_constants;
+recs = RecommendedParameters.filter_params;
 if isempty(defaults)
-    warning('Wrong filtering argument. Filtering is skipped.');
-    return;
-end
-if ~isempty(defaults.high) && ~isfield(defaults.high, 'order')
-    defaults.high.order = [];
-end
-if ~isempty(defaults.low) && ~isfield(defaults.low, 'order')
-    defaults.low.order = [];
+    defaults = recs;
 end
 
 %% Parse parameters

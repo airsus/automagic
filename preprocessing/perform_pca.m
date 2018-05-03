@@ -31,21 +31,12 @@ function [data, noise] = perform_pca(data, varargin)
 
 defaults = DefaultParameters.pca_params;
 constants = PreprocessingConstants.pca_constants;
+recs = RecommendedParameters.pca_params;
 % Check if defaults are not empty. If they are empty, override it with
 % defaults of inexact_alm_rpca.m: -1.
 if isempty(defaults)
-    defaults = struct('lambda', [], 'tol', -1, 'maxIter', -1);
+    defaults = recs;
 end
-if ~isfield(defaults, 'tol')
-    defaults.tol = -1;
-end
-if ~isfield(defaults, 'maxIter')
-    defaults.maxIter = -1;
-end
-if ~isfield(defaults, 'lambda')
-    defaults.lambda = [];
-end
-
 
 p = inputParser;
 addParameter(p,'lambda', defaults.lambda, @isnumeric);
@@ -56,7 +47,6 @@ parse(p, varargin{:});
 lambda = p.Results.lambda;
 tol = p.Results.tol; %#ok<NASGU>
 maxIter = p.Results.maxIter; %#ok<NASGU>
-
 
 if( isempty( lambda) )
     lambda = 1 / sqrt(m); %#ok<NASGU>

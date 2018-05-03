@@ -268,7 +268,6 @@ function handles = get_inputs(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-defs = handles.CGV.default_params;
 params = handles.params;
 
 ica_params = params.ica_params;
@@ -478,8 +477,17 @@ function handles = switch_components(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
+
+CGV = handles.CGV;
+recs = CGV.rec_params;
+
 if( get(main_gui_handle.highpasscheckbox, 'Value') )
     set(handles.highpassorderedit, 'enable', 'on');
+    if (~isempty(recs.filter_params.high.order))
+        set(handles.highpassorderedit, 'String', recs.filter_params.high.order);
+    else
+        set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword)
+    end
 else
     set(handles.highpassorderedit, 'enable', 'off');
     set(handles.highpassorderedit, 'String', '');
@@ -487,6 +495,11 @@ end
 
 if( get(main_gui_handle.lowpasscheckbox, 'Value') )
     set(handles.lowpassorderedit, 'enable', 'on');
+    if (~isempty(recs.filter_params.high.order))
+        set(handles.lowpassorderedit, 'String', recs.filter_params.low.order);
+    else
+        set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword)
+    end
 else
     set(handles.lowpassorderedit, 'enable', 'off');
     set(handles.lowpassorderedit, 'String', '');
@@ -494,6 +507,7 @@ end
 
 if( get(handles.linenoisecheckbox, 'Value') )
     set(handles.linenoiseedit, 'enable', 'on');
+    set(handles.linenoiseedit, 'String', recs.asr_params.LineNoiseCriterion);
 else
     set(handles.linenoiseedit, 'enable', 'off');
     set(handles.linenoiseedit, 'String', '');
@@ -501,12 +515,14 @@ end
 
 if( get(handles.channelcriterioncheckbox, 'Value') )
     set(handles.channelcriterionedit, 'enable', 'on');
+    set(handles.channelcriterionedit, 'String', recs.asr_params.ChannelCriterion);
 else
     set(handles.channelcriterionedit, 'enable', 'off');
     set(handles.channelcriterionedit, 'String', '');
 end
 
 if( get(handles.burstcheckbox, 'Value') )
+    set(handles.burstedit, 'String', recs.asr_params.BurstCriterion);
     set(handles.burstedit, 'enable', 'on');
 else
     set(handles.burstedit, 'enable', 'off');
@@ -514,6 +530,7 @@ else
 end
 
 if( get(handles.windowcheckbox, 'Value') )
+    set(handles.windowedit, 'String', recs.asr_params.WindowCriterion);
     set(handles.windowedit, 'enable', 'on');
 else
     set(handles.windowedit, 'enable', 'off');
@@ -529,6 +546,13 @@ if( get(handles.pcacheckbox, 'Value') )
     set(handles.lambdaedit, 'enable', 'on');
     set(handles.toledit, 'enable', 'on');
     set(handles.maxIteredit, 'enable', 'on');
+    if(~isempty(recs.pca_params.lambda))
+        set(handles.lambdaedit, 'String', recs.pca_params.lambda);
+    else
+        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
+    end
+    set(handles.toledit, 'String', recs.pca_params.tol);
+    set(handles.maxIteredit, 'String', recs.pca_params.maxIter);
 else
     set(handles.lambdaedit, 'enable', 'off');
     set(handles.toledit, 'enable', 'off');
