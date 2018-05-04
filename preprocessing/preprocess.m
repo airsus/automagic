@@ -539,7 +539,6 @@ EEG_regressed.automagic.ica.performed = 'no';
 EEG_regressed.automagic.pca.performed = 'no';
 if ( ~isempty(ica_params) )
     try
-        MException
         EEG_cleared = perform_ica(EEG_regressed, ica_params);
     catch ME
         message = ['ICA is not done on this subject, continue with the next steps: ' ...
