@@ -96,7 +96,7 @@ if(~isempty(params.filter_params))
         if( isempty( params.filter_params.high.order) )
             set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
-            set(handles.highpassorderedit, 'String', params.filter_params.high.order);
+            set(handles.highpassorderedit, 'String', mat2str(params.filter_params.high.order));
         end
     else
         set(handles.highpassorderedit, 'String', '');
@@ -106,7 +106,7 @@ if(~isempty(params.filter_params))
         if( isempty( params.filter_params.low.order) )
             set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
-            set(handles.lowpassorderedit, 'String', params.filter_params.low.order);
+            set(handles.lowpassorderedit, 'String', mat2str(params.filter_params.low.order));
         end
     else
         set(handles.lowpassorderedit, 'String', '');
@@ -129,28 +129,28 @@ if ~isempty(params.asr_params)
     else
         set(handles.channelcriterioncheckbox, 'Value', 0);
     end
-    set(handles.channelcriterionedit, 'String', params.asr_params.ChannelCriterion);
+    set(handles.channelcriterionedit, 'String', mat2str(params.asr_params.ChannelCriterion));
     
     if( ~strcmp(params.asr_params.LineNoiseCriterion, 'off'))
         set(handles.linenoisecheckbox, 'Value', 1);
     else
         set(handles.linenoisecheckbox, 'Value', 0);
     end
-    set(handles.linenoiseedit, 'String', params.asr_params.LineNoiseCriterion);
+    set(handles.linenoiseedit, 'String', mat2str(params.asr_params.LineNoiseCriterion));
     
     if( ~strcmp(params.asr_params.BurstCriterion, 'off'))
         set(handles.burstcheckbox, 'Value', 1);
     else
         set(handles.burstcheckbox, 'Value', 0);
     end
-    set(handles.burstedit, 'String', params.asr_params.BurstCriterion);
+    set(handles.burstedit, 'String', mat2str(params.asr_params.BurstCriterion));
     
     if( ~strcmp(params.asr_params.WindowCriterion, 'off'))
         set(handles.windowcheckbox, 'Value', 1);
     else
         set(handles.windowcheckbox, 'Value', 0);
     end
-    set(handles.windowedit, 'String', params.asr_params.WindowCriterion);
+    set(handles.windowedit, 'String', mat2str(params.asr_params.WindowCriterion));
 end
 
 if( ~isempty(params.prep_params))
@@ -164,10 +164,10 @@ if( ~isempty(params.pca_params))
     if( isempty( params.pca_params.lambda ))
        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
     else
-        set(handles.lambdaedit, 'String', params.pca_params.lambda); 
+        set(handles.lambdaedit, 'String', mat2str(params.pca_params.lambda)); 
     end
-    set(handles.toledit, 'String', params.pca_params.tol);
-    set(handles.maxIteredit, 'String', params.pca_params.maxIter);
+    set(handles.toledit, 'String', mat2str(params.pca_params.tol));
+    set(handles.maxIteredit, 'String', mat2str(params.pca_params.maxIter));
 else
     set(handles.pcacheckbox, 'Value', 0);
     set(handles.lambdaedit, 'String', '');
@@ -203,6 +203,10 @@ function linenoisecheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to linenoisecheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.linenoiseedit, 'String', recs.asr_params.LineNoiseCriterion)
+end
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
@@ -214,6 +218,10 @@ function burstcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to burstcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.burstedit, 'String', recs.asr_params.BurstCriterion)
+end
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
@@ -225,6 +233,10 @@ function channelcriterioncheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to channelcriterioncheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.channelcriterionedit, 'String', recs.asr_params.ChannelCriterion)
+end
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
@@ -239,7 +251,16 @@ function pcacheckbox_Callback(hObject, eventdata, handles)
 if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
     set(handles.icacheckbox, 'Value', 0);
 end
-
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    if isempty(recs.pca_params.lambda)
+        set(handles.lambdaedit, 'String', handles.CGV.DEFAULT_keyword)
+    else
+        set(handles.lambdaedit, 'String', mat2str(recs.pca_params.lambda))
+    end
+    set(handles.toledit, 'String', mat2str(recs.pca_params.tol))
+    set(handles.maxIteredit, 'String', mat2str(recs.pca_params.maxIter))
+end
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);
@@ -283,6 +304,8 @@ params = handles.params;
 
 ica_params = params.ica_params;
 if get(handles.icacheckbox, 'Value')
+    if isempty(ica_params)
+        ica_params = struct();end
     ica_params.large_map = get(handles.largemapcheckbox, 'Value');
 else
     ica_params = struct([]);
@@ -371,13 +394,22 @@ if( get(handles.pcacheckbox, 'Value') )
     lambda = str2double(get(handles.lambdaedit, 'String'));
     tol = str2double(get(handles.toledit, 'String'));
     maxIter = str2double(get(handles.maxIteredit, 'String'));
-    
-    if ~isnan(lambda) && ~isnan(tol) && ~isnan(maxIter)
-        if isempty(pca_params)
-            pca_params = struct(); end
+    if isempty(pca_params)
+        pca_params = struct(); end
+    if ~isnan(lambda)
         pca_params.lambda = lambda;
+    else
+        pca_params.lambda = [];
+    end
+    if ~isnan(tol)
         pca_params.tol = tol;
+    else
+        pca_params.tol = [];
+    end
+    if ~isnan(maxIter)
         pca_params.maxIter = maxIter;
+    else
+        pca_params.maxIter = [];
     end
 else
     pca_params = struct([]);
@@ -444,7 +476,7 @@ if ~isempty(defs.asr_params)
         set(handles.asrhighcheckbox, 'Value', 0);
     end
     set(handles.asrhighedit, 'String', ...
-            str2mat(defs.asr_params.Highpass));
+            mat2str(defs.asr_params.Highpass));
         
     if( ~strcmp(defs.asr_params.LineNoiseCriterion, 'off'))
         set(handles.linenoisecheckbox, 'Value', 1);
@@ -510,16 +542,8 @@ function handles = switch_components(handles)
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
 
-CGV = handles.CGV;
-recs = CGV.rec_params;
-
 if( get(main_gui_handle.highpasscheckbox, 'Value') )
     set(handles.highpassorderedit, 'enable', 'on');
-    if (~isempty(recs.filter_params.high.order))
-        set(handles.highpassorderedit, 'String', recs.filter_params.high.order);
-    else
-        set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword)
-    end
 else
     set(handles.highpassorderedit, 'enable', 'off');
     set(handles.highpassorderedit, 'String', '');
@@ -527,11 +551,6 @@ end
 
 if( get(main_gui_handle.lowpasscheckbox, 'Value') )
     set(handles.lowpassorderedit, 'enable', 'on');
-    if (~isempty(recs.filter_params.high.order))
-        set(handles.lowpassorderedit, 'String', recs.filter_params.low.order);
-    else
-        set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword)
-    end
 else
     set(handles.lowpassorderedit, 'enable', 'off');
     set(handles.lowpassorderedit, 'String', '');
@@ -539,7 +558,6 @@ end
 
 if( get(handles.asrhighcheckbox, 'Value') )
     set(handles.asrhighedit, 'enable', 'on');
-    set(handles.asrhighedit, 'String', mat2str(recs.asr_params.Highpass));
 else
     set(handles.asrhighedit, 'enable', 'off');
     set(handles.asrhighedit, 'String', '');
@@ -547,7 +565,6 @@ end
 
 if( get(handles.linenoisecheckbox, 'Value') )
     set(handles.linenoiseedit, 'enable', 'on');
-    set(handles.linenoiseedit, 'String', recs.asr_params.LineNoiseCriterion);
 else
     set(handles.linenoiseedit, 'enable', 'off');
     set(handles.linenoiseedit, 'String', '');
@@ -555,14 +572,12 @@ end
 
 if( get(handles.channelcriterioncheckbox, 'Value') )
     set(handles.channelcriterionedit, 'enable', 'on');
-    set(handles.channelcriterionedit, 'String', recs.asr_params.ChannelCriterion);
 else
     set(handles.channelcriterionedit, 'enable', 'off');
     set(handles.channelcriterionedit, 'String', '');
 end
 
 if( get(handles.burstcheckbox, 'Value') )
-    set(handles.burstedit, 'String', recs.asr_params.BurstCriterion);
     set(handles.burstedit, 'enable', 'on');
 else
     set(handles.burstedit, 'enable', 'off');
@@ -570,7 +585,6 @@ else
 end
 
 if( get(handles.windowcheckbox, 'Value') )
-    set(handles.windowedit, 'String', recs.asr_params.WindowCriterion);
     set(handles.windowedit, 'enable', 'on');
 else
     set(handles.windowedit, 'enable', 'off');
@@ -586,13 +600,6 @@ if( get(handles.pcacheckbox, 'Value') )
     set(handles.lambdaedit, 'enable', 'on');
     set(handles.toledit, 'enable', 'on');
     set(handles.maxIteredit, 'enable', 'on');
-    if(~isempty(recs.pca_params.lambda))
-        set(handles.lambdaedit, 'String', recs.pca_params.lambda);
-    else
-        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
-    end
-    set(handles.toledit, 'String', recs.pca_params.tol);
-    set(handles.maxIteredit, 'String', recs.pca_params.maxIter);
 else
     set(handles.lambdaedit, 'enable', 'off');
     set(handles.toledit, 'enable', 'off');
@@ -918,6 +925,10 @@ function windowcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to windowcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.windowedit, 'String', mat2str(recs.asr_params.WindowCriterion))
+end
 handles = switch_components(handles);
 % Hint: get(hObject,'Value') returns toggle state of windowcheckbox
 
@@ -1150,6 +1161,10 @@ function asrhighcheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of asrhighcheckbox
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.asrhighedit, 'String', mat2str(recs.asr_params.Highpass))
+end
 handles = switch_components(handles);
 % Update handles structure
 guidata(hObject, handles);

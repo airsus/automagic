@@ -490,7 +490,6 @@ set(handles.notchpanel.Children(3), 'enable', mode);
 set(handles.notchpanel.Children(4), 'enable', mode);
 set(handles.highpasscheckbox, 'enable', mode);
 set(handles.lowpasscheckbox, 'enable', mode);
-set(handles.configbutton, 'enable', mode)
 set(handles.createbutton, 'visible', mode)
 set(handles.deleteprojectbutton, 'visible', visibility)
 set(handles.highfreqedit, 'enable', mode);
@@ -1041,9 +1040,14 @@ function configbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to configbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+is_created = strcmp(get(handles.createbutton, 'visible'), 'off') ;
 h = settings(handles.params);
 switch_gui('off', 'off', handles);
+if(is_created)
+    set(h.Children.Children, 'enable', 'off');
+    canc = findobj(h.Children.Children, 'tag', 'cancelpushbutton');
+    set(canc, 'enable', 'on');
+end
 set(handles.runpreprocessbutton, 'enable', 'off');
 set(handles.manualratingbutton, 'enable', 'off');
 set(handles.interpolatebutton, 'enable', 'off');
@@ -1051,11 +1055,13 @@ set(handles.existingpopupmenu, 'enable', 'off');
 waitfor(h);
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 handles = guidata(h);
-switch_gui('on', 'on', handles);
 set(handles.runpreprocessbutton, 'enable', 'on');
 set(handles.manualratingbutton, 'enable', 'on');
 set(handles.interpolatebutton, 'enable', 'on');
 set(handles.existingpopupmenu, 'enable', 'on');
+if(~is_created)
+    switch_gui('on', 'on', handles);
+end
 
 
 function projectname_Callback(hObject, eventdata, handles)
