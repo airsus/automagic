@@ -491,6 +491,13 @@ if ( ~isempty(prep_params) )
     else
         prep_params.rereference = setdiff(rar_chans, eeg_system.ref_chan);
     end
+    if isfield(filter_params, 'notch')
+        if isfield(filter_params.notch, 'freq')
+            freq = filter_params.notch.freq;
+            prep_params.lineFrequencies = freq:freq:((EEG.srate/2)-1);
+            clear freq;
+        end
+    end
     [~, EEG_preped, ~] = evalc('prepPipeline(EEG, prep_params)');
     info = EEG_preped.etc.noiseDetection;
     prep_removed_chans = union(union(info.stillNoisyChannelNumbers, ...
