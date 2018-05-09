@@ -89,7 +89,6 @@ fig = [];
 %% Parse arguments
 defaults = DefaultParameters;
 constants = PreprocessingConstants;
-params = varargin{:};
 p = inputParser;
 addParameter(p,'eeg_system', defaults.eeg_system, @isstruct);
 addParameter(p,'filter_params', defaults.filter_params, @isstruct);
@@ -102,6 +101,7 @@ addParameter(p,'eog_regression_params', defaults.eog_regression_params, @isstruc
 addParameter(p,'channel_reduction_params', defaults.channel_reduction_params, @isstruct);
 addParameter(p,'original_file', constants.general_constants.original_file, @ischar);
 parse(p, varargin{:});
+params = p.Results;
 eeg_system = p.Results.eeg_system;
 filter_params = p.Results.filter_params;
 asr_params = p.Results.asr_params;
