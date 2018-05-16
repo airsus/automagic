@@ -183,7 +183,13 @@ classdef Block < handle
             if( exist(self.potential_result_address(), 'file'))
                 preprocessed = matfile(self.potential_result_address());
                 automagic = preprocessed.automagic;
-                if( ~ isequal(automagic.params, self.params))
+                
+                aut_params = automagic.params;
+                aut_fields = fieldnames(aut_params);
+                idx = ismember(aut_fields, fieldnames(self.params));
+                aut_params = struct2cell(aut_params);
+                aut_params = cell2struct(aut_params(idx), aut_fields(idx));
+                if( ~ isequal(aut_params, self.params))
                     popup_msg(['Preprocessing parameters of the ',...
                         self.file_name, ' does not correspond to the ',...
                         'preprocessing parameters of this project. This ',...

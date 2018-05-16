@@ -571,7 +571,7 @@ result = EEG_cleared;
 result.data = singled_data;
 clear doubled_data res singled_data;
 % Put back removed channels
-for chan_idx = 1:length(removed_chans);
+for chan_idx = 1:length(removed_chans)
     chan_nb = removed_chans(chan_idx);
     if( chan_nb == eeg_system.ref_chan)
         result.data = [result.data(1:chan_nb-1,:); ...
