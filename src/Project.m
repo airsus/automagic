@@ -214,27 +214,7 @@ classdef Project < handle
             % pop_fileio is checked as an example of a file in matlab_scripts, it could
             % be any other file in that folder.
             if(~exist('pop_fileio', 'file'))
-                matlab_paths = genpath(['..' slash 'matlab_scripts' slash]);
-                if(ispc)
-                    parts = strsplit(matlab_paths, ';');
-                else
-                    parts = strsplit(matlab_paths, ':');
-                end
-                IndexC = strfind(parts, 'compat');
-                Index = not(cellfun('isempty', IndexC));
-                parts(Index) = [];
-                IndexC = strfind(parts, 'neuroscope');
-                Index = not(cellfun('isempty', IndexC));
-                parts(Index) = [];
-                IndexC = strfind(parts, 'dpss');
-                Index = not(cellfun('isempty', IndexC));
-                parts(Index) = [];
-                if(ispc)
-                    matlab_paths = strjoin(parts, ';');
-                else
-                    matlab_paths = strjoin(parts, ':');
-                end
-                addpath(matlab_paths);
+                add_eeglab_path();
             end
 
             if(~exist('main_gui', 'file'))
@@ -369,24 +349,7 @@ classdef Project < handle
             % eeg_interp is checked as an example of a file in matlab_scripts, it could
             % be any other file in that folder.
             if(~exist('pop_fileio', 'file'))
-                matlab_paths = genpath(['..' slash 'matlab_scripts' slash]);
-                if(ispc)
-                    parts = strsplit(matlab_paths, ';');
-                else
-                    parts = strsplit(matlab_paths, ':');
-                end
-                IndexC = strfind(parts, 'compat');
-                Index = not(cellfun('isempty', IndexC));
-                parts(Index) = [];
-                IndexC = strfind(parts, 'neuroscope');
-                Index = not(cellfun('isempty', IndexC));
-                parts(Index) = [];
-                if(ispc)
-                    matlab_paths = strjoin(parts, ';');
-                else
-                    matlab_paths = strjoin(parts, ':');
-                end
-                addpath(matlab_paths);
+                add_eeglab_path();
             end
 
             if( ~exist('main_gui','file'))
@@ -527,7 +490,7 @@ classdef Project < handle
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
                 
-                raw_files = dir([self.data_folder subject_name slash '*' self.mask]);
+                raw_files = self.dir_nothiddens([self.data_folder subject_name slash '*' self.mask]);
                 temp = 0;
                 for j = 1:length(raw_files)
                     files_count = files_count + 1;
@@ -854,7 +817,7 @@ classdef Project < handle
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
 
-                raw_files = dir([self.data_folder subject_name slash '*' self.mask]);
+                raw_files = self.dir_nothiddens([self.data_folder subject_name slash '*' self.mask]);
                 temp = 0; 
                 for j = 1:length(raw_files)
                     files_count = files_count + 1;
@@ -1045,6 +1008,12 @@ classdef Project < handle
             isub = [subs(:).isdir];
             subjects = {subs(isub).name}';
             subjects(ismember(subjects,{'.','..'})) = [];
+        end
+        
+        function files = dir_nothiddens(folder)
+            files = dir(folder);
+            idx = ~startsWith({files.name}, '.');
+            files = files(idx);
         end
         
         function modified = folder_is_changed(folder, folder_counts, ...

@@ -590,6 +590,8 @@ file_count = 0;
 for i = 1:subject_count
     subject = subjects{i};
     raw_files = dir([folder subject slash '*' ext]);
+    idx = ~startsWith({raw_files.name}, '.');
+    raw_files = raw_files(idx);
     file_count = file_count + length(raw_files);
 end
 
