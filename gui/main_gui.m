@@ -356,6 +356,7 @@ end
 
 % Load the project:
 project = handles.project_list(name);
+handles.params = project.params;
 % Set the current_project to the selected project
 handles.current_project = Index;
 if ~ exist(project.state_address, 'file')
