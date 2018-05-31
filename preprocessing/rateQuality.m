@@ -21,6 +21,7 @@ function Q = rateQuality(EEG,auto_badchans,man_badchans,varargin)
 % 
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
+tic()
 defaults = DefaultParameters.qualityRating_params;
 
 %% Parse and check parameters
@@ -33,6 +34,7 @@ addParameter(p,'timeThresh', defaults.timeThresh,@isnumeric );
 addParameter(p,'timeGoodCutoff', defaults.timeGoodCutoff,@isnumeric );
 addParameter(p,'timeBadCutoff', defaults.timeBadCutoff,@isnumeric );
 
+addParameter(p,'chanThresh', defaults.chanThresh,@isnumeric );
 addParameter(p,'channelGoodCutoff', defaults.channelGoodCutoff,@isnumeric );
 addParameter(p,'channelBadCutoff', defaults.channelBadCutoff,@isnumeric );
 
@@ -74,11 +76,13 @@ THV = sum(std(X,[],1) > settings.timeThresh)./t;
 % percentage of channels that have been interpolated
 bad_chans = setxor(auto_badchans,man_badchans); 
 
-CHA = numel(bad_chans)./c; 
+nCH = numel(bad_chans)./c; 
 
 % standard deviation over channels
-
-TMP = find(std(X,[],2) > 20)
+% get index for plotting... 
+CIX = find(std(X,[],2) > settings.chanThresh); 
+% get the number of channels above threshold... 
+CHV = numel(find(std(X,[],2) > settings.chanThresh))./c; 
 
 %% for future versions: calculate the crosss correlation between interpolated and original template maps
 % apply the interpolation of the bad channels to a set of templates
@@ -113,10 +117,10 @@ if ismember('THV',settings.Qmeasure)
 end
 
 ratingC = {};
-if ismember('CHA',settings.Qmeasure)
-    if CHA < settings.channelGoodCutoff
+if ismember('CHV',settings.Qmeasure)
+    if CHV < settings.channelGoodCutoff
         ratingC = 'good' ;
-    elseif CHA >= settings.channelGoodCutoff && THV < settings.channelBadCutoff
+    elseif CHV >= settings.channelGoodCutoff && CHV < settings.channelBadCutoff
         ratingC = 'ok'  ;
     else
         ratingC = 'bad'  ;
@@ -159,8 +163,8 @@ if settings.plotFig == 1
     im.AlphaData = double(thrOHA==1);
     
     % channels over threshold
-    if ~isempty(TMP)
-        plot([0 t],[TMP TMP],'g')
+    if ~isempty(CIX)
+        plot([0 t],[CIX CIX],'g')
     end
     
     if ~isempty(bad_chans)
@@ -187,12 +191,13 @@ MAV = mean(abs(X(:)));
 %% Output
 Q.rating = rating;
 Q.Qmeasure = settings.Qmeasure;
-Q.Othres = settings.overallThresh;
-Q.Tthres = settings.timeThresh;
+Q.overallThresh = settings.overallThresh;
+Q.timeThresh = settings.timeThresh;
+Q.chanThresh = settings.chanThresh;
 
 Q.OHA = OHA;
 Q.THV = THV;
-Q.CHA = CHA;
+Q.CHV = CHV;
 Q.MAV = MAV;
 %Q.P90 = P90; 
 
@@ -202,5 +207,5 @@ Q.timeGoodCutoff = settings.timeGoodCutoff;
 Q.timeBadCutoff = settings.timeBadCutoff;
 Q.channelGoodCutoff = settings.channelGoodCutoff;
 Q.channelBadCutoff = settings.channelBadCutoff;
-
+toc()
 end
