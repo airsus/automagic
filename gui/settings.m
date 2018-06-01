@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 03-May-2018 17:14:49
+% Last Modified by GUIDE v2.5 23-May-2018 17:07:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -65,8 +65,8 @@ function settings_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to settings (see VARARGIN)
 
-if( nargin - 3 ~= 1 )
-    error('wrong number of arguments. Project must be given as argument.')
+if( nargin - 3 ~= 2 )
+    error('wrong number of arguments. params and ds rate must be given as arguments.')
 end
 
 set(handles.settingsfigure, 'units', 'normalized', 'position', [0.05 0.2 0.6 0.8])
@@ -83,6 +83,7 @@ end
 
 CGV = ConstantGlobalValues;
 params = varargin{1};
+ds = varargin{2};
 assert(isa(params, 'struct'));
 handles.params = params;
 handles.CGV = CGV;
@@ -91,29 +92,55 @@ assert( isempty(handles.params.pca_params) || ...
     isempty(handles.params.ica_params), ...
     'Either pca or ica, not both together.');
 
-if(~isempty(params.filter_params))
-    if(~isempty(params.filter_params.high))
-        if( isempty( params.filter_params.high.order) )
+if ~isempty(params.filter_params)
+    if ~isempty(params.filter_params.high)
+        set(handles.highcheckbox, 'Value', 1);
+        if isempty(params.filter_params.high.order)
             set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
-            set(handles.highpassorderedit, 'String', mat2str(params.filter_params.high.order));
+            set(handles.highpassorderedit, 'String', params.filter_params.high.order);
+        end
+        
+        if isempty(params.filter_params.high.freq)
+            set(handles.highedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.highedit, 'String', params.filter_params.high.freq);
         end
     else
-        set(handles.highpassorderedit, 'String', '');
+        set(handles.highcheckbox, 'Value', 0);
+        set(handles.highpassorderedit, 'String', '')
+        set(handles.highedit, 'String', '');
     end
-    
-    if(~isempty(params.filter_params.low))
-        if( isempty( params.filter_params.low.order) )
+
+    if ~isempty(params.filter_params.low)
+        set(handles.lowcheckbox, 'Value', 1);
+        if isempty(params.filter_params.low.order)
             set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
-            set(handles.lowpassorderedit, 'String', mat2str(params.filter_params.low.order));
+            set(handles.lowpassorderedit, 'String', params.filter_params.low.order);
+        end
+        
+        if isempty(params.filter_params.low.freq)
+            set(handles.lowedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.lowedit, 'String', params.filter_params.low.freq);
         end
     else
-        set(handles.lowpassorderedit, 'String', '');
+        set(handles.lowcheckbox, 'Value', 0);
+        set(handles.lowpassorderedit, 'String', '')
+        set(handles.lowedit, 'String', '');
     end
+    
+    setNotchFilter(params.filter_params.notch, handles);
 else
-    set(handles.highpassorderedit, 'String', '');
-    set(handles.lowpassorderedit, 'String', '');
+    set(handles.highcheckbox, 'Value', 0);
+    set(handles.lowcheckbox, 'Value', 0);
+    set(handles.highpassorderedit, 'String', '')
+    set(handles.highedit, 'String', '');
+    set(handles.lowpassorderedit, 'String', '')
+    set(handles.lowedit, 'String', '');
+    set(handles.notchedit, 'String', 'off')
+    set(handles.otherradio, 'Value', 1)
 end
 
 if ~isempty(params.asr_params)
@@ -185,7 +212,15 @@ Index = find(IndexC == 1);
 set(handles.interpolationpopupmenu,...
     'String',handles.interpolationpopupmenu.String,...
     'Value', Index);
-        
+
+set(handles.eogcheckbox, 'Value', params.eog_regression_params.perform_eog_regression)
+
+% Set the downsampling rate (TODO: HARDCODED!)
+contents = cellstr(get(handles.dspopupmenu,'String'));
+index = find(contains(contents, int2str(ds)));
+set(handles.dspopupmenu, 'Value', index);
+
+
 handles = switch_components(handles);
 
 
@@ -298,9 +333,9 @@ close('settings');
 
 function handles = get_inputs(handles)
 
+params = handles.params;
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-params = handles.params;
 
 ica_params = params.ica_params;
 if get(handles.icacheckbox, 'Value')
@@ -312,21 +347,56 @@ else
 end
 
 high = params.filter_params.high;
-if( get(main_gui_handle.highpasscheckbox, 'Value') && ~isempty(high))
+if( get(handles.highcheckbox, 'Value'))
+    if isempty(high)
+        high = struct();
+    end
     res = str2double(get(handles.highpassorderedit, 'String'));
     if ~isnan(res)
-        high.order = res; end
+        high.order = res; 
+    else
+        high.order = [];
+    end
+    
+    res = str2double(get(handles.highedit, 'String'));
+    if ~isnan(res)
+        high.freq = res; 
+    else
+        high.freq = [];
+    end
+else
+    high = struct([]);
 end
 clear res;
 
 low = params.filter_params.low;
-if( get(main_gui_handle.lowpasscheckbox, 'Value') && ~isempty(low))
+if( get(handles.lowcheckbox, 'Value'))
+    if isempty(low)
+        low = struct();end
     res = str2double(get(handles.lowpassorderedit, 'String'));
     if ~isnan(res)
-        low.order = res; end
+        low.order = res;
+    else
+        low.order = [];
+    end
+    
+    res = str2double(get(handles.lowedit, 'String'));
+    if ~isnan(res)
+        low.freq = res;
+    else
+        low.freq = [];
+    end
+else
+    low = struct([]);
 end
 clear res;
 
+notch = params.filter_params.notch;
+res = str2double(get(handles.notchedit, 'String'));
+if ~isnan(res)
+    notch.freq = res; end
+clear res;
+    
 asr_params = params.asr_params;
 if( get(handles.asrhighcheckbox, 'Value') )
     highpass_val = str2num(get(handles.asrhighedit, 'String'));
@@ -419,14 +489,53 @@ idx = get(handles.interpolationpopupmenu, 'Value');
 methods = get(handles.interpolationpopupmenu, 'String');
 method = methods{idx};
 
+% Get EOG regression
+eog_regression_params = params.eog_regression_params;
+eog_regression_params.perform_eog_regression = get(handles.eogcheckbox, 'Value');
+eog_regression_params.eog_chans = str2num(get(handles.eogedit, 'String'));
+if( ~get(main_gui_handle.egiradio, 'Value') && ...
+        get(handles.eogcheckbox, 'Value') && ...
+        isempty(get(handles.eogedit, 'String')))
+    popup_msg(['A list of channel indices seperated by space or',...
+        ' comma must be given to determine EOG channels'],...
+        'Error');
+    error(['A list of channel indices seperated by space or',...
+        ' comma must be given to determine EOG channels']);
+end
+
+% Get the downsampling rate
+idx = get(handles.dspopupmenu, 'Value');
+dsrates = get(handles.dspopupmenu, 'String');
+ds = str2double(dsrates{idx});
+
+handles.ds_rate = ds;
 handles.params.filter_params.high = high;
 handles.params.filter_params.low = low;
+handles.params.filter_params.notch = notch;
 handles.params.asr_params = asr_params;
+handles.params.eog_regression_params = eog_regression_params;
 handles.params.prep_params = prep_params;
 handles.params.pca_params = pca_params;
 handles.params.ica_params = ica_params;
 handles.params.interpolation_params.method = method;
 
+
+function handles = setNotchFilter(notch, handles)
+
+filt_cst = handles.CGV.preprocessing_constants.filter_constants;
+if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_eu)
+    set(handles.euradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_us)
+    set(handles.usradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~isempty(notch))
+    set(handles.otherradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+else
+    set(handles.otherradio, 'Value', 1)
+    set(handles.notchedit, 'String', '')
+end
 
 % --- Executes on button press in defaultpushbutton.
 function defaultpushbutton_Callback(hObject, eventdata, handles)
@@ -435,31 +544,56 @@ function defaultpushbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 CGV = handles.CGV;
 defs = CGV.default_params;
-params = handles.params;
 
 if ~isempty(defs.filter_params)
-    if ~isempty(defs.filter_params.high) && ~isempty(params.filter_params.high)
+    if ~isempty(defs.filter_params.high)
+        set(handles.highcheckbox, 'Value', 1);
         if isempty(defs.filter_params.high.order)
             set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
             set(handles.highpassorderedit, 'String', defs.filter_params.high.order);
         end
+        
+        if isempty(defs.filter_params.high.freq)
+            set(handles.highedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.highedit, 'String', defs.filter_params.high.freq);
+        end
     else
+        set(handles.highcheckbox, 'Value', 0);
         set(handles.highpassorderedit, 'String', '')
+        set(handles.highedit, 'String', '');
     end
 
-    if ~isempty(defs.filter_params.low) && ~isempty(params.filter_params.low)
+    if ~isempty(defs.filter_params.low)
+        set(handles.lowcheckbox, 'Value', 1);
         if isempty(defs.filter_params.low.order)
             set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
         else
             set(handles.lowpassorderedit, 'String', defs.filter_params.low.order);
         end
+        
+        if isempty(defs.filter_params.low.freq)
+            set(handles.lowedit, 'String', CGV.DEFAULT_keyword);
+        else
+            set(handles.lowedit, 'String', defs.filter_params.low.freq);
+        end
     else
+        set(handles.lowcheckbox, 'Value', 0);
         set(handles.lowpassorderedit, 'String', '')
+        set(handles.lowedit, 'String', '');
     end
+    
+    setNotchFilter(defs.filter_params.notch, handles);
 else
+    set(handles.highcheckbox, 'Value', 0);
+    set(handles.lowcheckbox, 'Value', 0);
     set(handles.highpassorderedit, 'String', '')
+    set(handles.highedit, 'String', '');
     set(handles.lowpassorderedit, 'String', '')
+    set(handles.lowedit, 'String', '');
+    set(handles.notchedit, 'String', 'off')
+    set(handles.otherradio, 'Value', 1)
 end
 
 set(handles.icacheckbox, 'Value', ~isempty(defs.ica_params));
@@ -532,6 +666,15 @@ IndexC = strfind(handles.interpolationpopupmenu.String, ...
 index = find(not(cellfun('isempty', IndexC)));
 set(handles.interpolationpopupmenu, 'Value', index);
 
+
+set(handles.eogcheckbox, 'Value', defs.eog_regression_params.perform_eog_regression)
+
+% Set the downsampling rate (TODO: HARDCODED!)
+contents = cellstr(get(handles.dspopupmenu,'String'));
+index = find(contains(contents, '2'));
+set(handles.dspopupmenu, 'Value', index);
+
+
 handles = switch_components(handles);
 
 % Update handles structure
@@ -541,19 +684,27 @@ function handles = switch_components(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-
-if( get(main_gui_handle.highpasscheckbox, 'Value') )
+if(~ get(main_gui_handle.egiradio, 'Value') && get(handles.eogcheckbox, 'Value'))
+    set(handles.eogedit, 'enable', 'on');
+else
+    set(handles.eogedit, 'enable', 'off');
+end
+if( get(handles.highcheckbox, 'Value') )
     set(handles.highpassorderedit, 'enable', 'on');
+    set(handles.highedit, 'enable', 'on');
 else
     set(handles.highpassorderedit, 'enable', 'off');
     set(handles.highpassorderedit, 'String', '');
+    set(handles.highedit, 'enable', 'off');
 end
 
-if( get(main_gui_handle.lowpasscheckbox, 'Value') )
+if( get(handles.lowcheckbox, 'Value') )
     set(handles.lowpassorderedit, 'enable', 'on');
+    set(handles.lowedit, 'enable', 'on');
 else
     set(handles.lowpassorderedit, 'enable', 'off');
     set(handles.lowpassorderedit, 'String', '');
+    set(handles.lowedit, 'enable', 'off');
 end
 
 if( get(handles.asrhighcheckbox, 'Value') )
@@ -635,6 +786,9 @@ if( isempty(h))
 end
 handle = guidata(h);
 handle.params = handles.params;
+if isfield(handles, 'ds_rate')
+    handle.ds_rate = handles.ds_rate;
+end
 guidata(handle.main_gui, handle);
 
 delete(hObject);
@@ -1189,4 +1343,206 @@ function asrhighedit_CreateFcn(hObject, eventdata, handles)
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in dspopupmenu.
+function dspopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to dspopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns dspopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from dspopupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function dspopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to dspopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in eogcheckbox.
+function eogcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to eogcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+switch_components(handles);
+% Hint: get(hObject,'Value') returns toggle state of eogcheckbox
+
+
+
+function eogedit_Callback(hObject, eventdata, handles)
+% hObject    handle to eogedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of eogedit as text
+%        str2double(get(hObject,'String')) returns contents of eogedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function eogedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to eogedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function notchedit_Callback(hObject, eventdata, handles)
+% hObject    handle to notchedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+fake_notch.freq = str2double(get(hObject,'String'));
+setNotchFilter(fake_notch, handles)
+% Hints: get(hObject,'String') returns contents of notchedit as text
+%        str2double(get(hObject,'String')) returns contents of notchedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function notchedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to notchedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function lowedit_Callback(hObject, eventdata, handles)
+% hObject    handle to lowedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of lowedit as text
+%        str2double(get(hObject,'String')) returns contents of lowedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function lowedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to lowedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in lowcheckbox.
+function lowcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to lowcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if (get(hObject,'Value') == get(hObject,'Max'))
+	set(handles.lowedit, 'enable', 'on');
+    set(handles.lowpassorderedit, 'enable', 'on');
+    if(~isempty(handles.CGV.default_params.filter_params.low))
+        val = num2str((handles.CGV.default_params.filter_params.low.freq));
+        val_order = num2str((handles.CGV.default_params.filter_params.low.order));
+    else
+        val = num2str((handles.CGV.rec_params.filter_params.low.freq));
+        val_order = num2str((handles.CGV.rec_params.filter_params.low.order));
+    end
+    set(handles.lowedit, 'String', val)
+    if( isempty( val_order) )
+        set(handles.lowpassorderedit, 'String', handles.CGV.DEFAULT_keyword);
+    else
+        set(handles.lowpassorderedit, 'String', val_order);
+    end
+else
+	set(handles.lowedit, 'enable', 'off');
+    set(handles.lowedit, 'String', '');
+    set(handles.lowpassorderedit, 'enable', 'off');
+    set(handles.lowpassorderedit, 'String', '');
+end
+% Hint: get(hObject,'Value') returns toggle state of lowcheckbox
+
+
+
+function highedit_Callback(hObject, eventdata, handles)
+% hObject    handle to highedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of highedit as text
+%        str2double(get(hObject,'String')) returns contents of highedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function highedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to highedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in highcheckbox.
+function highcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to highcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if (get(hObject,'Value') == get(hObject,'Max'))
+	set(handles.highedit, 'enable', 'on');
+    set(handles.highpassorderedit, 'enable', 'on');
+    if(~isempty(handles.CGV.default_params.filter_params.high))
+        val = num2str((handles.CGV.default_params.filter_params.high.freq));
+        val_order = num2str((handles.CGV.default_params.filter_params.high.order));
+    else
+        val = num2str((handles.CGV.rec_params.filter_params.high.freq));
+        val_order = num2str((handles.CGV.rec_params.filter_params.high.order));
+    end
+    set(handles.highedit, 'String', val)
+    if( isempty( val_order) )
+        set(handles.highpassorderedit, 'String', handles.CGV.DEFAULT_keyword);
+    else
+        set(handles.highpassorderedit, 'String', val_order);
+    end
+else
+	set(handles.highedit, 'enable', 'off');
+    set(handles.highedit, 'String', '');
+    set(handles.highpassorderedit, 'enable', 'off');
+    set(handles.highpassorderedit, 'String', '');
+end
+% Hint: get(hObject,'Value') returns toggle state of highcheckbox
+
+
+% --- Executes when selected object is changed in notchbuttongroup.
+function notchbuttongroup_SelectionChangedFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in notchbuttongroup 
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+filter_constants = handles.CGV.preprocessing_constants.filter_constants;
+switch get(hObject, 'Tag')
+   case 'euradio'
+      set(handles.notchedit, 'String', num2str(filter_constants.notch_eu))
+   case 'usradio'
+      set(handles.notchedit, 'String', num2str(filter_constants.notch_us))
+    case 'otherradio'
+      set(handles.notchedit, 'String', num2str(filter_constants.notch_other))
 end
