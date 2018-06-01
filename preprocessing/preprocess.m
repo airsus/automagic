@@ -531,6 +531,9 @@ clear prep_removed_chans_mask asr_removed_chans_mask;
 EEG_filtered = perform_filter(EEG_cleaned, filter_params);
 EOG_filtered = perform_filter(EOG, filter_params);
 
+% Assess quality beofre preprocessing 
+
+%TMP = rateQuality(EEG_filtered,[],[],struct('plotFig',1)); 
 
 % Remove effect of EOG
 EEG_filtered.automagic.eog_regression.performed = 'no';
