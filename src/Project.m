@@ -397,7 +397,7 @@ classdef Project < handle
                 
             	%% Do the quality scoring 
                 % Don't know if this fits in best here? 
-                automagic.qualityScore  = calcQuality(EEG,interpolate_chans,[],struct('plotFig',0)); 
+                automagic.qualityScore  = calcQuality(EEG,interpolate_chans,[],struct('plotFig',1)); 
                 %% The quality rating should come from the rating GUI... 
                 automagic.qualityRating = rateQuality(automagic.qualityScore)
                 
