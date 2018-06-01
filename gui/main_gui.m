@@ -247,42 +247,6 @@ if(strcmp(name, handles.CGV.new_project.LIST_NAME))
     set(handles.projectname, 'String', handles.CGV.new_project.NAME);
     set(handles.datafoldershow, 'String', handles.CGV.new_project.DATA_FOLDER);
     set(handles.projectfoldershow, 'String', handles.CGV.new_project.FOLDER);
-    if(~isempty(handles.params.filter_params.high))
-        set(handles.highfreqedit, 'String', ...
-            handles.params.filter_params.high.freq)
-        set(handles.highfreqedit, 'enable', 'on');
-        set(handles.highpasscheckbox, 'Value', 1);
-    else
-        set(handles.highfreqedit, 'String', '')
-        set(handles.highfreqedit, 'enable', 'off');
-        set(handles.highpasscheckbox, 'Value', 0);
-    end
-    
-    if(~isempty(handles.params.filter_params.low))
-        set(handles.lowfreqedit, 'enable', 'on');
-        set(handles.lowpasscheckbox, 'Value', 1);
-        set(handles.lowfreqedit, 'String', ...
-            handles.params.filter_params.low.freq)
-    else
-        set(handles.lowfreqedit, 'enable', 'off');
-        set(handles.lowpasscheckbox, 'Value', 0);
-        set(handles.lowfreqedit, 'String', '')
-    end
-    
-%     if(~isempty(handles.CGV.default_params.filter_params.notch))
-%         if(handles.CGV.default_params.filter_params.notch.freq == 50)
-%             set(handles.notchpanel.Children(1), 'Value', 0);
-%             set(handles.notchpanel.Children(2), 'Value', 1);
-%         elseif(handles.CGV.default_params.filter_params.notch.freq == 60)
-%             set(handles.notchpanel.Children(1), 'Value', 1);
-%             set(handles.notchpanel.Children(2), 'Value', 0);
-%         else
-%             
-%         end
-%     else
-%         set(handles.notchpanel.Children(1), 'Value', 0);
-%         set(handles.notchpanel.Children(2), 'Value', 1);
-%     end
 
     set(handles.subjectnumber, 'String', '')
     set(handles.filenumber, 'String', '')
@@ -290,15 +254,12 @@ if(strcmp(name, handles.CGV.new_project.LIST_NAME))
     set(handles.fpreprocessednumber, 'String', '')
     set(handles.ratednumber, 'String', '')
     set(handles.interpolatenumber, 'String', '')
-    set(handles.eogregressioncheckbox, 'Value', ...
-        handles.params.eog_regression_params.perform_eog_regression);
     set(handles.excludecheckbox, 'Value', ...
         handles.params.channel_reduction_params.perform_reduce_channels);
     set(handles.extedit, 'String', '')
     set(handles.srateedit, 'String', '')
     set(handles.checkbox1020, 'Value', 0)
     handles = setEEGSystem(handles.params, handles);
-    handles = setNotchFilter(handles.params.filter_params.notch, handles);
     handles.current_project = Index;
     % Enable modifications
     switch_gui('on', 'off', handles);
@@ -374,9 +335,7 @@ if ~ exist(project.state_address, 'file')
         set(handles.fpreprocessednumber, 'String', '')
         set(handles.ratednumber, 'String', '')
         set(handles.interpolatenumber, 'String', '')
-        set(handles.highfreqedit, 'String', '')
         set(handles.chanlocedit, 'String', '');
-        set(handles.eogchansedit, 'String', '');
         set(handles.excludeedit, 'String', '');
         set(handles.checkbox1020, 'Value', 0)
         % Disable modifications from gui
@@ -408,30 +367,6 @@ set(handles.preprocessednumber, 'String', ...
 set(handles.fpreprocessednumber, 'String', ...
     [num2str(project.processed_files), ' files already done'])
 
-if(~isempty(project.params.filter_params.high))
-    set(handles.highfreqedit, 'String', ...
-        project.params.filter_params.high.freq)
-    set(handles.highfreqedit, 'enable', 'on');
-    set(handles.highpasscheckbox, 'Value', 1);
-else
-    set(handles.highfreqedit, 'String', '')
-    set(handles.highfreqedit, 'enable', 'off');
-    set(handles.highpasscheckbox, 'Value', 0);
-end
-
-if(~isempty(project.params.filter_params.low))
-    set(handles.lowfreqedit, 'enable', 'on');
-    set(handles.lowpasscheckbox, 'Value', 1);
-    set(handles.lowfreqedit, 'String', ...
-        project.params.filter_params.low.freq)
-else
-    set(handles.lowfreqedit, 'enable', 'off');
-    set(handles.lowpasscheckbox, 'Value', 0);
-    set(handles.lowfreqedit, 'String', '')
-end
-
-handles = setNotchFilter(project.params.filter_params.notch, handles);
-
 % Set the file extension
 set(handles.extedit, 'String', project.mask);
 
@@ -444,11 +379,6 @@ handles = setEEGSystem(project.params, handles);
 % Set 10-20 checkbox
 set(handles.checkbox1020, 'Value', project.params.eeg_system.sys10_20);
 
-% Set the downsampling rate
-IndexC = strfind(handles.dsrate.String, int2str(handles.dsrate.Value));
-index = find(not(cellfun('isempty', IndexC)));
-set(handles.dsrate, 'Value', index);
-
 
 % Set number of rated files
 rated_count = project.get_rated_numbers();
@@ -459,9 +389,6 @@ set(handles.ratednumber, 'String', ...
 interpolate_count = project.to_be_interpolated_count();
 set(handles.interpolatenumber, 'String', ...
     [num2str(interpolate_count), ' subjects to interpolate'])
-
-% Set EOG regression checkox
-set(handles.eogregressioncheckbox, 'Value', project.params.eog_regression_params.perform_eog_regression);
 
 % Set reduce channel checkbox
 set(handles.excludecheckbox, 'Value', project.params.channel_reduction_params.perform_reduce_channels);
@@ -482,20 +409,10 @@ set(handles.projectname, 'enable', mode);
 set(handles.datafoldershow, 'enable', mode);
 set(handles.projectfoldershow, 'enable', mode);
 set(handles.extedit, 'enable', mode);
-set(handles.dsrate, 'enable', mode);
 set(handles.choosedata, 'enable', mode);
 set(handles.chooseproject, 'enable', mode);
-set(handles.notchpanel.Children(1), 'enable', mode);
-set(handles.notchpanel.Children(2), 'enable', mode);
-set(handles.notchpanel.Children(3), 'enable', mode);
-set(handles.notchpanel.Children(4), 'enable', mode);
-set(handles.highpasscheckbox, 'enable', mode);
-set(handles.lowpasscheckbox, 'enable', mode);
 set(handles.createbutton, 'visible', mode)
 set(handles.deleteprojectbutton, 'visible', visibility)
-set(handles.highfreqedit, 'enable', mode);
-set(handles.lowfreqedit, 'enable', mode);
-set(handles.eogregressioncheckbox, 'enable', mode);
 set(handles.excludecheckbox, 'enable', mode);
 setEEGSystemVisibility(mode, handles);
 setSRateVisibility(mode, handles);
@@ -515,7 +432,6 @@ set(handles.checkbox1020, 'enable', mode);
 
 if( strcmp(mode, 'off'))
     set(handles.chanlocedit, 'enable', mode);
-    set(handles.eogchansedit, 'enable', mode);
     set(handles.excludeedit, 'enable', mode);
     set(handles.loctypeedit, 'enable', mode);
     set(handles.choosechannelloc, 'enable', mode);
@@ -525,7 +441,6 @@ if( strcmp(mode, 'off'))
 elseif(strcmp(mode, 'on'))
     if( ~ get(handles.egiradio, 'Value'))
         set(handles.chanlocedit, 'enable', mode);
-        set(handles.eogchansedit, 'enable', mode);
         set(handles.excludeedit, 'enable', mode);
         set(handles.loctypeedit, 'enable', mode);
         set(handles.choosechannelloc, 'enable', mode);
@@ -797,14 +712,10 @@ if( ~ get(handles.egiradio, 'Value') && ...
     return;
 end
 
-% Get EOG regression
-handles.params.eog_regression_params.perform_eog_regression = ...
-    get(handles.eogregressioncheckbox, 'Value');
-handles.params.eog_regression_params.eog_chans = ...
-    str2num(get(handles.eogchansedit, 'String'));
-if( ~get(handles.egiradio, 'Value') && ...
-        get(handles.eogregressioncheckbox, 'Value') && ...
-        isempty(get(handles.eogchansedit, 'String')))
+% Check EOG regression
+eog_params = handles.params.eog_regression_params;
+if( ~get(handles.egiradio, 'Value') && eog_params.perform_eog_regression && ...
+        isempty(eog_params.eog_chans))
     popup_msg(['A list of channel indices seperated by space or',...
         ' comma must be given to determine EOG channels'],...
         'Error');
@@ -836,45 +747,13 @@ end
 handles.params.eeg_system.sys10_20 = get(handles.checkbox1020, 'Value');
 
 % Get the downsampling rate
-idx = get(handles.dsrate, 'Value');
-dsrates = get(handles.dsrate, 'String');
-ds = str2double(dsrates{idx});
-
-% Get filter_params params
-filter_params = handles.params.filter_params;
-
-if(isnan(str2double(get(handles.notchedit, 'String'))))
-    filter_params.notch = struct([]);
+if (isfield(handles, 'ds_rate'))
+    ds = handles.ds_rate;
 else
-    filter_params.notch.freq = str2double(get(handles.notchedit, 'String'));
+    %TODO: HARDCODED
+    ds = 2;
 end
 
-if ( get(handles.highpasscheckbox, 'Value') == 1)
-    high_freq = str2double(get(handles.highfreqedit, 'String'));
-    if( ~isnan(high_freq))
-        filter_params.high.freq = high_freq;
-    else
-        popup_msg(['You must choose the frequency for high pass filtering'...
-            ' or simply disable high pass filtering'], 'Error');
-        return;
-    end
-else
-    filter_params.high = struct([]);
-end
-if( get(handles.lowpasscheckbox, 'Value') == 1)
-    low_freq = str2double(get(handles.lowfreqedit, 'String'));
-    if( ~isempty(low_freq) && ~isnan(low_freq) )
-        filter_params.low.freq = low_freq;
-    else
-        popup_msg(['You must choose the frequency for low pass filtering'...
-            ' or simply disable low pass filtering'], 'Error');
-        return;
-    end
-else
-    filter_params.low = struct([]);
-end
-
-handles.params.filter_params = filter_params;
 params = handles.params;
 % Change the cursor to a watch while updating...
 set(handles.main_gui, 'pointer', 'watch')
@@ -893,16 +772,15 @@ end
 
 switch choice
     case 'Load'
-        load(Project.make_state_address(project_folder));
-        project = self;
+        project = load(Project.make_state_address(project_folder));
         project.update_addresses_form_state_file(project_folder, self.data_folder);
     case 'Over Write'
         if( exist(Project.make_state_address(project_folder), 'file'))
-            load(Project.make_state_address(project_folder));
-            if( isKey(handles.project_list, self.name))
-                project = handles.project_list(self.name);
+            proj = load(Project.make_state_address(project_folder));
+            if( isKey(handles.project_list, proj.name))
+                project = handles.project_list(proj.name);
                 delete(project.state_address);
-                remove(handles.project_list, self.name);
+                remove(handles.project_list, proj.name);
             else
                 delete(Project.make_state_address(project_folder));
             end
@@ -988,55 +866,6 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
-% --- Executes on button press in lowpasscheckbox.
-function lowpasscheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to lowpasscheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-if (get(hObject,'Value') == get(hObject,'Max'))
-	set(handles.lowfreqedit, 'enable', 'on');
-    if(~isempty(handles.CGV.default_params.filter_params.low))
-        val = num2str((handles.CGV.default_params.filter_params.low.freq));
-    else
-        val = '';
-    end
-    set(handles.lowfreqedit, 'String', val)
-    handles.params.filter_params.low = struct('freq', val, 'order', []);
-else
-	set(handles.lowfreqedit, 'enable', 'off');
-    set(handles.lowfreqedit, 'String', '')
-    handles.params.filter_params.low = struct([]);
-end
-
-% Update handles structure
-guidata(hObject, handles);
-
-
-
-% --- Executes on button press in highpasscheckbox.
-function highpasscheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to highpasscheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-if (get(hObject,'Value') == get(hObject,'Max'))
-	set(handles.highfreqedit, 'enable', 'on');
-    if(~isempty(handles.CGV.default_params.filter_params.high))
-        val = num2str((handles.CGV.default_params.filter_params.high.freq));
-    else
-        val = '';
-    end
-    set(handles.highfreqedit, 'String', val)
-    handles.params.filter_params.high = struct('freq', val, 'order', []);
-else
-	set(handles.highfreqedit, 'enable', 'off');
-    set(handles.highfreqedit, 'String', '');
-    handles.params.filter_params.high = struct([]);
-end
-
-% Update handles structure
-guidata(hObject, handles);
 
 % --- Executes on button press in configbutton.
 function configbutton_Callback(hObject, eventdata, handles)
@@ -1044,11 +873,26 @@ function configbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 is_created = strcmp(get(handles.createbutton, 'visible'), 'off') ;
-h = settings(handles.params);
+
+% HARDCODED ds rate
+if is_created
+    idx = get(handles.existingpopupmenu, 'Value');
+    projects = get(handles.existingpopupmenu, 'String');
+    name = projects{idx};
+    project = handles.project_list(name);
+    ds = project.ds_rate;
+elseif(isfield(handles, 'ds_rate'))
+    ds = handles.ds_rate;
+else
+    ds = 2;
+end
+
+h = settings(handles.params, ds);
 switch_gui('off', 'off', handles);
 if(is_created)
-    set(h.Children.Children, 'enable', 'off');
-    canc = findobj(h.Children.Children, 'tag', 'cancelpushbutton');
+    ui_elements = findobj(h.Children, 'Type', 'UiControl');
+    set(ui_elements, 'enable', 'off')
+    canc = findobj(h.Children, 'tag', 'cancelpushbutton');
     set(canc, 'enable', 'on');
 end
 set(handles.runpreprocessbutton, 'enable', 'off');
@@ -1088,28 +932,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on selection change in dsrate.
-function dsrate_Callback(hObject, eventdata, handles)
-% hObject    handle to dsrate (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns dsrate contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from dsrate
-
-
-% --- Executes during object creation, after setting all properties.
-function dsrate_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to dsrate (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 
 function datafoldershow_Callback(hObject, eventdata, handles)
 % hObject    handle to datafoldershow (see GCBO)
@@ -1169,52 +991,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes during object creation, after setting all properties.
-function highfreqedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to highfreqedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-function highfreqedit_Callback(hObject, eventdata, handles)
-% hObject    handle to projectfoldershow (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-val = str2double(get(hObject,'String'));
-handles.params.filter_params.high = struct('freq', val, 'order', []);
-% Hints: get(hObject,'String') returns contents of projectfoldershow as text
-%        str2double(get(hObject,'String')) returns contents of projectfoldershow as a double
-% Update handles structure
-guidata(hObject, handles);
-
-
-function lowfreqedit_Callback(hObject, eventdata, handles)
-% hObject    handle to lowfreqedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-val = str2double(get(hObject,'String'));
-handles.params.filter_params.low = struct('freq', val, 'order', []);
-% Hints: get(hObject,'String') returns contents of lowfreqedit as text
-%        str2double(get(hObject,'String')) returns contents of lowfreqedit as a double
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function lowfreqedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to lowfreqedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 
 % --- Get the file extension from the gui and calculate number of files and
 % subjects in the datafolder with this extension and set the gui
@@ -1274,7 +1050,6 @@ function handles = setEEGSystem(params, handles)
 % system    char that can be either 'EGI' or 'Others'
 % handles   main handles of the gui
 eeg_system = params.eeg_system;
-eog_regression_params = params.eog_regression_params;
 channel_reduction_params = params.channel_reduction_params;
 
 switch eeg_system.name
@@ -1282,10 +1057,8 @@ switch eeg_system.name
         set(handles.egiradio, 'Value', 1);
         set(handles.othersysradio, 'Value', 0);
         set(handles.chanlocedit, 'String', '');
-        set(handles.eogchansedit, 'String', '');
         set(handles.loctypeedit, 'String', '');
         set(handles.chanlocedit, 'enable', 'off');
-        set(handles.eogchansedit, 'enable', 'off');
         set(handles.loctypeedit, 'enable', 'off');
         set(handles.choosechannelloc, 'enable', 'off');
         set(handles.excludeedit, 'enable', 'off');
@@ -1303,11 +1076,6 @@ switch eeg_system.name
         set(handles.egiradio, 'Value', 0);
         set(handles.chanlocedit, 'enable', 'on');
         set(handles.chanlocedit, 'String', eeg_system.loc_file);
-        if(get(handles.eogregressioncheckbox, 'Value'))
-            set(handles.eogchansedit, 'enable', 'on');
-            set(handles.eogchansedit, 'String', ...
-                num2str(eog_regression_params.eog_chans));
-        end
         if(get(handles.excludecheckbox, 'Value'))
            set(handles.excludeedit, 'enable', 'on'); 
            set(handles.excludeedit, 'String', ...
@@ -1317,8 +1085,6 @@ switch eeg_system.name
         set(handles.loctypeedit, 'String', eeg_system.file_loc_type);
         set(handles.excludeedit, 'String', ...
             num2str(channel_reduction_params.tobe_excluded_chans));
-        set(handles.eogchansedit, 'String', ...
-            num2str(eog_regression_params.eog_chans));
         set(handles.choosechannelloc, 'enable', 'on');
         
         if(isempty(eeg_system.ref_chan))
@@ -1339,23 +1105,6 @@ switch eeg_system.name
         handles.params.channel_reduction_params.perform_reduce_channels = 0;
 end
 
-function handles = setNotchFilter(notch, handles)
-
-filter_constants = handles.CGV.preprocessing_constants.filter_constants;
-if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filter_constants.notch_eu)
-    set(handles.euradiobutton, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filter_constants.notch_us)
-    set(handles.usradiobutton, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~isempty(notch))
-    set(handles.otherradiobutton, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-else
-    set(handles.otherradiobutton, 'Value', 1)
-    set(handles.notchedit, 'String', '')
-end
-handles.params.filter_params.notch = notch;
 
 function params = make_default_params(default_params)
 params.filter_params = default_params.filter_params;
@@ -1379,23 +1128,6 @@ guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of egiradio
 
 
-% --- Executes on button press in othersysradio.
-function othersysradio_Callback(hObject, eventdata, handles)
-% hObject    handle to othersysradio (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-new_pars = handles.CGV.default_params.eeg_system;
-new_pars.name = 'Others';
-new_pars.eog_chans = [];
-new_pars.tobe_excluded_chans = [];
-new_params = handles.params;
-new_params.eeg_system = new_pars;
-handles = setEEGSystem(new_params, handles);
-% Update handles structure
-guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of othersysradio
-
-
 
 function chanlocedit_Callback(hObject, eventdata, handles)
 % hObject    handle to chanlocedit (see GCBO)
@@ -1417,30 +1149,6 @@ function chanlocedit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
-
-function eogchansedit_Callback(hObject, eventdata, handles)
-% hObject    handle to eogchansedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of eogchansedit as text
-%        str2double(get(hObject,'String')) returns contents of eogchansedit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function eogchansedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to eogchansedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 
 function loctypeedit_Callback(hObject, eventdata, handles)
@@ -1477,75 +1185,6 @@ if(full_address ~= 0)
     set(handles.chanlocedit, 'String', full_address)
 end
 
-
-% --- Executes on button press in eogregressioncheckbox.
-function eogregressioncheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to eogregressioncheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of eogregressioncheckbox
-if( get(handles.eogregressioncheckbox, 'Value'))
-    if(get(handles.othersysradio, 'Value'))
-       set(handles.eogchansedit, 'enable', 'on');
-    end
-else
-    if(get(handles.othersysradio, 'Value'))
-       set(handles.eogchansedit, 'enable', 'off');
-    end
-end
-
-% --- Executes on button press in usradiobutton.
-function usradiobutton_Callback(hObject, eventdata, handles)
-% hObject    handle to usradiobutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-filter_constants = handles.CGV.preprocessing_constants.filter_constants;
-if(get(hObject, 'Value'))
-    notch.freq = filter_constants.notch_us;
-    handles = setNotchFilter(notch, handles);
-end
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes on button press in euradiobutton.
-function euradiobutton_Callback(hObject, eventdata, handles)
-% hObject    handle to euradiobutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-filter_constants = handles.CGV.preprocessing_constants.filter_constants;
-if(get(hObject, 'Value'))
-    notch.freq = filter_constants.notch_eu;
-    handles = setNotchFilter(notch, handles);
-end
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes on button press in otherradiobutton.
-function otherradiobutton_Callback(hObject, eventdata, handles)
-% hObject    handle to otherradiobutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-filter_constants = handles.CGV.preprocessing_constants.filter_constants;
-if(get(hObject, 'Value'))
-    notch.freq = filter_constants.notch_other;
-    handles = setNotchFilter(notch, handles);
-end
-% Update handles structure
-guidata(hObject, handles);
-
-
-function notchedit_Callback(hObject, eventdata, handles)
-% hObject    handle to notchedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-notch.freq = str2double(get(hObject,'String'));
-handles = setNotchFilter(notch, handles);
-% Update handles structure
-guidata(hObject, handles);
 
 function excludeedit_Callback(hObject, eventdata, handles)
 % hObject    handle to excludeedit (see GCBO)
@@ -1584,18 +1223,6 @@ else
     if(get(handles.othersysradio, 'Value'))
        set(handles.excludeedit, 'enable', 'off');
     end
-end
-
-% --- Executes during object creation, after setting all properties.
-function notchedit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to notchedit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
 end
 
 
@@ -1671,3 +1298,20 @@ function hasreferenceradio_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of hasreferenceradio
 set(handles.hasreferenceedit, 'enable', 'on')
+
+
+% --- Executes on button press in othersysradio.
+function othersysradio_Callback(hObject, eventdata, handles)
+% hObject    handle to othersysradio (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+new_pars = handles.CGV.default_params.eeg_system;
+new_pars.name = 'Others';
+new_pars.eog_chans = [];
+new_pars.tobe_excluded_chans = [];
+new_params = handles.params;
+new_params.eeg_system = new_pars;
+handles = setEEGSystem(new_params, handles);
+% Update handles structure
+guidata(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of othersysradio
