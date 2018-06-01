@@ -394,6 +394,13 @@ classdef Project < handle
                 
                 automagic.interpolation.channels = interpolate_chans;
                 automagic.interpolation.params = self.params.interpolation_params;
+                
+            	%% Do the quality Rating 
+                % Don't know if this fits in best here? 
+                automagic.qualityRating = rateQuality(EEG,interpolate_chans,[]); 
+                %% 
+                
+                
                 % Put the channels back to NaN if they were not to be interpolated
                 % originally
                 original_nans = setdiff(nanchans, interpolate_chans);
@@ -414,6 +421,10 @@ classdef Project < handle
                 self.save_project();
             end
             end_time = cputime - start_time;
+            
+
+            
+            
             disp(['Interpolation finished. Total elapsed time: ', num2str(end_time)])
 
             % Update the main gui's data after rating processing
