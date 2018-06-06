@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 05-Jun-2018 15:30:06
+% Last Modified by GUIDE v2.5 06-Jun-2018 11:28:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1548,35 +1548,28 @@ switch get(hObject, 'Tag')
 end
 
 
-% --------------------------------------------------------------------
-function Untitled_1_Callback(hObject, eventdata, handles)
-% hObject    handle to Untitled_1 (see GCBO)
+% --- Executes on button press in highvarcheckbox.
+function highvarcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to highvarcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Hint: get(hObject,'Value') returns toggle state of highvarcheckbox
 
-% --- Executes on button press in checkbox21.
-function checkbox21_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox21 (see GCBO)
+
+
+function highvaredit_Callback(hObject, eventdata, handles)
+% hObject    handle to highvaredit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox21
-
-
-
-function edit23_Callback(hObject, eventdata, handles)
-% hObject    handle to edit23 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit23 as text
-%        str2double(get(hObject,'String')) returns contents of edit23 as a double
+% Hints: get(hObject,'String') returns contents of highvaredit as text
+%        str2double(get(hObject,'String')) returns contents of highvaredit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit23_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit23 (see GCBO)
+function highvaredit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to highvaredit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

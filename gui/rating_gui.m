@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 05-Jun-2018 09:51:36
+% Last Modified by GUIDE v2.5 06-Jun-2018 11:23:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -241,8 +241,7 @@ set(im, 'ButtonDownFcn', {@on_selection,handles}, 'AlphaData',~isnan(data))
 set(gcf, 'Color', [0.94,0.94,0.94])
 colormap jet
 caxis([-colorScale colorScale])
-%title(unique_name, 'Interpreter','none')
-set(handles.FileName, 'String', unique_name) 
+set(handles.titletext, 'String', unique_name) 
 
 
 draw_lines(handles);
@@ -1380,9 +1379,9 @@ draw_lines(handles)
 set_gui_rating(handles);
 
 
-% --- Executes on button press in pushbutton7.
-function pushbutton7_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton7 (see GCBO)
+% --- Executes on button press in qualitybutton.
+function qualitybutton_Callback(hObject, eventdata, handles)
+% hObject    handle to qualitybutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-h = qualityrating_gui();
+qualityrating_gui();

@@ -1315,28 +1315,3 @@ handles = setEEGSystem(new_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of othersysradio
-
-
-% --- If Enable == 'on', executes on mouse press in 5 pixel border.
-% --- Otherwise, executes on mouse press in 5 pixel border or over configbutton.
-function configbutton_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to configbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on key press with focus on configbutton and none of its controls.
-function configbutton_KeyPressFcn(hObject, eventdata, handles)
-% hObject    handle to configbutton (see GCBO)
-% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
-%	Key: name of the key that was pressed, in lower case
-%	Character: character interpretation of the key(s) that was pressed
-%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes during object creation, after setting all properties.
-function configbutton_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to configbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
