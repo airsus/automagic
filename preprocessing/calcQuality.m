@@ -87,7 +87,7 @@ THV = nansum(std(X,[],1) > settings.timeThresh)./t;
 
 % ratio of channels that have been interpolated
 bad_chans = setxor(auto_badchans,man_badchans);
-RCH = numel(bad_chans)./c;
+RBC = numel(bad_chans)./c;
 
 % ratio of channels with high variance
 
@@ -157,7 +157,7 @@ Q.OHA = OHA;
 Q.THV = THV;
 Q.CHV = CHV;
 Q.MAV = MAV;
-Q.RCH = RCH; 
+Q.RBC = RBC; 
 
 % thresholds
 Q.overallThresh = settings.overallThresh;

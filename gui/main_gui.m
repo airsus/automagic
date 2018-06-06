@@ -41,7 +41,7 @@ function varargout = main_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 29-Aug-2017 09:11:46
+% Last Modified by GUIDE v2.5 05-Jun-2018 10:31:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -75,8 +75,8 @@ function main_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 % Position of the gui
-screen_size = get( groot, 'Screensize' );
-set(handles.main_gui, 'position', screen_size / 1.2)
+%screen_size = get( groot, 'Screensize' );
+%set(handles.main_gui, 'position', screen_size / 1.2)
 
 % set( findall( handles.main_gui, '-property', 'Units' ), 'Units', 'Normalized' )
 % set(handles.main_gui, 'units', 'normalized', 'position', [0.05 0.5 0.9 0.82])
@@ -1315,3 +1315,28 @@ handles = setEEGSystem(new_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of othersysradio
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over configbutton.
+function configbutton_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to configbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on key press with focus on configbutton and none of its controls.
+function configbutton_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to configbutton (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes during object creation, after setting all properties.
+function configbutton_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to configbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called

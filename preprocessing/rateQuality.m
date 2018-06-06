@@ -10,17 +10,20 @@ function R = rateQuality (Q, varargin)
 %         voltage measures across all time points exceeds a certain threshold
 % MAV   - unthresholded mean absolute voltage of the dataset (not used in
 %         the current version)
+% RBC   - ratio of bad channels
 %
 %   The input is an EEG structure with optional parameters that can be
 %   passed within a structure: (e.g. struct('',50))
 %   'Qmeasures'           - a cell array indicating on which metrics the
 %                           datasets should be rated {'OHA','THV','CHV'}
-%   'overallGoodCutoff'   - cutoff for "Good" quality based on OHA [0.1]
-%   'overallBadCutoff'    - cutoff for "Bad" quality based on OHA [0.2]
-%   'timeGoodCutoff'      - cutoff for "Good" quality based on THV [0.1]
-%   'timeBadCutoff'       - cutoff for "Bad" quality based on THV [0.2]
-%   'channelGoodCutoff'   - cutoff for "Good" quality based on CHV [0.15]
-%   'channelBadCutoff'    - cutoff for "Bad" quality based on CHV [0.3]
+%   'overallGoodCutoff'      - cutoff for "Good" quality based on OHA [0.1]
+%   'overallBadCutoff'       - cutoff for "Bad" quality based on OHA [0.2]
+%   'timeGoodCutoff'         - cutoff for "Good" quality based on THV [0.1]
+%   'timeBadCutoff'          - cutoff for "Bad" quality based on THV [0.2]
+%   'channelGoodCutoff'      - cutoff for "Good" quality based on CHV [0.15]
+%   'channelBadCutoff'       - cutoff for "Bad" quality based on CHV [0.3]
+%   'badChannelGoodCutoff'   - cutoff for "Good" quality based on RBC[0.15]
+%   'badChannelBadCutoff'    - cutoff for "Bad" quality based on RBC[0.3]
 %
 % Copyright (C) 2018  Andreas Pedroni, anpedroni@gmail.com
 %
@@ -48,6 +51,10 @@ addParameter(p,'timeBadCutoff', defaults.timeBadCutoff,@isnumeric );
 addParameter(p,'channelGoodCutoff', defaults.channelGoodCutoff,@isnumeric );
 addParameter(p,'channelBadCutoff', defaults.channelBadCutoff,@isnumeric );
 
+addParameter(p,'BadChannelGoodCutoff', defaults.BadChannelGoodCutoff,@isnumeric );
+addParameter(p,'BadChannelBadCutoff', defaults.BadChannelBadCutoff,@isnumeric );
+
+
 addParameter(p,'Qmeasure', defaults.Qmeasure, @isstr );
 
 parse(p, varargin{:});
@@ -59,8 +66,9 @@ end
 
 %% create empty cells
 ratingO = {};
-ratingC = {};
 ratingT = {};
+ratingC = {};
+ratingBC = {};
 
 % Categorize wrt OHA
 
@@ -96,12 +104,22 @@ if any(strfind(settings.Qmeasure,'CHV'))
     end
 end
 
+% Categorize wrt CHV
+if any(strfind(settings.Qmeasure,'RBC'))
+    if Q.RBC < settings.channelGoodCutoff
+        ratingC = 'good' ;
+    elseif Q.RBC >= settings.channelGoodCutoff && Q.RBC < settings.channelBadCutoff
+        ratingC = 'ok'  ;
+    else
+        ratingC = 'bad'  ;
+    end
+end
 
 %% combine ratings with the rule that the rating depends on the worst rating
 
-if ismember('bad',[ratingO,ratingT,ratingC])
+if ismember('bad',[ratingO,ratingT,ratingC,ratingBC])
     rating = 'bad';
-elseif ismember('ok',[ratingO,ratingT,ratingC])
+elseif ismember('ok',[ratingO,ratingT,ratingC,ratingBC])
     rating = 'ok';
 else
     rating = 'good';
@@ -117,5 +135,7 @@ R.timeGoodCutoff = settings.timeGoodCutoff;
 R.timeBadCutoff = settings.timeBadCutoff;
 R.channelGoodCutoff = settings.channelGoodCutoff;
 R.channelBadCutoff = settings.channelBadCutoff;
+R.BadChannelGoodCutoff = settings.BadChannelGoodCutoff;
+R.BadChannelBadCutoff = settings.BadChannelBadCutoff;
 R.Q = Q; % here are the parameters of the calcQuality. don't know if this should be here?
 end

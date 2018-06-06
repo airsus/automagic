@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 23-May-2018 17:07:33
+% Last Modified by GUIDE v2.5 05-Jun-2018 15:30:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -69,8 +69,8 @@ if( nargin - 3 ~= 2 )
     error('wrong number of arguments. params and ds rate must be given as arguments.')
 end
 
-set(handles.settingsfigure, 'units', 'normalized', 'position', [0.05 0.2 0.6 0.8])
-set(handles.settingspanel, 'units', 'normalized', 'position', [0.05 0.1 0.8 0.9])
+%set(handles.settingsfigure, 'units', 'normalized', 'position', [0.05 0.2 0.6 0.8])
+%set(handles.settingspanel, 'units', 'normalized', 'position', [0.05 0.1 0.8 0.9])
 children = handles.settingsfigure.Children;
 for child_idx = 1:length(children)
     child = children(child_idx);
@@ -1545,4 +1545,43 @@ switch get(hObject, 'Tag')
       set(handles.notchedit, 'String', num2str(filter_constants.notch_us))
     case 'otherradio'
       set(handles.notchedit, 'String', num2str(filter_constants.notch_other))
+end
+
+
+% --------------------------------------------------------------------
+function Untitled_1_Callback(hObject, eventdata, handles)
+% hObject    handle to Untitled_1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in checkbox21.
+function checkbox21_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox21 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox21
+
+
+
+function edit23_Callback(hObject, eventdata, handles)
+% hObject    handle to edit23 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit23 as text
+%        str2double(get(hObject,'String')) returns contents of edit23 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit23_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit23 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end

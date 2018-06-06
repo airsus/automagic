@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 09-May-2018 09:38:53
+% Last Modified by GUIDE v2.5 05-Jun-2018 09:51:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -62,7 +62,7 @@ assert(isa(project, 'Project') || isa(project, 'EEGLabProject'));
 handles.project = project;
 handles.CGV = ConstantGlobalValues;
 
-set(handles.rating_gui, 'units', 'normalized', 'position', [0.05 0.3 0.8 0.8])
+%set(handles.rating_gui, 'units', 'normalized', 'position', [0.05 0.3 0.8 0.8])
 
 % Set the title to the current version
 set(handles.rating_gui, 'Name', ['Automagic v.', handles.CGV.version, ...
@@ -238,10 +238,12 @@ end
 
 im = imagesc(data, 'tag', 'im');
 set(im, 'ButtonDownFcn', {@on_selection,handles}, 'AlphaData',~isnan(data))
-set(gcf, 'Color', [1,1,1])
+set(gcf, 'Color', [0.94,0.94,0.94])
 colormap jet
 caxis([-colorScale colorScale])
-title(unique_name, 'Interpreter','none')
+%title(unique_name, 'Interpreter','none')
+set(handles.FileName, 'String', unique_name) 
+
 
 draw_lines(handles);
 mark_interpolated_chans(handles)
@@ -1376,3 +1378,11 @@ guidata(hObject, handles);
 
 draw_lines(handles)
 set_gui_rating(handles);
+
+
+% --- Executes on button press in pushbutton7.
+function pushbutton7_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+h = qualityrating_gui();

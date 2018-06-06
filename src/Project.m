@@ -395,10 +395,10 @@ classdef Project < handle
                 automagic.interpolation.channels = interpolate_chans;
                 automagic.interpolation.params = self.params.interpolation_params;
                 
-            	%% Do the quality scoring 
+            	% Do the quality scoring 
                 % Don't know if this fits in best here? 
                 automagic.qualityScore  = calcQuality(EEG,interpolate_chans,[],struct('plotFig',1)); 
-                %% The quality rating should come from the rating GUI... 
+                % The quality rating should come from the rating GUI... 
                 automagic.qualityRating = rateQuality(automagic.qualityScore)
                 
                 % Put the channels back to NaN if they were not to be interpolated
