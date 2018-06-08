@@ -39,7 +39,8 @@ function R = rateQuality (Q, varargin)
 %
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
-defaults = DefaultParameters.rateQuality_params;
+defaults = ConstantGlobalValues.rateQuality_params;
+rating_strs = ConstantGlobalValues.ratings;
 
 p = inputParser;
 addParameter(p,'overallGoodCutoff', defaults.overallGoodCutoff,@isnumeric );
@@ -64,78 +65,71 @@ if nargin < 1
     disp('No quality metrics to base a rating on')
 end
 
-%% create empty cells
+% create empty cells
 ratingO = {};
 ratingT = {};
 ratingC = {};
 ratingBC = {};
 
+if ~isstruct(Q) && isnan(Q)
+   R = rating_strs.Interpolate;
+   return;
+end
 % Categorize wrt OHA
 
 if any(strfind(settings.Qmeasure,'OHA'))
     if Q.OHA < settings.overallGoodCutoff
-        ratingO = 'good' ;
+        ratingO = rating_strs.Good;
     elseif Q.OHA >= settings.overallGoodCutoff && Q.OHA < settings.overallBadCutoff
-        ratingO = 'ok'  ;
+        ratingO = rating_strs.OK ;
     else
-        ratingO = 'bad'  ;
+        ratingO = rating_strs.Bad;
     end
 end
 
 % Categorize wrt THV
 if any(strfind(settings.Qmeasure,'THV'))
     if Q.THV < settings.timeGoodCutoff
-        ratingT = 'good' ;
+        ratingT = rating_strs.Good;
     elseif Q.THV >= settings.timeGoodCutoff && Q.THV < settings.timeBadCutoff
-        ratingT = 'ok'  ;
+        ratingT = rating_strs.OK;
     else
-        ratingT = 'bad'  ;
+        ratingT = rating_strs.Bad;
     end
 end
 
 % Categorize wrt CHV
 if any(strfind(settings.Qmeasure,'CHV'))
     if Q.CHV < settings.channelGoodCutoff
-        ratingC = 'good' ;
+        ratingC = rating_strs.Good;
     elseif Q.CHV >= settings.channelGoodCutoff && Q.CHV < settings.channelBadCutoff
-        ratingC = 'ok'  ;
+        ratingC = rating_strs.OK;
     else
-        ratingC = 'bad'  ;
+        ratingC = rating_strs.Bad;
     end
 end
 
 % Categorize wrt CHV
 if any(strfind(settings.Qmeasure,'RBC'))
     if Q.RBC < settings.channelGoodCutoff
-        ratingC = 'good' ;
+        ratingBC = rating_strs.Good;
     elseif Q.RBC >= settings.channelGoodCutoff && Q.RBC < settings.channelBadCutoff
-        ratingC = 'ok'  ;
+        ratingBC = rating_strs.OK;
     else
-        ratingC = 'bad'  ;
+        ratingBC = rating_strs.Bad;
     end
 end
 
-%% combine ratings with the rule that the rating depends on the worst rating
-
-if ismember('bad',[ratingO,ratingT,ratingC,ratingBC])
-    rating = 'bad';
-elseif ismember('ok',[ratingO,ratingT,ratingC,ratingBC])
-    rating = 'ok';
-else
-    rating = 'good';
+% combine ratings with the rule that the rating depends on the worst rating
+rating = rating_strs.NotRated;
+if ismember(rating_strs.Bad,[ratingO,ratingT,ratingC,ratingBC])
+    rating = rating_strs.Bad;
+elseif ismember(rating_strs.OK,[ratingO,ratingT,ratingC,ratingBC])
+    rating = rating_strs.OK;
+elseif ismember(rating_strs.Good,[ratingO,ratingT,ratingC,ratingBC])
+    rating = rating_strs.Good;
 end
 
-%% Output
-R.rating = rating;
-
-R.Qmeasure = settings.Qmeasure;
-R.overallGoodCutoff = settings.overallGoodCutoff;
-R.overallBadCutoff = settings.overallBadCutoff;
-R.timeGoodCutoff = settings.timeGoodCutoff;
-R.timeBadCutoff = settings.timeBadCutoff;
-R.channelGoodCutoff = settings.channelGoodCutoff;
-R.channelBadCutoff = settings.channelBadCutoff;
-R.BadChannelGoodCutoff = settings.BadChannelGoodCutoff;
-R.BadChannelBadCutoff = settings.BadChannelBadCutoff;
-R.Q = Q; % here are the parameters of the calcQuality. don't know if this should be here?
+% Output
+R = rating;
 end

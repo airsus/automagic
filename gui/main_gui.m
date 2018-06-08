@@ -243,6 +243,8 @@ name = names{Index};
 
 % Special case of New Project
 if(strcmp(name, handles.CGV.new_project.LIST_NAME))
+    handles.visualisation_params.calcQuality_params = handles.CGV.calcQuality_params;
+    handles.visualisation_params.ds = handles.CGV.ds_rate;
     handles.params = make_default_params(handles.CGV.default_params);
     set(handles.projectname, 'String', handles.CGV.new_project.NAME);
     set(handles.datafoldershow, 'String', handles.CGV.new_project.DATA_FOLDER);
@@ -318,6 +320,8 @@ end
 % Load the project:
 project = handles.project_list(name);
 handles.params = project.params;
+handles.visualisation_params.ds = project.ds_rate;
+handles.visualisation_params.calcQuality_params = project.qualityThresholds;
 % Set the current_project to the selected project
 handles.current_project = Index;
 if ~ exist(project.state_address, 'file')
@@ -746,15 +750,8 @@ if ~ get(handles.egiradio, 'Value')
 end
 handles.params.eeg_system.sys10_20 = get(handles.checkbox1020, 'Value');
 
-% Get the downsampling rate
-if (isfield(handles, 'ds_rate'))
-    ds = handles.ds_rate;
-else
-    %TODO: HARDCODED
-    ds = 2;
-end
-
 params = handles.params;
+visualisation_params = handles.visualisation_params;
 % Change the cursor to a watch while updating...
 set(handles.main_gui, 'pointer', 'watch')
 drawnow;
@@ -776,16 +773,16 @@ switch choice
         project.update_addresses_form_state_file(project_folder, self.data_folder);
     case 'Over Write'
         if( exist(Project.make_state_address(project_folder), 'file'))
-            proj = load(Project.make_state_address(project_folder));
-            if( isKey(handles.project_list, proj.name))
-                project = handles.project_list(proj.name);
+            load(Project.make_state_address(project_folder));
+            if( isKey(handles.project_list, self.name))
+                project = handles.project_list(self.name);
                 delete(project.state_address);
-                remove(handles.project_list, proj.name);
+                remove(handles.project_list, self.name);
             else
                 delete(Project.make_state_address(project_folder));
             end
         end
-        project = Project(name, data_folder, project_folder, ext, ds, params, srate);
+        project = Project(name, data_folder, project_folder, ext, visualisation_params.ds, params, visualisation_params.calcQuality_params, srate);
 end
 name = project.name; % Overwrite the name in case the project is loaded.
 
@@ -874,20 +871,7 @@ function configbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 is_created = strcmp(get(handles.createbutton, 'visible'), 'off') ;
 
-% HARDCODED ds rate
-if is_created
-    idx = get(handles.existingpopupmenu, 'Value');
-    projects = get(handles.existingpopupmenu, 'String');
-    name = projects{idx};
-    project = handles.project_list(name);
-    ds = project.ds_rate;
-elseif(isfield(handles, 'ds_rate'))
-    ds = handles.ds_rate;
-else
-    ds = 2;
-end
-
-h = settings(handles.params, ds);
+h = settings(handles.params, handles.visualisation_params);
 switch_gui('off', 'off', handles);
 if(is_created)
     ui_elements = findobj(h.Children, 'Type', 'UiControl');
@@ -1116,6 +1100,7 @@ params.pca_params = default_params.pca_params;
 params.ica_params= default_params.ica_params;
 params.interpolation_params = default_params.interpolation_params;
 params.eeg_system = default_params.eeg_system;
+params.highvar_params = default_params.highvar_params;
 
 % --- Executes on button press in egiradio.
 function egiradio_Callback(hObject, eventdata, handles)

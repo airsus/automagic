@@ -35,6 +35,8 @@ classdef RecommendedParameters
         
         prep_params = struct();                           % Default by prep
         
+        highvar_params = struct('sd', 25);
+        
         interpolation_params = struct('method', 'spherical');
         
         pca_params = struct('lambda', [], ...  % Default lambda by alm_rpca

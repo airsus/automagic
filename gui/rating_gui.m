@@ -1099,61 +1099,8 @@ end
 % Save the rating data into the preprocessing file
 block = get_current_block(handles);
 block.saveRatingsToFile();
-% Now we should update five lists of ratings which are used to speed up the
-% filtering pocess.
-switch block.rate
-    case handles.CGV.ratings.Good
-        if( ~ ismember(block.index, handles.project.good_list ) )
-            handles.project.good_list = ...
-                [handles.project.good_list block.index];
-            handles.project.not_rated_list(handles.project.not_rated_list == block.index) = [];
-            handles.project.ok_list(handles.project.ok_list == block.index) = [];
-            handles.project.bad_list(handles.project.bad_list == block.index) = [];
-            handles.project.interpolate_list(handles.project.interpolate_list == block.index) = [];
-            handles.project.good_list = sort(handles.project.good_list);
-
-        end
-    case handles.CGV.ratings.OK
-        if( ~ ismember(block.index, handles.project.ok_list ) )
-            handles.project.ok_list = ...
-                [handles.project.ok_list block.index];
-            handles.project.not_rated_list(handles.project.not_rated_list == block.index) = [];
-            handles.project.good_list(handles.project.good_list == block.index) = [];
-            handles.project.bad_list(handles.project.bad_list == block.index) = [];
-            handles.project.interpolate_list(handles.project.interpolate_list == block.index) = [];
-            handles.project.ok_list = sort(handles.project.ok_list);
-        end
-    case handles.CGV.ratings.Bad
-        if( ~ ismember(block.index, handles.project.bad_list ) )
-            handles.project.bad_list = ...
-                [handles.project.bad_list block.index];
-            handles.project.not_rated_list(handles.project.not_rated_list == block.index) = [];
-            handles.project.ok_list(handles.project.ok_list == block.index) = [];
-            handles.project.good_list(handles.project.good_list == block.index) = [];
-            handles.project.interpolate_list(handles.project.interpolate_list == block.index) = [];
-            handles.project.bad_list = sort(handles.project.bad_list);
-        end
-    case handles.CGV.ratings.Interpolate
-        if( ~ ismember(block.index, handles.project.interpolate_list ) )
-            handles.project.interpolate_list = ...
-                [handles.project.interpolate_list block.index];
-            handles.project.not_rated_list(handles.project.not_rated_list == block.index) = [];
-            handles.project.ok_list(handles.project.ok_list == block.index) = [];
-            handles.project.bad_list(handles.project.bad_list == block.index) = [];
-            handles.project.good_list(handles.project.good_list == block.index) = [];
-            handles.project.interpolate_list = sort(handles.project.interpolate_list);
-        end
-    case handles.CGV.ratings.NotRated
-        if( ~ ismember(block.index, handles.project.not_rated_list ) )
-            handles.project.not_rated_list = ...
-                [handles.project.not_rated_list block.index];
-            handles.project.good_list(handles.project.good_list == block.index) = [];
-            handles.project.ok_list(handles.project.ok_list == block.index) = [];
-            handles.project.bad_list(handles.project.bad_list == block.index) = [];
-            handles.project.interpolate_list(handles.project.interpolate_list == block.index) = [];
-            handles.project.not_rated_list = sort(handles.project.not_rated_list);
-        end
-end
+% update five lists of ratings which are used to speed up the filtering
+handles.project.update_rating_lists(block);
         
 % Save the stateS
 if(isa(handles.project, 'Project'))
@@ -1384,4 +1331,4 @@ function qualitybutton_Callback(hObject, eventdata, handles)
 % hObject    handle to qualitybutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-qualityrating_gui();
+qualityrating_gui(handles.project);

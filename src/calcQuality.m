@@ -1,4 +1,4 @@
-function Q = calcQuality(EEG,auto_badchans,man_badchans,varargin)
+function Q = calcQuality(EEG, bad_chans, varargin)
 % Calculates quality measures of a dataset based on the following metrics:
 %
 % -  The ratio of data points that exceed the absolute value a certain
@@ -43,7 +43,7 @@ function Q = calcQuality(EEG,auto_badchans,man_badchans,varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %% Parse and check parameters
-defaults = DefaultParameters.calcQuality_params;
+defaults = ConstantGlobalValues.calcQuality_params;
 
 p = inputParser;
 
@@ -86,7 +86,6 @@ OHA = nansum(abs(X(:)) > settings.overallThresh)./(t.*c);
 THV = nansum(std(X,[],1) > settings.timeThresh)./t;
 
 % ratio of channels that have been interpolated
-bad_chans = setxor(auto_badchans,man_badchans);
 RBC = numel(bad_chans)./c;
 
 % ratio of channels with high variance
@@ -158,10 +157,4 @@ Q.THV = THV;
 Q.CHV = CHV;
 Q.MAV = MAV;
 Q.RBC = RBC; 
-
-% thresholds
-Q.overallThresh = settings.overallThresh;
-Q.timeThresh = settings.timeThresh;
-Q.chanThresh = settings.chanThresh;
-
 end

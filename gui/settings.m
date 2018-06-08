@@ -35,7 +35,7 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 06-Jun-2018 11:28:45
+% Last Modified by GUIDE v2.5 08-Jun-2018 15:22:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,10 +83,12 @@ end
 
 CGV = ConstantGlobalValues;
 params = varargin{1};
-ds = varargin{2};
+visualisation_params = varargin{2};
 assert(isa(params, 'struct'));
 handles.params = params;
+handles.visualisation_params = visualisation_params;
 handles.CGV = CGV;
+
 
 assert( isempty(handles.params.pca_params) || ...
     isempty(handles.params.ica_params), ...
@@ -143,6 +145,13 @@ else
     set(handles.otherradio, 'Value', 1)
 end
 
+% Set Quality Rating Parameters. This can't be disabled
+calcQuality_params = visualisation_params.calcQuality_params;
+set(handles.overalledit, 'String', mat2str(calcQuality_params.overallThresh));
+set(handles.timeedit, 'String', mat2str(calcQuality_params.timeThresh));
+set(handles.channelthresholdedit, 'String', mat2str(calcQuality_params.chanThresh));
+
+
 if ~isempty(params.asr_params)
    if( ~strcmp(params.asr_params.Highpass, 'off'))
         set(handles.asrhighcheckbox, 'Value', 1);
@@ -186,6 +195,14 @@ else
     set(handles.rarcheckbox, 'Value', 0);
 end
 
+if( ~isempty(params.highvar_params))
+    set(handles.highvarcheckbox, 'Value', 1);
+    set(handles.highvaredit, 'String', mat2str(params.highvar_params.sd));
+else
+    set(handles.highvarcheckbox, 'Value', 0);
+    set(handles.highvaredit, 'String', '');
+end
+
 if( ~isempty(params.pca_params))
     set(handles.pcacheckbox, 'Value', 1);
     if( isempty( params.pca_params.lambda ))
@@ -215,7 +232,8 @@ set(handles.interpolationpopupmenu,...
 
 set(handles.eogcheckbox, 'Value', params.eog_regression_params.perform_eog_regression)
 
-% Set the downsampling rate (TODO: HARDCODED!)
+% Set the downsampling rate
+ds = visualisation_params.ds;
 contents = cellstr(get(handles.dspopupmenu,'String'));
 index = find(contains(contents, int2str(ds)));
 set(handles.dspopupmenu, 'Value', index);
@@ -332,8 +350,8 @@ guidata(hObject, handles);
 close('settings');
 
 function handles = get_inputs(handles)
-
 params = handles.params;
+visualisation_params = handles.visualisation_params;
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
 
@@ -396,7 +414,23 @@ res = str2double(get(handles.notchedit, 'String'));
 if ~isnan(res)
     notch.freq = res; end
 clear res;
-    
+
+
+% Get Quality Rating Parameters.
+calcQuality_params = visualisation_params.calcQuality_params;
+overallThresh = str2double(get(handles.overalledit, 'String'));
+timeThresh = str2double(get(handles.timeedit, 'String'));
+chanThresh = str2double(get(handles.channelthresholdedit, 'String'));
+if ~isnan(overallThresh)
+    calcQuality_params.overallThresh = overallThresh;
+end
+if ~isnan(timeThresh)
+    calcQuality_params.timeThresh = timeThresh;
+end
+if ~isnan(chanThresh)
+    calcQuality_params.chanThresh = chanThresh;
+end
+
 asr_params = params.asr_params;
 if( get(handles.asrhighcheckbox, 'Value') )
     highpass_val = str2num(get(handles.asrhighedit, 'String'));
@@ -459,6 +493,15 @@ elseif ~rar_check
     prep_params = struct([]);
 end
 
+highvar_params = params.highvar_params;
+if (get(handles.highvarcheckbox, 'Value'))
+     sd = str2double(get(handles.highvaredit, 'String'));
+     if ~isnan(sd)
+        highvar_params.sd = sd; end
+else
+    highvar_params = struct([]);
+end
+
 pca_params = params.pca_params;
 if( get(handles.pcacheckbox, 'Value') )
     lambda = str2double(get(handles.lambdaedit, 'String'));
@@ -508,13 +551,15 @@ idx = get(handles.dspopupmenu, 'Value');
 dsrates = get(handles.dspopupmenu, 'String');
 ds = str2double(dsrates{idx});
 
-handles.ds_rate = ds;
+handles.visualisation_params.ds = ds;
+handles.visualisation_params.calcQuality_params = calcQuality_params;
 handles.params.filter_params.high = high;
 handles.params.filter_params.low = low;
 handles.params.filter_params.notch = notch;
 handles.params.asr_params = asr_params;
 handles.params.eog_regression_params = eog_regression_params;
 handles.params.prep_params = prep_params;
+handles.params.highvar_params = highvar_params;
 handles.params.pca_params = pca_params;
 handles.params.ica_params = ica_params;
 handles.params.interpolation_params.method = method;
@@ -596,6 +641,12 @@ else
     set(handles.otherradio, 'Value', 1)
 end
 
+% Set Quality Rating Parameters. This can't be disabled
+calcQuality_params = CGV.calcQuality_params;
+set(handles.overalledit, 'String', mat2str(calcQuality_params.overallThresh));
+set(handles.timeedit, 'String', mat2str(calcQuality_params.timeThresh));
+set(handles.channelthresholdedit, 'String', mat2str(calcQuality_params.chanThresh));
+
 set(handles.icacheckbox, 'Value', ~isempty(defs.ica_params));
 if ~isempty(defs.ica_params)
     set(handles.largemapcheckbox, 'Value', defs.ica_params.large_map)
@@ -645,6 +696,14 @@ if ~isempty(defs.asr_params)
             CGV.default_params.asr_params.WindowCriterion);
 end
 set(handles.rarcheckbox, 'Value', ~isempty(defs.prep_params));
+
+if( ~isempty(defs.highvar_params))
+    set(handles.highvarcheckbox, 'Value', 1);
+    set(handles.highvaredit, 'String', mat2str(defs.highvar_params.sd));
+else
+    set(handles.highvarcheckbox, 'Value', 0);
+    set(handles.highvaredit, 'String', '');
+end
 
 if ~isempty(defs.pca_params)
     set(handles.pcacheckbox, 'Value', 1);
@@ -760,6 +819,12 @@ else
     set(handles.maxIteredit, 'String', '');
 end
 
+if( get(handles.highvarcheckbox, 'Value'))
+    set(handles.highvaredit, 'enable', 'on')
+else
+    set(handles.highvaredit, 'enable', 'off')
+end
+
 if( get(handles.rarcheckbox, 'Value'))
     set(handles.preppushbutton, 'enable', 'on')
 else
@@ -786,9 +851,7 @@ if( isempty(h))
 end
 handle = guidata(h);
 handle.params = handles.params;
-if isfield(handles, 'ds_rate')
-    handle.ds_rate = handles.ds_rate;
-end
+handle.visualisation_params = handles.visualisation_params;
 guidata(handle.main_gui, handle);
 
 delete(hObject);
@@ -1084,6 +1147,9 @@ if get(hObject,'Value')
     set(handles.windowedit, 'String', mat2str(recs.asr_params.WindowCriterion))
 end
 handles = switch_components(handles);
+
+% Update handles structure
+guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of windowcheckbox
 
 
@@ -1553,7 +1619,14 @@ function highvarcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to highvarcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.highvaredit, 'String', mat2str(recs.highvar_params.sd))
+end
+handles = switch_components(handles);
 
+% Update handles structure
+guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of highvarcheckbox
 
 
@@ -1570,6 +1643,73 @@ function highvaredit_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function highvaredit_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to highvaredit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function overalledit_Callback(hObject, eventdata, handles)
+% hObject    handle to overalledit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of overalledit as text
+%        str2double(get(hObject,'String')) returns contents of overalledit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function overalledit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to overalledit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function timeedit_Callback(hObject, eventdata, handles)
+% hObject    handle to timeedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of timeedit as text
+%        str2double(get(hObject,'String')) returns contents of timeedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function timeedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to timeedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function channelthresholdedit_Callback(hObject, eventdata, handles)
+% hObject    handle to channelthresholdedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of channelthresholdedit as text
+%        str2double(get(hObject,'String')) returns contents of channelthresholdedit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function channelthresholdedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to channelthresholdedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

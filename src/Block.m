@@ -84,6 +84,8 @@ classdef Block < handle
         % plotted on the rating_gui. It is downsampled to speed up the
         % plotting in rating_gui
         reduced_address
+        
+        qualityScore
     end
 
     properties(SetAccess=private)
@@ -161,6 +163,7 @@ classdef Block < handle
         function self = Block(subject, file_name, ext, dsrate, params)
   
             % Fixed ones are initialised in the constructor
+            self.qualityScore = nan;
             self.subject = subject;
             self.file_name = file_name;
             self.file_extension = ext;

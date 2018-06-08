@@ -118,6 +118,8 @@ classdef Project < handle
         % Address of the state file corresponding to this project. By
         % default it's in the result_folder and is name project_state.mat.
         state_address
+        
+        qualityCutoffs
     end
     
     properties(SetAccess=private)
@@ -164,12 +166,14 @@ classdef Project < handle
         
         % Constant Global Variables
         CGV
+        
+        qualityThresholds
     end
     
     %% Constructor
     methods
         function self = Project(name, d_folder, p_folder, ext, ds, ...
-                params, varargin)
+                params, qualityThresholds, varargin)
             
             self = self.setName(name);
             self = self.setData_folder(d_folder);
@@ -180,7 +184,8 @@ classdef Project < handle
             ext_split = strsplit(ext, '.');
             self.file_extension = strcat('.', ext_split{end});
             self.mask = ext;
-            
+            self.qualityThresholds = qualityThresholds
+            self.qualityCutoffs = self.CGV.rateQuality_params;
             if(any(strcmp(self.file_extension, {self.CGV.extensions.text})))
                 self.srate = varargin{1};
             end
@@ -297,12 +302,21 @@ classdef Project < handle
                 automagic.version = self.CGV.version;
                 if(~ isempty(automagic.tobe_interpolated))
                     rate = self.CGV.ratings.Interpolate;
+                    block.qualityScore = nan;
+                    automagic.qualityScore = nan;
                 else
-                    rate = self.CGV.ratings.NotRated;
+                    qualityScore  = calcQuality(EEG, block.final_badchans, self.qualityThresholds); 
+                    block.qualityScore = qualityScore;
+                    automagic.qualityScore = qualityScore;
+
+                    % Quality rating
+                    rate = rateQuality(automagic.qualityScore, self.qualityCutoffs);
                 end
                 automagic.rate = rate;
                 block.setRatingInfoAndUpdate(rate , automagic.tobe_interpolated, [], false);
+                self.update_rating_lists(block);
                 EEG = rmfield(EEG, 'automagic');
+                
                 % save results
                 set(fig,'PaperUnits','inches','PaperPosition',[0 0 10 8])
                 print(fig, block.image_address, '-djpeg', '-r100');
@@ -313,9 +327,7 @@ classdef Project < handle
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
                 save(block.result_address, 'EEG', 'automagic','-v7.3');
 
-                self.not_rated_list = ...
-                    [self.not_rated_list block.index];
-                self.not_rated_list = sort(unique(self.not_rated_list));
+                
                 if( self.current == -1)
                    self.current = 1; 
                 end
@@ -395,29 +407,31 @@ classdef Project < handle
                 automagic.interpolation.channels = interpolate_chans;
                 automagic.interpolation.params = self.params.interpolation_params;
                 
-            	% Do the quality scoring 
-                % Don't know if this fits in best here? 
-                automagic.qualityScore  = calcQuality(EEG,interpolate_chans,[],struct('plotFig',1)); 
-                % The quality rating should come from the rating GUI... 
-                automagic.qualityRating = rateQuality(automagic.qualityScore)
+            	% Quality scoring
+                qualityScore  = calcQuality(EEG, block.final_badchans, self.qualityThresholds); 
+                block.qualityScore = qualityScore;
+                automagic.qualityScore = qualityScore;
+                
+                % Quality rating
+                rate = rateQuality(automagic.qualityScore, self.qualityCutoffs);
+                automagic.rate = rate;
                 
                 % Put the channels back to NaN if they were not to be interpolated
                 % originally
                 original_nans = setdiff(nanchans, interpolate_chans);
                 EEG.data(original_nans, :) = NaN;
+                
                 preprocessed.EEG = EEG;
                 preprocessed.automagic = automagic;
+                
                 % Downsample the new file and save it
                 reduced.data = (downsample(EEG.data', self.ds_rate))';
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
 
                 % Setting the new information
-                block.setRatingInfoAndUpdate(self.CGV.ratings.NotRated, [], [block.final_badchans interpolate_chans], true);
-                self.interpolate_list(self.interpolate_list == block.index) = [];
-                self.not_rated_list = ...
-                        [self.not_rated_list block.index];
-                self.not_rated_list = sort(unique(self.not_rated_list));
+                block.setRatingInfoAndUpdate(rate , [], [block.final_badchans interpolate_chans], true);
                 block.saveRatingsToFile();
+                self.update_rating_lists(block);
                 self.save_project();
             end
             end_time = cputime - start_time;
@@ -438,6 +452,56 @@ classdef Project < handle
             main_gui();
         end
         
+        function self = update_rating_lists(self, block)
+            switch block.rate
+                case self.CGV.ratings.Good
+                    if( ~ ismember(block.index, self.good_list ) )
+                        self.good_list = [self.good_list block.index];
+                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.ok_list(self.ok_list == block.index) = [];
+                        self.bad_list(self.bad_list == block.index) = [];
+                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.good_list = sort(unique(self.good_list));
+
+                    end
+                case self.CGV.ratings.OK
+                    if( ~ ismember(block.index, self.ok_list ) )
+                        self.ok_list = [self.ok_list block.index];
+                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.good_list(self.good_list == block.index) = [];
+                        self.bad_list(self.bad_list == block.index) = [];
+                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.ok_list = sort(unique(self.ok_list));
+                    end
+                case self.CGV.ratings.Bad
+                    if( ~ ismember(block.index, self.bad_list ) )
+                        self.bad_list = [self.bad_list block.index];
+                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.ok_list(self.ok_list == block.index) = [];
+                        self.good_list(self.good_list == block.index) = [];
+                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.bad_list = sort(unique(self.bad_list));
+                    end
+                case self.CGV.ratings.Interpolate
+                    if( ~ ismember(block.index, self.interpolate_list ) )
+                        self.interpolate_list = [self.interpolate_list block.index];
+                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.ok_list(self.ok_list == block.index) = [];
+                        self.bad_list(self.bad_list == block.index) = [];
+                        self.good_list(self.good_list == block.index) = [];
+                        self.interpolate_list = sort(unique(self.interpolate_list));
+                    end
+                case self.CGV.ratings.NotRated
+                    if( ~ ismember(block.index, self.not_rated_list ) )
+                        self.not_rated_list = [self.not_rated_list block.index];
+                        self.good_list(self.good_list == block.index) = [];
+                        self.ok_list(self.ok_list == block.index) = [];
+                        self.bad_list(self.bad_list == block.index) = [];
+                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.not_rated_list = sort(unique(self.not_rated_list));
+                    end
+            end
+        end
         function self = update_rating_structures(self)
             % Updates the data structures of this project. Look
             % create_rating_structure for more info.
