@@ -184,7 +184,7 @@ classdef Project < handle
             ext_split = strsplit(ext, '.');
             self.file_extension = strcat('.', ext_split{end});
             self.mask = ext;
-            self.qualityThresholds = qualityThresholds
+            self.qualityThresholds = qualityThresholds;
             self.qualityCutoffs = self.CGV.rateQuality_params;
             if(any(strcmp(self.file_extension, {self.CGV.extensions.text})))
                 self.srate = varargin{1};
@@ -310,10 +310,11 @@ classdef Project < handle
                     automagic.qualityScore = qualityScore;
 
                     % Quality rating
-                    rate = rateQuality(automagic.qualityScore, self.qualityCutoffs);
+                    rate = rateQuality(block, self.qualityCutoffs);
                 end
                 automagic.rate = rate;
-                block.setRatingInfoAndUpdate(rate , automagic.tobe_interpolated, [], false);
+                automagic.is_manually_rated = false;
+                block.setRatingInfoAndUpdate(rate , automagic.tobe_interpolated, [], false, false);
                 self.update_rating_lists(block);
                 EEG = rmfield(EEG, 'automagic');
                 
@@ -413,7 +414,7 @@ classdef Project < handle
                 automagic.qualityScore = qualityScore;
                 
                 % Quality rating
-                rate = rateQuality(automagic.qualityScore, self.qualityCutoffs);
+                rate = rateQuality(block, self.qualityCutoffs);
                 automagic.rate = rate;
                 
                 % Put the channels back to NaN if they were not to be interpolated
@@ -429,7 +430,7 @@ classdef Project < handle
                 save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
 
                 % Setting the new information
-                block.setRatingInfoAndUpdate(rate , [], [block.final_badchans interpolate_chans], true);
+                block.setRatingInfoAndUpdate(rate , [], [block.final_badchans interpolate_chans], true, false);
                 block.saveRatingsToFile();
                 self.update_rating_lists(block);
                 self.save_project();
@@ -645,7 +646,7 @@ classdef Project < handle
                         % File is new
                         % Block creation extracts and updates automatically the rating 
                         % information from the existing files, if any.
-                        block = Block(subject, file_name, ext, self.ds_rate, self.params);
+                        block = Block(self, subject, file_name, ext, self.ds_rate, self.params);
                         % If the block is not created due to unmatched
                         % parameters just skip it.
                         if( isempty(block.rate))
@@ -907,7 +908,7 @@ classdef Project < handle
                     end
                     % Block creation extracts and updates automatically the rating 
                     % information from the existing files, if any.
-                    block = Block(subject, file_name, ext, self.ds_rate, self.params);
+                    block = Block(self, subject, file_name, ext, self.ds_rate, self.params);
                     % If the block is not created due to unmatched
                     % parameters just skip it.
                     if( isempty(block.rate))

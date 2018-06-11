@@ -135,7 +135,7 @@ else
 end
 set(handles.rbcslider1text, 'String', get(handles.rbcslider1, 'Value'));
 set(handles.rbcslider2text, 'String', get(handles.rbcslider2, 'Value'));
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 
 function cutoffs = get_gui_values(handles)
 
@@ -164,35 +164,80 @@ if get(handles.rbcradio, 'Value')
     cutoffs.BadChannelBadCutoff = get(handles.rbcslider2, 'Value');
 end
 
+function renderChanges(handles, cutoffs)
+handles.project.qualityCutoffs = cutoffs;
+renderAxes(handles, cutoffs);
+change_rating_gui(false);
+
+function change_rating_gui(render_lines)
+h = findobj(allchild(0), 'flat', 'Tag', 'rating_gui');
+rating_gui_handle = guidata(h);
+set_gui_rating(rating_gui_handle);
+if render_lines
+    update_lines(rating_gui_handle);
+end
 
 function renderAxes(handles, cutoffs)
-blocks = handles.project.block_map.values;
-res = cellfun( @(block) rateQuality(block.qualityScore, cutoffs), blocks, 'uniform', 0);
+block_map = handles.project.block_map;
+processed = handles.project.processed_list;
+blocks = values(block_map, processed);
+res = cellfun( @(block) rateQuality(block, cutoffs), blocks, 'uniform', 0);
 cutoffAxes = handles.cutoffaxes;
-rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Interpolate'},'Ordinal',true), 'Parent', cutoffAxes);
-set(cutoffAxes, 'YTick', 0:max(rateingHist.Values))
+rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Interpolate', 'Manually Rated'},'Ordinal',true), 'Parent', cutoffAxes);
+set(cutoffAxes, 'YTick', 0:(max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values))))
+set(cutoffAxes,'fontsize',6)
 title('Overview of dataset rating based on selected cutoffshow')
+if max(rateingHist.Values) ~= 0
+    ylim([0 (max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values)))])
+end
 
-function handles = apply_to_all(handles, cutoffs)
+function ret_val = apply_to_all(handles, cutoffs)
 % Change the cutoff the project
 % Change rating of everyfile
+ret_val = [];
 project = handles.project;
-blocks = project.block_map.values;
+files = project.processed_list;
+blocks = project.block_map;
+
+question = 'Would you like to apply changes on also manually rated files';
+handle = findobj(allchild(0), 'flat', 'Tag', 'qualityrating');
+main_pos = get(handle,'position');
+screen_size = get( groot, 'Screensize' );
+choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], question, ...
+    'Apply on all files',...
+    'Apply on all', 'Do not apply on manually rated files','Do not apply on manually rated files');
+
+switch choice
+    case 'Apply on all'
+        apply_to_manually_rated = true;
+    case 'Do not apply on manually rated files'
+        apply_to_manually_rated = false;
+    otherwise
+        return;
+end
 
 set(handles.qualityrating, 'pointer', 'watch')
 drawnow;
-for i = 1:length(blocks)
-    block = blocks{i};
-    new_rate = rateQuality(block.qualityScore, cutoffs);
-    if ~strcmp(new_rate, handles.CGV.ratings.Interpolate) 
-        block.setRatingInfoAndUpdate(new_rate, [], block.final_badchans, ...
-            block.is_interpolated);
+for i = 1:length(files)
+    file = files{i};
+    block = blocks(file);
+    new_rate = rateQuality(block, cutoffs);
+    if (apply_to_manually_rated || ~ block.is_manually_rated)
+        if ~strcmp(new_rate, handles.CGV.ratings.Interpolate) 
+            block.setRatingInfoAndUpdate(new_rate, [], block.final_badchans, ...
+                block.is_interpolated, false);
+        else
+            block.setRatingInfoAndUpdate(new_rate, block.tobe_interpolated, block.final_badchans, ...
+                    block.is_interpolated, false);
+        end
         block.saveRatingsToFile();
         project.update_rating_lists(block);
     end
 end
 handles.project.qualityCutoffs = cutoffs;
-set(handles.qualityrating, 'pointer', 'arrow')
+change_rating_gui(true);
+set(handles.qualityrating, 'pointer', 'arrow');
+ret_val = handles;
 
 % --- Executes on button press in commitbutton.
 function commitbutton_Callback(hObject, eventdata, handles)
@@ -200,8 +245,10 @@ function commitbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 cutoffs = get_gui_values(handles);
-apply_to_all(handles, cutoffs);
-close(handles.title_name);
+ret_val = apply_to_all(handles, cutoffs);
+if ~ isempty(ret_val)
+    close(handles.title_name);
+end
 
 % --- Executes on button press in resetbutton.
 function resetbutton_Callback(hObject, eventdata, handles)
@@ -209,8 +256,7 @@ function resetbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 cutoffs = handles.CGV.rateQuality_params;
-handles = render_project(handles, cutoffs);
-renderAxes(handles, cutoffs);
+render_project(handles, cutoffs);
 
 % --- Executes on button press in cancelbutton.
 function cancelbutton_Callback(hObject, eventdata, handles)
@@ -231,7 +277,7 @@ if (goodValue > badValue)
 end
 set(handles.ohaslider1text, 'String', goodValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
@@ -262,7 +308,7 @@ else
     set(handles.chvslider2, 'enable', 'off')
 end
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hint: get(hObject,'Value') returns toggle state of chvradio
 
 
@@ -279,7 +325,7 @@ else
      set(handles.thvslider2, 'enable', 'off')
 end
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hint: get(hObject,'Value') returns toggle state of thvradio
 
 
@@ -296,7 +342,7 @@ else
     set(handles.ohaslider2, 'enable', 'off')
 end
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hint: get(hObject,'Value') returns toggle state of oharadio
 
 
@@ -313,7 +359,7 @@ else
     set(handles.rbcslider2, 'enable', 'off')
 end
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hint: get(hObject,'Value') returns toggle state of rbcradio
 
 
@@ -329,7 +375,7 @@ if (goodValue > badValue)
 end
 set(handles.rbcslider1text, 'String', goodValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -358,7 +404,7 @@ if (goodValue > badValue)
 end
 set(handles.rbcslider2text, 'String', badValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -387,7 +433,7 @@ if (goodValue > badValue)
 end
 set(handles.chvslider1text, 'String', goodValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -416,7 +462,7 @@ if (goodValue > badValue)
 end
 set(handles.chvslider2text, 'String', badValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -445,7 +491,7 @@ if (goodValue > badValue)
 end
 set(handles.thvslider1text, 'String', goodValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -474,7 +520,7 @@ if (goodValue > badValue)
 end
 set(handles.thvslider2text, 'String', badValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
@@ -503,7 +549,7 @@ if (goodValue > badValue)
 end
 set(handles.ohaslider2text, 'String', badValue);
 cutoffs = get_gui_values(handles);
-renderAxes(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 

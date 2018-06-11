@@ -53,6 +53,9 @@ function rating_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 set(handles.rating_gui, 'pointer', 'watch')
 drawnow;
 
+if ~ exist('update_lines', 'file')
+    addpath('rating_gui_utils/');
+end
 if( nargin - 3 ~= 1 )
     error('wrong number of arguments. Project must be given as argument.')
 end
@@ -151,34 +154,6 @@ end
 set(handles.subjectsmenu,'String',list);
 handles = update_gui_selected_subject(handles);
 
-% --- Set the rating of the gui based on the current project
-function handles = set_gui_rating(handles)
-% handles  structure with handles of the gui
-
-project = handles.project;
-if( project.current == - 1 || is_filtered(handles, project.current))
-    set(handles.rategroup,'selectedobject',[]);
-    return
-end
-block = get_current_block(handles);
-
-set(handles.turnonbutton,'Enable', 'off')
-set(handles.turnoffbutton,'Enable', 'off')
-switch block.rate
-    case handles.CGV.ratings.Good
-       set(handles.rategroup,'selectedobject',handles.goodrate)
-    case handles.CGV.ratings.OK
-        set(handles.rategroup,'selectedobject',handles.okrate)
-    case handles.CGV.ratings.Bad
-        set(handles.rategroup,'selectedobject',handles.badrate)
-    case handles.CGV.ratings.Interpolate
-        set(handles.rategroup,'selectedobject',handles.interpolaterate)
-        set(handles.turnonbutton,'Enable', 'on')
-        set(handles.turnoffbutton,'Enable', 'on')
-    case handles.CGV.ratings.NotRated
-        set(handles.rategroup,'selectedobject',handles.notrate)
-end
-
 
 % --- Load the current "reduced" file to the work space (The file is 
 % downsampled to speed up the loading)
@@ -191,7 +166,7 @@ if ( project.current == - 1 || is_filtered(handles, project.current))
 else
     block = get_current_block(handles);
     if(isa(block, 'Block'))
-        block.update_addresses(project.data_folder, project.result_folder);
+%         block.update_addresses(project.data_folder, project.result_folder);
         if(get_reduced)
             load(block.reduced_address);
             data = reduced;
@@ -262,21 +237,6 @@ if(isempty(Index))
     Index = 1;
 end
 set(handles.subjectsmenu,'Value',Index);
-
-% Returns the block pointed by the current index. If current = -1, a mock
-% block is returned.
-function block = get_current_block(handles)
-project = handles.project;
-
-if( project.current == -1)
-    subject = Subject('','');
-    block = Block(subject, '', '', 0, []);
-    block.index = -1;
-    return;
-end
-unique_name = project.processed_list{project.current};
-block = project.block_map(unique_name);
-
 
 
 % --- Get the index of the next available file.
@@ -424,42 +384,6 @@ if( isempty(previous))
     end
 end
 
-% --- Check whether this file is filtered by the user
-function bool = is_filtered(handles, file)
-% handles  structure with handles of the gui
-% subj     could be a double indicating the index of the file or a char
-%          indicating the name of it
-project = handles.project;
-if( project.current == -1)
-    bool = false;
-    return;
-end
-
-project = handles.project;
-switch class(file)
-    case 'double'
-        unique_name = project.processed_list{file};
-    case 'char'
-        unique_name = file;
-end
-
-block = project.block_map(unique_name);
-rate = block.rate;
-switch rate
-    case handles.CGV.ratings.Good
-        bool = ~ get(handles.goodcheckbox,'Value');
-    case handles.CGV.ratings.OK
-        bool = ~ get(handles.okcheckbox,'Value');
-    case handles.CGV.ratings.Bad
-        bool = ~ get(handles.badcheckbox,'Value');
-    case handles.CGV.ratings.Interpolate
-        bool = ~ get(handles.interpolatecheckbox,'Value');
-    case handles.CGV.ratings.NotRated
-        bool = ~ get(handles.notratedcheckbox,'Value');
-    otherwise
-        bool = false;
-end
-
 % --- Switch the gui to enable or disable
 function switch_gui(mode, handles)
 % handles  structure with handles of the gui
@@ -542,6 +466,34 @@ handles = turn_off_selection(handles);
 % Update handles structure
 guidata(hObject, handles);
 
+% --- Set the rating of the gui based on the current project
+function handles = set_gui_rating(handles)
+% handles  structure with handles of the rating_gui
+
+project = handles.project;
+if( project.current == - 1 || is_filtered(handles, project.current))
+    set(handles.rategroup,'selectedobject',[]);
+    return
+end
+block = get_current_block(handles);
+
+set(handles.turnonbutton,'Enable', 'off')
+set(handles.turnoffbutton,'Enable', 'off')
+switch block.rate
+    case handles.CGV.ratings.Good
+       set(handles.rategroup,'selectedobject', handles.goodrate)
+    case handles.CGV.ratings.OK
+        set(handles.rategroup,'selectedobject', handles.okrate)
+    case handles.CGV.ratings.Bad
+        set(handles.rategroup,'selectedobject', handles.badrate)
+    case handles.CGV.ratings.Interpolate
+        set(handles.rategroup,'selectedobject', handles.interpolaterate)
+        set(handles.turnonbutton,'Enable', 'on')
+        set(handles.turnoffbutton,'Enable', 'on')
+    case handles.CGV.ratings.NotRated
+        set(handles.rategroup,'selectedobject', handles.notrate)
+end
+
 % --- Executes on button press in goodcheckbox. If the checkbox is
 % unchecked, the blocks with this rating are filtered and can not be shown.
 % It processes as explaind below:
@@ -555,7 +507,6 @@ function goodcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to goodcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = save_state(handles);
 project = handles.project;
 
 next_idx = handles.project.current;
@@ -603,7 +554,6 @@ function okcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to okcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = save_state(handles);
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.okcheckbox, 'Value');
@@ -647,7 +597,6 @@ function badcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to badcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = save_state(handles);
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.badcheckbox, 'Value');
@@ -691,7 +640,6 @@ function interpolatecheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to interpolatecheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = save_state(handles);
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.interpolatecheckbox, 'Value');
@@ -735,7 +683,6 @@ function notratedcheckbox_Callback(hObject, eventdata, handles)
 % hObject    handle to notratedcheckbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles = save_state(handles);
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.notratedcheckbox, 'Value');
@@ -872,8 +819,6 @@ function subjectsmenu_Callback(hObject, eventdata, handles)
 set(handles.rating_gui, 'pointer', 'watch')
 drawnow;
 
-handles = save_state(handles);
-
 project = handles.project;
 list = get(hObject, 'String');
 idx = get(hObject,'Value');
@@ -897,7 +842,6 @@ set(handles.rating_gui, 'pointer', 'arrow')
 function handles = next(handles)
 % handles  structure with handles of the gui
 
-handles = save_state(handles);
 handles.project.current = get_next_index(handles);
 handles = load_project(handles);
 
@@ -905,7 +849,6 @@ handles = load_project(handles);
 function handles = previous(handles)
 % handles  structure with handles of the gui
 
-handles = save_state(handles);
 handles.project.current = get_previous_index(handles);
 handles = load_project(handles);
 
@@ -926,76 +869,26 @@ if( isempty(handles.rategroup.SelectedObject))
 else
     block = get_current_block(handles);
     new_rate = handles.rategroup.SelectedObject.String;
+    is_manually_rated = ~ strcmp(new_rate, rateQuality(block, project.qualityCutoffs));
     switch new_rate
         case {handles.CGV.ratings.Good, handles.CGV.ratings.OK, ...
                 handles.CGV.ratings.Bad, handles.CGV.ratings.NotRated}
             block.setRatingInfoAndUpdate(new_rate, ...
-                                        [], ...
+                                        block.tobe_interpolated, ...
                                         block.final_badchans, ...
-                                        block.is_interpolated);
+                                        block.is_interpolated, ...
+                                        is_manually_rated);
         case handles.CGV.ratings.Interpolate
                 % The interpolate_list is untouched at this step. There maybe even
                 % conflicts in it which are not checked.
                 block.setRatingInfoAndUpdate(new_rate, ...
                 block.tobe_interpolated, ...
                 block.final_badchans, ...
-                block.is_interpolated);
+                block.is_interpolated, ...
+                is_manually_rated);
     end
+    project.update_rating_lists(block);
 end
-
-% --- Draw all the channels that has been previously selected to be
-% interpolated
-function draw_lines(handles)
-% handles  structure with handles of the gui
-
-project = handles.project;
-if(project.current == -1)
-    return;
-end
-block = get_current_block(handles);
-list = block.tobe_interpolated;
-for chan = 1:length(list)
-    draw_line(list(chan), project.maxX, handles, 'b');
-end
-set(handles.channellistbox,'String',list)
-
-% --- Draw a horizontal line on the channel selected by y to mark it on the
-% plot
-function handles = draw_line(y, maxX, handles, color)
-% handles  structure with handles of the gui
-% y        the y-coordinate of the selected point to be drawn
-% maxX     the maximum x-coordinate until which the line must be drawn in
-%          the x-axis
-% color    color of the line
-
-axe = handles.axes;
-axes(axe);
-hold on;
-p1 = [0, maxX];
-p2 = [y, y];
-p = plot(axe, p1, p2, color ,'LineWidth', 3);
-set(p, 'ButtonDownFcn', {@delete_line, p, y, handles})
-hold off;
-
-% --- Draw a star * on the plot to show the channels that have been
-% selected as bad channels during the preprocessing step. Note that they
-% are not necessary interpolated.
-function mark_interpolated_chans(handles)
-% handles  structure with handles of the gui
-
-project = handles.project;
-if(project.current == -1)
-    return;
-end
-block = get_current_block(handles);
-badchans = block.auto_badchans;
-axe = handles.axes;
-axes(axe);
-hold on;
-for i = 1:length(badchans)
-    plot(0 , badchans(i),'r*')
-end
-hold off;
 
 % --- Turn on the selection mode to choose channels that should be
 % interpolated
@@ -1009,7 +902,7 @@ handles.selection_mode = true;
 % changed
 im = findobj(allchild(0), 'Tag', 'im');
 set(im, 'ButtonDownFcn', {@on_selection,handles})
-update_lines(handles)
+% update_lines(handles)
 
 set(gcf,'Pointer','crosshair');
 switch_gui('off', handles);
@@ -1025,7 +918,7 @@ handles.selection_mode = false;
 % changed
 im = findobj(allchild(0), 'Tag', 'im');
 set(im, 'ButtonDownFcn', {@on_selection,handles})
-update_lines(handles)
+% update_lines(handles)
 
 set(gcf,'Pointer','arrow');
 switch_gui('on', handles);
@@ -1054,7 +947,7 @@ else
     list = [list y];
     draw_line(y, handles.project.maxX, handles, 'b');
 end
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated);
+block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated, true);
 set(handles.channellistbox,'String',list)
 
 % --- Redraw all lines
@@ -1068,39 +961,19 @@ end
 draw_lines(handles);
 mark_interpolated_chans(handles);
 
-% --- Delete the line selected by y and remove it from the interpolation
-% list 
-function delete_line(source, event, p, y, handles)
-% handles  structure with handles of the gui
-% y        the y-coordinate of the line to be deleted (number of the channel)
-% p        the plot handler of the line (this is the plot seperated from the main plot)
-% event    the event object
-
-if( ~ handles.selection_mode )
-    return;
-end
-axes(handles.axes);
-delete(p);
-block = get_current_block(handles);
-list = block.tobe_interpolated;
-list = list(list ~= y);
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated);
-set(handles.channellistbox,'String',list)
-
 % --- Save the state of the project
 function handles = save_state(handles)
 % handles  structure with handles of the gui
 
 if ( ~ isa(handles,'struct') || handles.project.current == -1)
     return
-
 end
 
-% Save the rating data into the preprocessing file
-block = get_current_block(handles);
-block.saveRatingsToFile();
-% update five lists of ratings which are used to speed up the filtering
-handles.project.update_rating_lists(block);
+% % Save the rating data into the preprocessing file
+% block = get_current_block(handles);
+% block.saveRatingsToFile();
+% % update five lists of ratings which are used to speed up the filtering
+% handles.project.update_rating_lists(block);
         
 % Save the stateS
 if(isa(handles.project, 'Project'))
@@ -1122,6 +995,12 @@ save_state(handles);
 if(isa(handles.project, 'EEGLabProject'))
     delete(hObject);
     return;
+end
+
+
+h = findobj(allchild(0), 'flat', 'Tag', 'qualityrating');
+if ~ isempty(h)
+    close(h.Name);
 end
 
 % Update the main gui's data after rating processing
@@ -1317,8 +1196,8 @@ if(~isempty(tobe_interpolated))
 else
     rate = block.rate;
 end
-block.setRatingInfoAndUpdate(rate, tobe_interpolated', block.final_badchans, block.is_interpolated);
-
+block.setRatingInfoAndUpdate(rate, tobe_interpolated', block.final_badchans, block.is_interpolated, block.is_manually_rated);
+handles.project.update_rating_lists(block);
 % Update handles structure
 guidata(hObject, handles);
 

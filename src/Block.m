@@ -90,6 +90,7 @@ classdef Block < handle
 
     properties(SetAccess=private)
         
+        project
         % Instance of the Subject. The corresponding subject that contains
         % this block.
         subject
@@ -150,6 +151,8 @@ classdef Block < handle
         
         % is true if the block has been already interpolated at least once.
         is_interpolated
+        
+        is_manually_rated
     end
     
     properties(Dependent)
@@ -160,10 +163,10 @@ classdef Block < handle
     
     %% Constructor
     methods   
-        function self = Block(subject, file_name, ext, dsrate, params)
+        function self = Block(project, subject, file_name, ext, dsrate, params)
   
             % Fixed ones are initialised in the constructor
-            self.qualityScore = nan;
+            self.project = project;
             self.subject = subject;
             self.file_name = file_name;
             self.file_extension = ext;
@@ -177,7 +180,15 @@ classdef Block < handle
     end
     
     %% Public Methods
-    methods 
+    methods
+        function rate = get.rate(self)
+            if self.is_manually_rated
+                rate = self.rate;
+            else
+                rate = rateQuality(self, self.project.qualityCutoffs);
+            end
+        end
+        
         function self = update_rating_info_from_file_if_any(self)
             % Check if any corresponding preprocessed file exists, if it's 
             % the case and that file has been already rated import the 
@@ -214,12 +225,16 @@ classdef Block < handle
                 self.is_interpolated = (length(extracted_prefix) == 3);
                 self.auto_badchans = automagic.auto_badchans;
                 self.final_badchans = automagic.final_badchans;
+                self.qualityScore = automagic.qualityScore;
+                self.is_manually_rated = automagic.is_manually_rated;
             else
                 self.rate = ConstantGlobalValues.ratings.NotRated;
                 self.tobe_interpolated = [];
                 self.auto_badchans = [];
                 self.final_badchans = [];
                 self.is_interpolated = false;
+                self.qualityScore = nan;
+                self.is_manually_rated = 1;
             end
             
             % Build prefix and adress based on ratings
@@ -263,13 +278,14 @@ classdef Block < handle
             self = self.update_prefix_and_result_address();
         end
         
-        function self = setRatingInfoAndUpdate(self, rate, list, final_badchans, is_interpolated)
+        function self = setRatingInfoAndUpdate(self, rate, list, final_badchans, is_interpolated, is_manually_rated)
             % Set the new rating information
             
             self.rate = rate;
             self.tobe_interpolated = list;
             self.final_badchans = final_badchans;
             self.is_interpolated = is_interpolated;
+            self.is_manually_rated = is_manually_rated;
             
             % Update the result address and rename if necessary
             self = self.update_prefix_and_result_address();
@@ -285,6 +301,8 @@ classdef Block < handle
             automagic.rate = self.rate;
             automagic.auto_badchans = self.auto_badchans;
             automagic.is_interpolated = self.is_interpolated;
+            automagic.is_manually_rated = self.is_manually_rated;
+            automagic.qualityScore = self.qualityScore;
             
             % It keeps track of the history of all interpolations.
             automagic.final_badchans = self.final_badchans;

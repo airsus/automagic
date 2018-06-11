@@ -31,5 +31,5 @@ parse(p, varargin{:});
 sd_threshold = p.Results.sd;
 
 data = EEG.data;
-rejected = numel(find(nanstd(data,[],2) > sd_threshold));
+rejected = find(nanstd(data,[],2) > sd_threshold);
 

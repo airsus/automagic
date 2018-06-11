@@ -1,4 +1,4 @@
-function R = rateQuality (Q, varargin)
+function R = rateQuality (block, varargin)
 % rates datasets, based on quality measures calculated with calcQuality()
 % Inputs: A structure Q with the following fields:
 
@@ -71,8 +71,16 @@ ratingT = {};
 ratingC = {};
 ratingBC = {};
 
+Q = block.qualityScore;
+is_manually_rated = block.is_manually_rated;
+
 if ~isstruct(Q) && isnan(Q)
    R = rating_strs.Interpolate;
+   return;
+end
+
+if is_manually_rated
+   R = 'Manually Rated';
    return;
 end
 % Categorize wrt OHA

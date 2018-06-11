@@ -520,36 +520,37 @@ if ( ~isempty(prep_params) )
     clear EEG_preped to_remove info rar_chans prep_removed_chans;
 end
 
+% Filtering on the whole dataset
+EEG_filtered = perform_filter(EEG_cleaned, filter_params);
+EOG_filtered = perform_filter(EOG, filter_params);
 
 % Reject channels based on high variance
 [s, ~] = size(EEG.data);
 highvar_removed_chans_mask = false(1, s); clear s;
-EEG_cleaned.automagic.highvariance_rejection.performed = 'no';
+EEG_filtered.automagic.highvariance_rejection.performed = 'no';
 if ~isempty(highvar_params)
-    highvar_rejected = high_variance_channel_rejection(EEG, highvar_params);
-    highvar_removed_chans_mask(highvar_rejected) = true;
-    to_remove = highvar_removed_chans_mask & (~prep_removed_chans_mask & ~asr_removed_chans_mask);
-    to_remove = to_remove((~prep_removed_chans_mask & ~asr_removed_chans_mask)); %#ok<NASGU>
-    [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove))');
-    EEG_cleaned.automagic.highvariance_rejection.performed = 'yes';
-    EEG_cleaned.automagic.highvariance_rejection.params = highvar_params;
-    clear to_remove highvar_rejected;
+    highvar_rejected = high_variance_channel_rejection(EEG_filtered, highvar_params);
+    [~, EEG_filtered] = evalc('pop_select(EEG_filtered, ''nochannel'', highvar_rejected)');
+    
+    remaining_mask = find(~prep_removed_chans_mask & ~asr_removed_chans_mask);
+    highvar_removed_chans_mask(remaining_mask(highvar_rejected)) = true;
+
+    EEG_filtered.automagic.highvariance_rejection.performed = 'yes';
+    EEG_filtered.automagic.highvariance_rejection.params = find(highvar_removed_chans_mask);
+    clear highvar_rejected remaining_mask;
 end
+
 
 % Gather information from previous steps
 asr_removed_chans = find(asr_removed_chans_mask);
 prep_removed_chans = find(prep_removed_chans_mask);
 highvar_rejected = find(highvar_removed_chans_mask);
 removed_chans = union(asr_removed_chans, union(prep_removed_chans, highvar_rejected));
-EEG_cleaned.automagic.prep.removed_chans = prep_removed_chans;
-EEG_cleaned.automagic.asr.removed_chans = asr_removed_chans;
-EEG_cleaned.automagic.highvariance_rejection.removed_chans = highvar_rejected;
+EEG_filtered.automagic.prep.removed_chans = prep_removed_chans;
+EEG_filtered.automagic.asr.removed_chans = asr_removed_chans;
+EEG_filtered.automagic.highvariance_rejection.removed_chans = highvar_rejected;
 clear prep_removed_chans_mask asr_removed_chans_mask highvar_removed_chans_mask;
 
-
-% Filtering on the whole dataset
-EEG_filtered = perform_filter(EEG_cleaned, filter_params);
-EOG_filtered = perform_filter(EOG, filter_params);
 
 % Remove effect of EOG
 EEG_filtered.automagic.eog_regression.performed = 'no';
