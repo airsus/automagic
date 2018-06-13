@@ -777,7 +777,9 @@ for i = 1:length(lines)
    end
 end
 delete(lines(i));
-draw_line(channel, project.maxX, handles, 'r')
+axe = handles.axes;
+axes(axe);
+draw_line(channel, project.maxX, handles, 'r', axe)
 
 
 % --- Executes on selection change in subjectsmenu. It selects the block
@@ -918,7 +920,9 @@ if( ismember(y, list ) )
     error('No way the callback function is called here !')
 else
     list = [list y];
-    draw_line(y, handles.project.maxX, handles, 'b');
+    axe = handles.axes;
+    axes(axe);
+    draw_line(y, handles.project.maxX, handles, 'b', axe);
 end
 block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated, true);
 set(handles.channellistbox,'String',list)

@@ -420,7 +420,7 @@ asr_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned = EEG;
 EEG_cleaned.automagic.asr.performed = 'no';
 if ( ~isempty(asr_params) )
-    display('Detecting bad channels using Artifact Subspace Reconstruction...');
+    display('Detecting bad channels using routines of clean_raw_data()...');
     [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
     
     % If only channels are removed, remove them from the original EEG so
@@ -618,7 +618,7 @@ fig1 = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])
 hold on
 % eog figure
-subplot(9,1,1)
+subplot(11,1,1)
 imagesc(EOG_filtered.data);
 colormap jet
 caxis([-100 100])
@@ -628,15 +628,33 @@ set(gca,'XTick', XTicks)
 set(gca,'XTickLabel', XTicketLabels)
 title('Filtered EOG data');
 %eeg figure
-subplot(9,1,2:3)
+subplot(11,1,2:3)
 imagesc(EEG_filtered_toplot.data);
 colormap jet
 caxis([-100 100])
 set(gca,'XTick', XTicks)
 set(gca,'XTickLabel', XTicketLabels)
 title('Filtered EEG data')
+%eeg figure
+subplot(11,1,4:5)
+imagesc(EEG_filtered_toplot.data);
+axe = gca;
+hold on;
+bads = result.automagic.auto_badchans;
+for i = 1:length(bads)
+    y = bads(i);
+    p1 = [0, size(EEG_filtered_toplot.data, 2)];
+    p2 = [y, y];
+    plot(axe, p1, p2, 'b' ,'LineWidth', 0.5);
+end
+hold off;
+colormap jet;
+caxis([-100 100])
+set(gca,'XTick', XTicks)
+set(gca,'XTickLabel', XTicketLabels)
+title('Detected bad channels')
 % figure;
-subplot(9,1,4:5)
+subplot(11,1,6:7)
 imagesc(EEG_regressed.data);
 colormap jet
 caxis([-100 100])
@@ -644,7 +662,7 @@ set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
 title('EOG regressed out');
 %figure;
-subplot(9,1,6:7)
+subplot(11,1,8:9)
 imagesc(EEG_cleared.data);
 colormap jet
 caxis([-100 100])
@@ -660,7 +678,7 @@ end
 title([title_text ' corrected clean data'])
 %figure;
 if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_params.lambda ~= -1))
-    subplot(9,1,8:9)
+    subplot(11,1,10:11)
     imagesc(pca_noise);
     colormap jet
     caxis([-100 100])

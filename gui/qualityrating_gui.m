@@ -201,9 +201,11 @@ blocks = project.block_map;
 
 question = 'Would you like to apply changes on also manually rated files';
 handle = findobj(allchild(0), 'flat', 'Tag', 'qualityrating');
+set(handle, 'units', 'pixels')
 main_pos = get(handle,'position');
+set(handle, 'units', 'normalized')
 screen_size = get( groot, 'Screensize' );
-choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], question, ...
+choice = MFquestdlg([main_pos(3)/1.5/screen_size(3) main_pos(4)/1.5/screen_size(4)], question, ...
     'Apply on all files',...
     'Apply on all', 'Do not apply on manually rated files','Do not apply on manually rated files');
 
