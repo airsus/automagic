@@ -673,14 +673,32 @@ end
 
 % Pot a seperate figure for only the original filtered data
 fig2 = figure('visible', 'off');
+ax = gca;
+outerpos = ax.OuterPosition;
+ti = ax.TightInset; 
+left = outerpos(1) + ti(1) * 1.5;
+bottom = outerpos(2);
+ax_width = outerpos(3) - ti(1) - ti(3) * 1.5;
+ax_height = outerpos(4) - ti(2) * 0.5 - ti(4);
+ax.Position = [left bottom ax_width ax_height];
 set(gcf, 'Color', [1,1,1])
 imagesc(EEG_filtered_toplot.data);
 colormap jet
 caxis([-100 100])
-set(gca,'XTick', XTicks)
-set(gca,'XTickLabel', XTicketLabels)
-pbaspect([1 0.751 0.751])
-title('Filtered EEG data')
+set(ax,'XTick', XTicks)
+set(ax,'XTickLabel', XTicketLabels)
+title_str = 'Filtered EEG data';
+if (strcmp(result.automagic.filtering.highpass.performed, 'yes'))
+    title_str = [title_str, ' highpass: ', num2str(result.automagic.filtering.highpass.freq) ' Hz'];
+end
+if (strcmp(result.automagic.filtering.lowpass.performed, 'yes'))
+    title_str = [title_str, ' lowpass: ', num2str(result.automagic.filtering.lowpass.freq) ' Hz'];
+end
+if (strcmp(result.automagic.filtering.notch.performed, 'yes'))
+    title_str = [title_str, ' notch: ', num2str(result.automagic.filtering.notch.freq) ' Hz'];
+end
+title(title_str, 'FontSize', 10)
+
 
 varargout{1} = fig1;
 varargout{2} = fig2;

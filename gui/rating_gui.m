@@ -19,7 +19,7 @@ function varargout = rating_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 06-Jun-2018 11:23:11
+% Last Modified by GUIDE v2.5 13-Jun-2018 13:55:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1174,3 +1174,37 @@ function qualitybutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 qualityrating_gui(handles.project);
+
+
+% --- Executes on button press in rawpushbutton.
+function rawpushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to rawpushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Get current axes position in pixels
+set(handles.axes,'units','pixel');
+current_pos = get(handles.axes,'position');
+set(handles.axes,'units','normalized');
+
+block = get_current_block(handles);
+file_add = strcat(block.image_address, '_orig.jpg');
+eeg_filtered = imread(file_add);
+
+figure('units','pixel', 'pos', get(gca, 'pos').* [1, 1, 0, 0] + current_pos .* [0, 0, 1, 1]);
+image(eeg_filtered)
+ax = gca;
+
+outerpos = ax.OuterPosition;
+ti = ax.TightInset; 
+left = outerpos(1);
+bottom = outerpos(2);
+ax_width = outerpos(3) - ti(3);
+ax_height = outerpos(4) - ti(4);
+ax.Position = [left bottom ax_width ax_height];
+
+set(ax,'xtick',[])
+set(ax,'xticklabel',[])
+set(ax,'ytick',[])
+set(ax,'yticklabel',[])
+% set(gca, 'units','pixel', 'PlotBoxAspectRatio', current_pbac, ...
+%     'pos', get(gca, 'pos').* [1, 1, 0, 0] + current_pos .* [0, 0, 1, 1]);

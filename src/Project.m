@@ -320,9 +320,8 @@ classdef Project < handle
                 
                 % save results
                 set(fig1,'PaperUnits','inches','PaperPosition',[0 0 10 8])
-                print(fig1, block.image_address, '-djpeg', '-r100');
+                print(fig1, block.image_address, '-djpeg', '-r200');
                 close(fig1);
-                set(fig2,'PaperUnits','inches','PaperPosition',[0 0 10 8])
                 print(fig2, strcat(block.image_address, '_orig'), '-djpeg', '-r100');
                 close(fig2);
 
