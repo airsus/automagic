@@ -1,4 +1,4 @@
-function [result, fig] = preprocess(data, varargin)
+function [result, varargout] = preprocess(data, varargin)
 % preprocess  preprocess the data 
 %   [result, fig] = preprocess(data, varargin)
 %   where data is the EEGLAB data structure and varargin is an 
@@ -84,7 +84,6 @@ function [result, fig] = preprocess(data, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 result = [];
-fig = [];
 
 %% Parse arguments
 defaults = DefaultParameters;
@@ -421,7 +420,7 @@ asr_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned = EEG;
 EEG_cleaned.automagic.asr.performed = 'no';
 if ( ~isempty(asr_params) )
-    display('Removing bad channels using Artifact Subspace Reconstruction...');
+    display('Detecting bad channels using Artifact Subspace Reconstruction...');
     [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
     
     % If only channels are removed, remove them from the original EEG so
@@ -521,6 +520,7 @@ if ( ~isempty(prep_params) )
 end
 
 % Filtering on the whole dataset
+display(PreprocessingConstants.filter_constants.run_message);
 EEG_filtered = perform_filter(EEG_cleaned, filter_params);
 EOG_filtered = perform_filter(EOG, filter_params);
 
@@ -612,7 +612,9 @@ result.nbchan = size(result.data,1);
 result.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
 result.automagic.params = params;
 %% Creating the final figure to save
-fig = figure('visible', 'off');
+
+EEG_filtered_toplot = perform_filter(EEG, filter_params);
+fig1 = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])
 hold on
 % eog figure
@@ -627,7 +629,7 @@ set(gca,'XTickLabel', XTicketLabels)
 title('Filtered EOG data');
 %eeg figure
 subplot(9,1,2:3)
-imagesc(EEG_filtered.data);
+imagesc(EEG_filtered_toplot.data);
 colormap jet
 caxis([-100 100])
 set(gca,'XTick', XTicks)
@@ -668,3 +670,17 @@ if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_param
     set(gca,'XTickLabel',XTicketLabels)
     title('PCA noise')
 end
+
+% Pot a seperate figure for only the original filtered data
+fig2 = figure('visible', 'off');
+set(gcf, 'Color', [1,1,1])
+imagesc(EEG_filtered_toplot.data);
+colormap jet
+caxis([-100 100])
+set(gca,'XTick', XTicks)
+set(gca,'XTickLabel', XTicketLabels)
+pbaspect([1 0.751 0.751])
+title('Filtered EEG data')
+
+varargout{1} = fig1;
+varargout{2} = fig2;

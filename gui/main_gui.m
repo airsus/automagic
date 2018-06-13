@@ -507,14 +507,15 @@ end
 subjects = list_subjects(folder);
 subject_count = length(subjects);
 file_count = 0;
-for i = 1:subject_count
-    subject = subjects{i};
-    raw_files = dir([folder subject slash '*' ext]);
-    idx = ~startsWith({raw_files.name}, '.');
-    raw_files = raw_files(idx);
-    file_count = file_count + length(raw_files);
+if ~ isempty(ext)
+    for i = 1:subject_count
+        subject = subjects{i};
+        raw_files = dir([folder subject slash '*' ext]);
+        idx = ~startsWith({raw_files.name}, '.');
+        raw_files = raw_files(idx);
+        file_count = file_count + length(raw_files);
+    end
 end
-
 % Change the cursor to normal
 set(handles.main_gui, 'pointer', 'arrow')
 
@@ -561,7 +562,7 @@ if(folder ~= 0)
         [num2str(subject_count) ' subjects...'])
     set(handles.filenumber, 'String', [num2str(file_count) ' files...'])
     
-    if( file_count == 0)
+    if( subject_count == 0)
         popup_msg('There are no files in this folder. Make sure it is the right data folder', 'No data detected')
     end
 end

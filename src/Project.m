@@ -271,7 +271,7 @@ classdef Project < handle
                         self.params.original_file = block.source_address;
                     end
                     
-                    [EEG, fig] = preprocess(data, self.params);
+                    [EEG, fig1, fig2] = preprocess(data, self.params);
 
                     if(any(strcmp({self.CGV.extensions.fif}, self.file_extension))) 
                         self.params = rmfield(self.params, 'original_file');
@@ -319,9 +319,12 @@ classdef Project < handle
                 EEG = rmfield(EEG, 'automagic');
                 
                 % save results
-                set(fig,'PaperUnits','inches','PaperPosition',[0 0 10 8])
-                print(fig, block.image_address, '-djpeg', '-r100');
-                close(fig);
+                set(fig1,'PaperUnits','inches','PaperPosition',[0 0 10 8])
+                print(fig1, block.image_address, '-djpeg', '-r100');
+                close(fig1);
+                set(fig2,'PaperUnits','inches','PaperPosition',[0 0 10 8])
+                print(fig2, strcat(block.image_address, '_orig'), '-djpeg', '-r100');
+                close(fig2);
 
                 reduced.data = downsample(EEG.data',self.ds_rate)';
                 display('Saving results...');

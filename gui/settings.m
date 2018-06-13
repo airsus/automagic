@@ -274,6 +274,15 @@ function burstcheckbox_Callback(hObject, eventdata, handles)
 if get(hObject,'Value')
     recs = handles.CGV.rec_params;
     set(handles.burstedit, 'String', recs.asr_params.BurstCriterion)
+    
+    % Warn the user if two filterings are about to happen
+    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+            (get(handles.burstcheckbox, 'Value') || ...
+            get(handles.windowcheckbox, 'Value')))
+        popup_msg(['Warning! This will make the preprocessing apply two high',...
+            'pass filtering in your data. Please make sure what you are ',...
+            'about to do'], 'WARNING')
+    end
 end
 handles = switch_components(handles);
 % Update handles structure
@@ -825,6 +834,9 @@ else
     set(handles.highvaredit, 'enable', 'off')
 end
 
+% TODO: This is temporarily disabled. Later remove the line.
+set(handles.rarcheckbox, 'enable', 'off')
+
 if( get(handles.rarcheckbox, 'Value'))
     set(handles.preppushbutton, 'enable', 'on')
 else
@@ -1145,6 +1157,15 @@ function windowcheckbox_Callback(hObject, eventdata, handles)
 if get(hObject,'Value')
     recs = handles.CGV.rec_params;
     set(handles.windowedit, 'String', mat2str(recs.asr_params.WindowCriterion))
+    
+    % Warn the user if two filterings are about to happen
+    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+            (get(handles.burstcheckbox, 'Value') || ...
+            get(handles.windowcheckbox, 'Value')))
+        popup_msg(['Warning! This will make the preprocessing apply two high',...
+            'pass filtering in your data. Please make sure what you are ',...
+            'about to do'], 'WARNING')
+    end
 end
 handles = switch_components(handles);
 
@@ -1384,6 +1405,15 @@ function asrhighcheckbox_Callback(hObject, eventdata, handles)
 if get(hObject,'Value')
     recs = handles.CGV.rec_params;
     set(handles.asrhighedit, 'String', mat2str(recs.asr_params.Highpass))
+    
+    % Warn the user if two filterings are about to happen
+    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+            (get(handles.burstcheckbox, 'Value') || ...
+            get(handles.windowcheckbox, 'Value')))
+        popup_msg(['Warning! This will make the preprocessing apply two high',...
+            'pass filtering in your data. Please make sure what you are ',...
+            'about to do'], 'WARNING')
+    end
 end
 handles = switch_components(handles);
 % Update handles structure
@@ -1587,6 +1617,16 @@ if (get(hObject,'Value') == get(hObject,'Max'))
         set(handles.highpassorderedit, 'String', handles.CGV.DEFAULT_keyword);
     else
         set(handles.highpassorderedit, 'String', val_order);
+    end
+    
+    
+    % Warn the user if two filterings are about to happen
+    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+            (get(handles.burstcheckbox, 'Value') || ...
+            get(handles.windowcheckbox, 'Value')))
+        popup_msg(['Warning! This will make the preprocessing apply two high',...
+            'pass filtering in your data. Please make sure what you are ',...
+            'about to do'], 'WARNING')
     end
 else
 	set(handles.highedit, 'enable', 'off');

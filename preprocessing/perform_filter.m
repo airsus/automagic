@@ -41,7 +41,6 @@ function data = perform_filter(data, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 defaults = DefaultParameters.filter_params;
-constants = PreprocessingConstants.filter_constants;
 recs = RecommendedParameters.filter_params;
 if isempty(defaults)
     defaults = recs;
@@ -85,7 +84,6 @@ end
 
 %% Perform filtering
 if( ~isempty(high) || ~isempty(low) || ~isempty(notch))
-    display(constants.run_message);
 
     if( ~isempty(high) )
         [~, data] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
