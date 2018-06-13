@@ -466,33 +466,6 @@ handles = turn_off_selection(handles);
 % Update handles structure
 guidata(hObject, handles);
 
-% --- Set the rating of the gui based on the current project
-function handles = set_gui_rating(handles)
-% handles  structure with handles of the rating_gui
-
-project = handles.project;
-if( project.current == - 1 || is_filtered(handles, project.current))
-    set(handles.rategroup,'selectedobject',[]);
-    return
-end
-block = get_current_block(handles);
-
-set(handles.turnonbutton,'Enable', 'off')
-set(handles.turnoffbutton,'Enable', 'off')
-switch block.rate
-    case handles.CGV.ratings.Good
-       set(handles.rategroup,'selectedobject', handles.goodrate)
-    case handles.CGV.ratings.OK
-        set(handles.rategroup,'selectedobject', handles.okrate)
-    case handles.CGV.ratings.Bad
-        set(handles.rategroup,'selectedobject', handles.badrate)
-    case handles.CGV.ratings.Interpolate
-        set(handles.rategroup,'selectedobject', handles.interpolaterate)
-        set(handles.turnonbutton,'Enable', 'on')
-        set(handles.turnoffbutton,'Enable', 'on')
-    case handles.CGV.ratings.NotRated
-        set(handles.rategroup,'selectedobject', handles.notrate)
-end
 
 % --- Executes on button press in goodcheckbox. If the checkbox is
 % unchecked, the blocks with this rating are filtered and can not be shown.
@@ -950,16 +923,6 @@ end
 block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated, true);
 set(handles.channellistbox,'String',list)
 
-% --- Redraw all lines
-function update_lines(handles)
-% handles  structure with handles of the gui
-
-lines = findall(gcf,'Type','Line');
-for i = 1:length(lines)
-   delete(lines(i)); 
-end
-draw_lines(handles);
-mark_interpolated_chans(handles);
 
 % --- Save the state of the project
 function handles = save_state(handles)

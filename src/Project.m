@@ -305,7 +305,7 @@ classdef Project < handle
                     block.qualityScore = nan;
                     automagic.qualityScore = nan;
                 else
-                    qualityScore  = calcQuality(EEG, block.final_badchans, self.qualityThresholds); 
+                    qualityScore  = calcQuality(EEG, unique(block.final_badchans), self.qualityThresholds); 
                     block.qualityScore = qualityScore;
                     automagic.qualityScore = qualityScore;
 
@@ -409,7 +409,7 @@ classdef Project < handle
                 automagic.interpolation.params = self.params.interpolation_params;
                 
             	% Quality scoring
-                qualityScore  = calcQuality(EEG, block.final_badchans, self.qualityThresholds); 
+                qualityScore  = calcQuality(EEG, unique([block.final_badchans interpolate_chans]), self.qualityThresholds); 
                 block.qualityScore = qualityScore;
                 automagic.qualityScore = qualityScore;
                 

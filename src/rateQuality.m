@@ -119,9 +119,9 @@ end
 
 % Categorize wrt CHV
 if any(strfind(settings.Qmeasure,'RBC'))
-    if Q.RBC < settings.channelGoodCutoff
+    if Q.RBC < settings.BadChannelGoodCutoff
         ratingBC = rating_strs.Good;
-    elseif Q.RBC >= settings.channelGoodCutoff && Q.RBC < settings.channelBadCutoff
+    elseif Q.RBC >= settings.BadChannelGoodCutoff && Q.RBC < settings.BadChannelBadCutoff
         ratingBC = rating_strs.OK;
     else
         ratingBC = rating_strs.Bad;

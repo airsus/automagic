@@ -65,7 +65,7 @@ handles.title_name = ['Automagic v.', handles.CGV.version, ' Quality Rating'];
 set(handles.qualityrating, 'Name', handles.title_name);
 
 cutoffs = handles.project.qualityCutoffs;
-render_project(handles, cutoffs);
+renderChanges(handles, cutoffs);
 % Choose default command line output for qualityrating_gui
 handles.output = hObject;
 
@@ -85,6 +85,12 @@ function varargout = qualityrating_gui_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
+
+function renderChanges(handles, cutoffs)
+handles.project.qualityCutoffs = cutoffs;
+render_project(handles, cutoffs);
+renderAxes(handles, cutoffs);
+change_rating_gui(false);
 
 function handles = render_project(handles, cutoffs)
 
@@ -135,7 +141,6 @@ else
 end
 set(handles.rbcslider1text, 'String', get(handles.rbcslider1, 'Value'));
 set(handles.rbcslider2text, 'String', get(handles.rbcslider2, 'Value'));
-renderChanges(handles, cutoffs);
 
 function cutoffs = get_gui_values(handles)
 
@@ -163,11 +168,6 @@ if get(handles.rbcradio, 'Value')
     cutoffs.BadChannelGoodCutoff = get(handles.rbcslider1, 'Value');
     cutoffs.BadChannelBadCutoff = get(handles.rbcslider2, 'Value');
 end
-
-function renderChanges(handles, cutoffs)
-handles.project.qualityCutoffs = cutoffs;
-renderAxes(handles, cutoffs);
-change_rating_gui(false);
 
 function change_rating_gui(render_lines)
 h = findobj(allchild(0), 'flat', 'Tag', 'rating_gui');
@@ -256,7 +256,7 @@ function resetbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 cutoffs = handles.CGV.rateQuality_params;
-render_project(handles, cutoffs);
+renderChanges(handles, cutoffs);
 
 % --- Executes on button press in cancelbutton.
 function cancelbutton_Callback(hObject, eventdata, handles)
