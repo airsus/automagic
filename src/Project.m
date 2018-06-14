@@ -1048,7 +1048,7 @@ classdef Project < handle
             else
                 fileID = fopen(log_file_address,'w');
             end
-            fprintf(fileID, ['The data file ' source_address ' could not be preprocessed:' msg]);
+            fprintf(fileID, ['The data file ' source_address ' could not be preprocessed:' msg '\n']);
             fclose(fileID);
         end
     end
