@@ -67,14 +67,10 @@ end
 intersect_labels = intersect(cellstr(constants.req_chan_labels), ...
                             {data.chanlocs.labels});
 if(length(intersect_labels) < 3)
-    msg = ['The channel location system you are using is very probably ',...
-    'wrong and ICA can not be used correctly.' sprintf('\n') 'ICA for this ',... 
-    'subject will be skipped, and next steps of preprocessing will resume.'];
-    if(exist('warndlg2', 'file'))
-        warndlg2(msg);
-    else
-        warndlg(msg);
-    end
+    msg = ['The channel location system was very probably ',...
+    'wrong and ICA could not be used correctly.' sprintf('\n') 'ICA for this ',... 
+    'file is skipped.'];
+    ME = MException('ICA:notEnoughChannels', msg);
     
     % Change back the labels to the original one
     if( ~ isempty(chanloc_map))
@@ -91,7 +87,7 @@ if(length(intersect_labels) < 3)
         end
     end
     data.automagic.ica.performed = 'no';
-    return;
+    throw(ME)
 end
 
 %% Perform ICA
