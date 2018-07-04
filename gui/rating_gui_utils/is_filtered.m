@@ -5,7 +5,7 @@ function bool = is_filtered(handles, file)
 %          indicating the name of it
 project = handles.project;
 if( project.current == -1)
-    bool = false;
+    bool = true;
     return;
 end
 
