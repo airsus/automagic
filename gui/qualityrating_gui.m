@@ -177,14 +177,24 @@ if render_lines
     update_lines(rating_gui_handle);
 end
 
+function rate = make_rating_manually(block, qRate)
+    if block.is_manually_rated
+        rate = 'Manually Rated';
+    else
+        rate = qRate;
+    end
+
 function renderAxes(handles, cutoffs)
 block_map = handles.project.block_map;
 processed = handles.project.processed_list;
 blocks = values(block_map, processed);
-res = cellfun( @(block) rateQuality(block, cutoffs), blocks, 'uniform', 0);
+res = cellfun( @(block) rateQuality(block.qualityScore, cutoffs), blocks, 'uniform', 0);
+res = cellfun( @make_rating_manually, blocks, res, 'uniform', 0);
 cutoffAxes = handles.cutoffaxes;
-rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Interpolate', 'Manually Rated'},'Ordinal',true), 'Parent', cutoffAxes);
-set(cutoffAxes, 'YTick', 0:(max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values))))
+rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Manually Rated'},'Ordinal',true), 'Parent', cutoffAxes);
+Y_axis_max = max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values));
+n_Y = Y_axis_max / 10.0;
+set(cutoffAxes, 'YTick', 0:ceil(n_Y):ceil(Y_axis_max))
 set(cutoffAxes,'fontsize',6)
 title('Overview of dataset rating based on selected cutoffshow')
 if max(rateingHist.Values) ~= 0
@@ -223,17 +233,10 @@ drawnow;
 for i = 1:length(files)
     file = files{i};
     block = blocks(file);
-    new_rate = rateQuality(block, cutoffs);
+    new_rate = rateQuality(block.qualityScore, cutoffs);
     if (apply_to_manually_rated || ~ block.is_manually_rated)
-        if ~strcmp(new_rate, handles.CGV.ratings.Interpolate) 
-            block.setRatingInfoAndUpdate(new_rate, [], block.final_badchans, ...
-                block.is_interpolated, false);
-        else
-            block.setRatingInfoAndUpdate(new_rate, block.tobe_interpolated, block.final_badchans, ...
-                    block.is_interpolated, false);
-        end
+        block.setRatingInfoAndUpdate(struct('rate', new_rate));
         block.saveRatingsToFile();
-        project.update_rating_lists(block);
     end
 end
 handles.project.qualityCutoffs = cutoffs;

@@ -11,8 +11,10 @@ if( ~ handles.selection_mode )
 end
 axes(handles.axes);
 delete(p);
-block = get_current_block(handles);
+block = handles.project.get_current_block();
 list = block.tobe_interpolated;
 list = list(list ~= y);
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated, true);
+block.setRatingInfoAndUpdate(...
+    struct('rate', handles.CGV.ratings.Interpolate, ...
+           'tobe_interpolated', list));
 set(handles.channellistbox,'String',list)

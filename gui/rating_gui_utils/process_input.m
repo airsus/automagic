@@ -3,7 +3,7 @@
 function process_input(y, handles)
 % handles  structure with handles of the gui
 % y        the y coordinate of the selected point
-block = get_current_block(handles);
+block = handles.project.get_current_block();
 list = block.tobe_interpolated;
 y = int64(y);
 if( ismember(y, list ) )
@@ -14,5 +14,5 @@ else
     axes(axe);
     draw_line(y, handles.project.maxX, handles, 'b', axe);
 end
-block.setRatingInfoAndUpdate(handles.CGV.ratings.Interpolate, list, block.final_badchans, block.is_interpolated, true);
+block.setRatingInfoAndUpdate(struct('tobe_interpolated', list));
 set(handles.channellistbox,'String',list)

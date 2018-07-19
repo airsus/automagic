@@ -7,9 +7,9 @@ project = handles.project;
 if ( project.current == - 1 || is_filtered(handles, project.current))
     data = [];
 else
-    block = get_current_block(handles);
+    block = project.get_current_block();
     if(isa(block, 'Block'))
-%         block.update_addresses(project.data_folder, project.result_folder);
+        block.update_addresses(project.data_folder, project.result_folder);
         if(get_reduced)
             load(block.reduced_address);
             data = reduced;

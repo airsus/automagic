@@ -7,7 +7,7 @@ if( project.current == - 1 || is_filtered(handles, project.current))
     set(handles.rategroup,'selectedobject',[]);
     return
 end
-block = get_current_block(handles);
+block = project.get_current_block();
 
 set(handles.turnonbutton,'Enable', 'off')
 set(handles.turnoffbutton,'Enable', 'off')

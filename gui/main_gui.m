@@ -218,7 +218,6 @@ if( exist( project.result_folder, 'dir'))
         
         % Update the structure and save results in file
         project.update_rating_structures();
-        project.save_project();
         
         % Change back the cursor to an arrow
         set(handles.main_gui, 'pointer', 'arrow')
@@ -316,7 +315,7 @@ end
 % Load the project:
 project = handles.project_list(name);
 handles.params = project.params;
-handles.visualisation_params.ds = project.ds_rate;
+handles.visualisation_params.ds = project.dsrate;
 handles.visualisation_params.calcQuality_params = project.qualityThresholds;
 % Set the current_project to the selected project
 handles.current_project = Index;

@@ -84,7 +84,6 @@ function [result, varargout] = preprocess(data, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 result = [];
-
 %% Parse arguments
 defaults = DefaultParameters;
 constants = PreprocessingConstants;
@@ -420,7 +419,7 @@ asr_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned = EEG;
 EEG_cleaned.automagic.asr.performed = 'no';
 if ( ~isempty(asr_params) )
-    display('Detecting bad channels using routines of clean_raw_data()...');
+    fprintf('Detecting bad channels using routines of clean_raw_data()...\n');
     [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
     
     % If only channels are removed, remove them from the original EEG so
@@ -472,7 +471,7 @@ end
 prep_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned.automagic.prep.performed = 'no';
 if ( ~isempty(prep_params) )
-    display(sprintf('Running Robust Average Referencing...'));
+    fprintf(sprintf('Running Robust Average Referencing...\n'));
     % Remove the ref_chan containing zeros from prep preprocessing
     rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
     if isfield(prep_params, 'referenceChannels')

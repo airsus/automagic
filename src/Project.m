@@ -5,7 +5,7 @@ classdef Project < handle
     %   of the data_folder, result_folder, list of all exisiting blocks,
     %   list of all preprocessed blocks, five different list of ratings
     %   corresponding to each rate and more. Please see the properties for 
-    %    more information.
+    %   more information.
     %
     %   Project is a subclass of handle, meaning it's a refrence to an
     %   object. Use accordingly.
@@ -57,7 +57,7 @@ classdef Project < handle
     %   update_rating_structures or not. Note that at this stage this
     %   method only returns based on the number of files in the folder.
     %   
-    %   save_project - Save the entire project class in an m.file
+    %   save_project - Save the entire project class in a .m file
     %   
     %   list_subject_files - List all folders in the data_folder
     %   
@@ -83,24 +83,6 @@ classdef Project < handle
         % The index of the current block that must be shown in rating_gui.
         current
         
-        % List of names of all existing blocks in the data_folder.
-        block_list
-        
-        % List of indices of blocks that are rated as Interpolate.
-        interpolate_list
-        
-        % List of indices of blocks that are rated as Good.
-        good_list
-        
-        % List of indices of blocks that are rated as Bad.
-        bad_list
-        
-        % List of indices of blocks that are rated as OK.
-        ok_list
-        
-        % List of indices of blocks that are not rated (or rated as Not Rated).
-        not_rated_list
-        
         % Maximum value for the X-axis in the plot. Needed for the visual
         % aspects of the plot.
         maxX
@@ -108,16 +90,6 @@ classdef Project < handle
         % This determines the color scale in rating gui:
         % [-colorScale, colorScale]. Default is 100.
         colorScale
-        
-        % Adress of the folder where raw data are stored.
-        data_folder
-        
-        % Address of the folder where results are (to be) saved. 
-        result_folder
-        
-        % Address of the state file corresponding to this project. By
-        % default it's in the result_folder and is name project_state.mat.
-        state_address
         
         qualityCutoffs
     end
@@ -127,15 +99,22 @@ classdef Project < handle
         % Name of this project.
         name
         
+        % Adress of the folder where raw data are stored.
+        data_folder
+        
+        % Address of the folder where results are (to be) saved. 
+        result_folder
+        
         % Sampling rate to crate reduced files.
-        ds_rate
+        dsrate
         
         % Sampling rate of the recorded data. This is necessary only in the
         % case of file_extension = '.txt'
         srate
         
         % File extension of the raw files in this project. Can be .raw,
-        % .RAW, .dat , .fif , .txt or even .mat if it's saved as a matlab file
+        % .RAW, .dat , .fif , .txt or even .mat if it's saved as a matlab 
+        % file
         file_extension
         
         % All files with this mask at the end are loaded. It must include 
@@ -164,10 +143,37 @@ classdef Project < handle
         % Number of preprocessed subjects.
         processed_subjects
         
+        qualityThresholds
+        
+        % Address of the state file corresponding to this project. By
+        % default it's in the result_folder and is name project_state.mat.
+        state_address
+        
+    end
+    
+    properties(SetAccess=private, GetAccess=private)
+       % List of names of all existing blocks in the data_folder.
+        block_list
+        
+        % List of indices of blocks that are rated as Interpolate.
+        interpolate_list
+        
+        % List of indices of blocks that are rated as Good.
+        good_list
+        
+        % List of indices of blocks that are rated as Bad.
+        bad_list
+        
+        % List of indices of blocks that are rated as OK.
+        ok_list
+        
+        % List of indices of blocks that are not rated (or rated as Not Rated).
+        not_rated_list 
+        
         % Constant Global Variables
         CGV
         
-        qualityThresholds
+        slash
     end
     
     %% Constructor
@@ -191,48 +197,156 @@ classdef Project < handle
             end
             
             self.colorScale = self.CGV.COLOR_SCALE;
-            self.ds_rate = ds;
+            self.dsrate = ds;
             self.params = params;
             self = self.create_rating_structure();
-            self.save_project();
         end
     end
     
     %% Public Methods
     methods
+        function block = get_current_block(self)
+            % Returns the block pointed by the current index. If 
+            % current == -1, a mock block is returned.
+
+            if( self.current == -1)
+                subject = Subject('','');
+                block = Block(self, subject, '');
+                block.index = -1;
+                return;
+            end
+            unique_name = self.processed_list{self.current};
+            block = self.block_map(unique_name);
+        end
+        
+        function next = get_next_index(self, next_idx, good_bool, ok_bool, ...
+                bad_bool, interpolate_bool, notrated_bool)
+            
+            block = self.get_current_block();
+            current_index = block.index;
+            % If no rating is filtered, simply return the next one in the list.
+            if( good_bool && ok_bool && bad_bool && interpolate_bool && notrated_bool)
+                next = min(self.current + 1, length(self.processed_list));
+                if( next == 0)
+                    next = next + 1;
+                end
+            else
+                next_good = [];
+                next_ok = [];
+                next_bad = [];
+                next_interpolate = [];
+                next_notrated = [];
+                if(good_bool)
+                    possible_goods = find(self.good_list > current_index, 1);
+                    if( ~ isempty(possible_goods))
+                        next_good = self.good_list(possible_goods(1));
+                    end
+                end
+                if(ok_bool)
+                   possible_oks = find(self.ok_list > current_index, 1);
+                    if( ~ isempty(possible_oks))
+                        next_ok = self.ok_list(possible_oks(1));
+                    end
+                end
+                if(bad_bool)
+                   possible_bads = find(self.bad_list > current_index, 1);
+                    if( ~ isempty(possible_bads))
+                        next_bad = self.bad_list(possible_bads(1));
+                    end
+                end
+                if(interpolate_bool)
+                   possible_interpolates = find(self.interpolate_list > current_index, 1);
+                    if( ~ isempty(possible_interpolates))
+                        next_interpolate = self.interpolate_list(possible_interpolates(1));
+                    end
+                end
+                if(notrated_bool)
+                   possible_notrateds = find(self.not_rated_list > current_index, 1);
+                    if( ~ isempty(possible_notrateds))
+                        next_notrated = self.not_rated_list(possible_notrateds(1));
+                    end
+                end
+                next = min([next_good next_ok next_bad next_interpolate next_notrated]);
+                if( isempty(next))
+                    next = next_idx;
+                end
+            end
+        end
+        
+        function previous = get_previous_index(self, previous_idx, good_bool, ...
+                ok_bool, bad_bool, interpolate_bool, notrated_bool)
+            % Get the current project and file
+            block =  self.get_current_block();
+            current_index = block.index;
+            
+            % If nothing is filtered the previous one is simply the one 
+            % before the current one in the list
+            if( good_bool && ok_bool && bad_bool && ...
+                    interpolate_bool && notrated_bool)
+                previous = max(self.current - 1, 1);
+                return;
+            end
+
+            % Now for each rating, find the possible choices, and then 
+            % choose the closest one
+            previous_good = [];
+            previous_ok = [];
+            previous_bad = [];
+            previous_interpolate = [];
+            previous_notrated = [];
+            if(good_bool)
+                possible_goods = find(self.good_list < current_index, 1, 'last');
+                if( ~ isempty(possible_goods))
+                    previous_good = self.good_list(possible_goods(end));
+                end
+            end
+            if(ok_bool)
+               possible_oks = find(self.ok_list < current_index, 1, 'last');
+                if( ~ isempty(possible_oks))
+                    previous_ok = self.ok_list(possible_oks(end));
+                end
+            end
+            if(bad_bool)
+               possible_bads = find(self.bad_list < current_index, 1, 'last');
+                if( ~ isempty(possible_bads))
+                    previous_bad = self.bad_list(possible_bads(end));
+                end
+            end
+            if(interpolate_bool)
+               possible_interpolates = ...
+                   find(self.interpolate_list < current_index, 1, 'last');
+                if( ~ isempty(possible_interpolates))
+                    previous_interpolate = ...
+                        self.interpolate_list(possible_interpolates(end));
+                end
+            end
+            if(notrated_bool)
+               possible_notrateds = ...
+                   find(self.not_rated_list < current_index, 1, 'last');
+                if( ~ isempty(possible_notrateds))
+                    previous_notrated = ...
+                        self.not_rated_list(possible_notrateds(end));
+                end
+            end
+            previous = max([previous_good previous_ok previous_bad ...
+                previous_interpolate previous_notrated]);
+            if( isempty(previous))
+                previous = previous_idx;
+            end
+            
+        end
         function self = preprocess_all(self)
             % preprocesses all the files in the data_folder of this project
             
-            % Add paths
-            if(isunix)
-                slash = '/';
-            elseif(ispc)
-                slash = '\';
-            end
-
-            % preprocess is checked as an example of a file in preprocessing, it could
-            % be any other file in that folder.
-            if( ~exist('preprocess', 'file'))
-                addpath(['..' slash 'preprocessing']);
-            end
-
-            % pop_fileio is checked as an example of a file in matlab_scripts, it could
-            % be any other file in that folder.
-            if(~exist('pop_fileio', 'file'))
-                add_eeglab_path();
-            end
-
-            if(~exist('main_gui', 'file'))
-                addpath(genpath(['..' slash 'gui' slash]));
-            end
-
             assert(exist(self.result_folder, 'dir') > 0 , ...
                 'The project folder does not exist or is not reachable.' );
 
-            % Ask the user whether to overwrite the existing preprocessed files, if any
+            self.add_necessary_paths();
+            
+            % Ask to overwrite the existing preprocessed files, if any
             skip = self.check_existings();
 
-            display('*******Start preprocessing all dataset**************');
+            fprintf('*******Start preprocessing all dataset*******\n');
             start_time = cputime;
             % Iterate on all subjects
             for i = 1:length(self.block_list)
@@ -241,135 +355,48 @@ classdef Project < handle
                 block.update_addresses(self.data_folder, self.result_folder);
                 subject_name = block.subject.name;
 
-                display(['Processing file ', block.unique_name ,' ...', '(file ', ...
-                    int2str(i), ' out of ', int2str(length(self.block_list)), ')']); 
+                fprintf(['Processing file ', block.unique_name ,' ...', ... 
+                    '(file ', int2str(i), ' out of ', ...
+                    int2str(length(self.block_list)), ')\n']); 
 
                 % Create the subject folder if it doesn't exist yet
                 if(~ exist([self.result_folder subject_name], 'dir'))
                     mkdir([self.result_folder subject_name]);
                 end
 
-                % Don't preprocess the file if user answered negatively to overwriting
+                % Don't preprocess the file if skip
                 if skip && exist(block.potential_result_address, 'file')
-                    display('Results already exits. Skipping prerocessing for this subject... ');
+                    fprintf(['Results already exits. Skipping '...
+                             'prerocessing for this subject...\n']);
                     continue;
-                else
-                    % Load and preprocess
-                    if( any(strcmp(block.file_extension(end-3:end), {self.CGV.extensions.mat})))
-                        data = load(block.source_address);
-                        data = data.EEG;
-                    elseif(any(strcmp(block.file_extension, {self.CGV.extensions.text})))
-                        [~, data] = ...
-                            evalc(['pop_importdata(''dataformat'',''ascii'',' ...
-                            '''data'', block.source_address,''srate'', self.srate,' ...
-                            '''pnts'',0,''xmin'',0)']);
-                    else
-                        [~ , data] = evalc('pop_fileio(block.source_address)');
-                    end
-                    
-                    if(any(strcmp({self.CGV.extensions.fif}, self.file_extension))) 
-                        self.params.original_file = block.source_address;
-                    end
-                    
-                    [EEG, fig1, fig2] = preprocess(data, self.params);
-
-                    if(any(strcmp({self.CGV.extensions.fif}, self.file_extension))) 
-                        self.params = rmfield(self.params, 'original_file');
-                    end
-                    
-                    if( isempty(EEG) || isfield(EEG.automagic, 'error_msg'))
-                        message = EEG.automagic.error_msg;
-                        self.write_to_log(block.source_address, message);
-                       continue; 
-                    end
                 end
                 
-                % Delete old results
-                if( exist(block.reduced_address, 'file' ))
-                    delete(block.reduced_address);
-                end
-                if( exist(block.result_address, 'file' ))
-                    delete(block.result_address);
-                end
-                if( exist([block.image_address, '.tif'], 'file' ))
-                    delete([block.image_address, '.tif']);
-                end
-                
-                automagic = EEG.automagic;
-                automagic.tobe_interpolated = automagic.auto_badchans;
-                automagic.final_badchans = [];
-                automagic.is_interpolated = false;
-                automagic.version = self.CGV.version;
-                if(~ isempty(automagic.tobe_interpolated))
-                    rate = self.CGV.ratings.Interpolate;
-                    block.qualityScore = nan;
-                    automagic.qualityScore = nan;
-                else
-                    qualityScore  = calcQuality(EEG, unique(block.final_badchans), self.qualityThresholds); 
-                    block.qualityScore = qualityScore;
-                    automagic.qualityScore = qualityScore;
+                % preprocess the file
+                [EEG, automagic] = block.preprocess();
 
-                    % Quality rating
-                    rate = rateQuality(block, self.qualityCutoffs);
+                if( isempty(EEG) || isfield(automagic, 'error_msg'))
+                    message = automagic.error_msg;
+                    self.write_to_log(block.source_address, message);
+                   continue; 
                 end
-                automagic.rate = rate;
-                automagic.is_manually_rated = false;
-                block.setRatingInfoAndUpdate(rate , automagic.tobe_interpolated, [], false, false);
-                self.update_rating_lists(block);
-                EEG = rmfield(EEG, 'automagic');
-                
-                % save results
-                set(fig1,'PaperUnits','inches','PaperPosition',[0 0 10 8])
-                print(fig1, block.image_address, '-djpeg', '-r200');
-                close(fig1);
-                print(fig2, strcat(block.image_address, '_orig'), '-djpeg', '-r100');
-                close(fig2);
-
-                reduced.data = downsample(EEG.data',self.ds_rate)';
-                display('Saving results...');
-                save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
-                save(block.result_address, 'EEG', 'automagic','-v7.3');
-
                 
                 if( self.current == -1)
-                   self.current = 1; 
+                    self.current = 1; 
                 end
                 self.save_project();
             end
+            
+            self.update_main_gui();
             end_time = cputime - start_time;
-            disp(['*********Pre-processing finished. Total elapsed time: ', num2str(end_time),'***************'])
-
-            % Update the main gui's data after rating processing
-            h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-            if( isempty(h))
-                h = main_gui;
-            end
-            handle = guidata(h);
-            handle.project_list(self.name) = self;
-            guidata(handle.main_gui, handle);
-            main_gui();
+            fprintf(['*******Pre-processing finished. Total elapsed '...
+                'time: ', num2str(end_time),'***************\n'])
         end
         
         function self = interpolate_selected(self)
             % Interpolates all the channels selected to be interpolated
             % during the manual rating in rating_gui.
-            
-            % Add paths
-            if(isunix)
-                slash = '/';
-            elseif(ispc)
-                slash = '\';
-            end
 
-            % eeg_interp is checked as an example of a file in matlab_scripts, it could
-            % be any other file in that folder.
-            if(~exist('pop_fileio', 'file'))
-                add_eeglab_path();
-            end
-
-            if( ~exist('main_gui','file'))
-                addpath(['..' slash 'gui'])
-            end
+            self.add_necessary_paths();
 
             if(isempty(self.interpolate_list))
                 popup_msg('No subjects to interpolate. Please first rate.',...
@@ -377,7 +404,7 @@ classdef Project < handle
                 return;
             end
 
-            display('*******Start Interpolation**************');
+            fprintf('*******Start Interpolation**************\n');
             start_time = cputime;
             int_list = self.interpolate_list;
             for i = 1:length(int_list)
@@ -386,73 +413,18 @@ classdef Project < handle
                 block = self.block_map(unique_name);
                 block.update_addresses(self.data_folder, self.result_folder);
 
-                display(['Processing file ', block.unique_name ,' ...', '(file ', ...
-                    int2str(i), ' out of ', int2str(length(int_list)), ')']); 
+                fprintf(['Processing file ', block.unique_name ,' ...', '(file ', ...
+                    int2str(i), ' out of ', int2str(length(int_list)), ')\n']); 
                 assert(strcmp(block.rate, self.CGV.ratings.Interpolate) == 1);
 
-                % Interpolate and save to results
-                preprocessed = matfile(block.result_address,'Writable',true);
-                EEG = preprocessed.EEG;
-                automagic = preprocessed.automagic;
-                interpolate_chans = block.tobe_interpolated;
-                if(isempty(interpolate_chans))
-                    popup_msg(['The subject is rated to be interpolated but no',...
-                        'channels has been chosen.'], 'Error');
-                    continue;
-                end
-                % Put NaN channels to zeros so that interpolation works
-                nanchans = find(all(isnan(EEG.data), 2));
-                EEG.data(nanchans, :) = 0;
+                block.interpolate();
                 
-                EEG = eeg_interp(EEG ,...
-                    interpolate_chans , self.params.interpolation_params.method);
-                
-                automagic.interpolation.channels = interpolate_chans;
-                automagic.interpolation.params = self.params.interpolation_params;
-                
-            	% Quality scoring
-                qualityScore  = calcQuality(EEG, unique([block.final_badchans interpolate_chans]), self.qualityThresholds); 
-                block.qualityScore = qualityScore;
-                automagic.qualityScore = qualityScore;
-                
-                % Quality rating
-                rate = rateQuality(block, self.qualityCutoffs);
-                automagic.rate = rate;
-                
-                % Put the channels back to NaN if they were not to be interpolated
-                % originally
-                original_nans = setdiff(nanchans, interpolate_chans);
-                EEG.data(original_nans, :) = NaN;
-                
-                preprocessed.EEG = EEG;
-                preprocessed.automagic = automagic;
-                
-                % Downsample the new file and save it
-                reduced.data = (downsample(EEG.data', self.ds_rate))';
-                save(block.reduced_address, self.CGV.preprocessing_constants.general_constants.reduced_name, '-v6');
-
-                % Setting the new information
-                block.setRatingInfoAndUpdate(rate , [], [block.final_badchans interpolate_chans], true, false);
-                block.saveRatingsToFile();
-                self.update_rating_lists(block);
                 self.save_project();
             end
             end_time = cputime - start_time;
-            
-
-            
-            
-            disp(['Interpolation finished. Total elapsed time: ', num2str(end_time)])
-
-            % Update the main gui's data after rating processing
-            h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-            if( isempty(h))
-                h = main_gui;
-            end
-            handle = guidata(h);
-            handle.project_list(self.name) = self;
-            guidata(handle.main_gui, handle);
-            main_gui();
+            self.update_main_gui();
+            fprintf(['Interpolation finished. Total elapsed time: ', ...
+                num2str(end_time), '\n'])
         end
         
         function self = update_rating_lists(self, block)
@@ -460,51 +432,63 @@ classdef Project < handle
                 case self.CGV.ratings.Good
                     if( ~ ismember(block.index, self.good_list ) )
                         self.good_list = [self.good_list block.index];
-                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.not_rated_list(...
+                            self.not_rated_list == block.index) = [];
                         self.ok_list(self.ok_list == block.index) = [];
                         self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.interpolate_list(...
+                            self.interpolate_list == block.index) = [];
                         self.good_list = sort(unique(self.good_list));
 
                     end
                 case self.CGV.ratings.OK
                     if( ~ ismember(block.index, self.ok_list ) )
                         self.ok_list = [self.ok_list block.index];
-                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.not_rated_list(...
+                            self.not_rated_list == block.index) = [];
                         self.good_list(self.good_list == block.index) = [];
                         self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.interpolate_list(...
+                            self.interpolate_list == block.index) = [];
                         self.ok_list = sort(unique(self.ok_list));
                     end
                 case self.CGV.ratings.Bad
                     if( ~ ismember(block.index, self.bad_list ) )
                         self.bad_list = [self.bad_list block.index];
-                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.not_rated_list(...
+                            self.not_rated_list == block.index) = [];
                         self.ok_list(self.ok_list == block.index) = [];
                         self.good_list(self.good_list == block.index) = [];
-                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.interpolate_list(...
+                            self.interpolate_list == block.index) = [];
                         self.bad_list = sort(unique(self.bad_list));
                     end
                 case self.CGV.ratings.Interpolate
                     if( ~ ismember(block.index, self.interpolate_list ) )
-                        self.interpolate_list = [self.interpolate_list block.index];
-                        self.not_rated_list(self.not_rated_list == block.index) = [];
+                        self.interpolate_list = ...
+                            [self.interpolate_list block.index];
+                        self.not_rated_list(...
+                            self.not_rated_list == block.index) = [];
                         self.ok_list(self.ok_list == block.index) = [];
                         self.bad_list(self.bad_list == block.index) = [];
                         self.good_list(self.good_list == block.index) = [];
-                        self.interpolate_list = sort(unique(self.interpolate_list));
+                        self.interpolate_list = ...
+                            sort(unique(self.interpolate_list));
                     end
                 case self.CGV.ratings.NotRated
                     if( ~ ismember(block.index, self.not_rated_list ) )
-                        self.not_rated_list = [self.not_rated_list block.index];
+                        self.not_rated_list = ...
+                            [self.not_rated_list block.index];
                         self.good_list(self.good_list == block.index) = [];
                         self.ok_list(self.ok_list == block.index) = [];
                         self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(self.interpolate_list == block.index) = [];
+                        self.interpolate_list(...
+                            self.interpolate_list == block.index) = [];
                         self.not_rated_list = sort(unique(self.not_rated_list));
                     end
             end
         end
+        
         function self = update_rating_structures(self)
             % Updates the data structures of this project. Look
             % create_rating_structure for more info.
@@ -531,11 +515,6 @@ classdef Project < handle
             h = waitbar(0,'Updating project. Please wait...');
             h.Children.Title.Interpreter = 'none';
 
-            if(isunix)
-                slash = '/';
-            elseif(ispc)
-                slash = '\';
-            end
             % Load subject folders
             subjects = self.list_subject_files();
             s_count = length(subjects);
@@ -552,14 +531,7 @@ classdef Project < handle
 
             files_count = 0;
             preprocessed_file_count = 0;
-            stop_flag = 0;
             for i = 1:length(subjects)
-                if(stop_flag)
-                    if(ishandle(h))
-                        close(h)
-                    end
-                    break;
-                end
                 if(ishandle(h))
                     waitbar((i-1) / length(subjects), h)
                 end
@@ -568,7 +540,8 @@ classdef Project < handle
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
                 
-                raw_files = self.dir_nothiddens([self.data_folder subject_name slash '*' self.mask]);
+                raw_files = self.dir_nothiddens(...
+                    [self.data_folder subject_name self.slash '*' self.mask]);
                 temp = 0;
                 for j = 1:length(raw_files)
                     files_count = files_count + 1;
@@ -578,94 +551,90 @@ classdef Project < handle
                     file_name = splits{1};
                     unique_name = strcat(subject_name, '_', file_name);
 
-                    display(['...Adding file ', file_name]);
+                    fprintf(['...Adding file ', file_name, '\n']);
                     if(ishandle(h))
                         waitbar((i-1) / length(subjects), h, ...
-                            ['Setting up project. Please wait.', ' Adding file ', file_name, '...'])
+                            ['Setting up project. Please wait.', ...
+                            ' Adding file ', file_name, '...'])
                     end
                     % Merge data and update block_list
-                    if isKey(self.block_map, unique_name) % File has been here
+                    if isKey(self.block_map, unique_name) 
+                        % File has been here
+                        
                         block = self.block_map(unique_name);
-                        % Add it to the new list anyways. So that if anything has been
-                        % deleted, it's not copied to this new list.
+                        % Add it to the new list anyways. So that if 
+                        % anything has been deleted, it's not copied to 
+                        % this new list.
                         map(block.unique_name) = block; 
                         list{files_count} = block.unique_name;
                         block.index = files_count;
-                        if (~ isempty(block.potential_result_address)) % Some results exist
+                        if (~ isempty(block.potential_result_address)) 
+                            % Some results exist
+                            
                             IndexC = strfind(self.processed_list, unique_name);
                             Index = find(not(cellfun('isempty', IndexC)), 1);
                             if( ~isempty(Index))
-                                % Currently a result file exists. There has been a
-                                % result file before as well. So don't do anything.
-                                % Here we don't check whether the rating info has been
-                                % changed.
+                                % Currently a result file exists. There has 
+                                % been a result file before as well. So 
+                                % don't do anything. Here we don't check 
+                                % whether the rating info has been changed.
                             else % The result is new
                                 % Update the rating info of the block
-                                block.update_rating_info_from_file_if_any();
-                                if( isempty(block.rate))
+                                try
+                                    block.update_rating_info_from_file_if_any();
+                                catch ME
+                                    if ~contains(ME.identifier, 'Automagic')
+                                        rethrow(ME); 
+                                    end
                                     list{files_count} = [];
                                     files_count = files_count - 1;
                                     remove(map, block.unique_name);
-                                    
-                                    handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-                                    main_pos = get(handle,'position');
-                                    screen_size = get( groot, 'Screensize' );
-                                    choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
-                                                        'Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                                        'Continue preprocessing?', 'Yes', 'No','Yes');
-                                    switch choice
-                                        case 'Yes'
-                                            continue;
-                                        case 'No'
-                                            break;
-                                    end
+
+                                    warning(ME.message)
+                                    self.write_to_log(...
+                                        block.source_address, ME.message);
+                                    continue;
                                 end
                             end
                         else
                             % In any case, no file exists, so resets the rating info
-                            block.update_rating_info_from_file_if_any();
-                            if( isempty(block.rate))
+                            try
+                                block.update_rating_info_from_file_if_any();
+                            catch ME
+                                if ~contains(ME.identifier, 'Automagic')
+                                    rethrow(ME); 
+                                end
                                 list{files_count} = [];
                                 files_count = files_count - 1;
                                 remove(map, block.unique_name);
                                 
-                                handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-                                main_pos = get(handle,'position');
-                                screen_size = get( groot, 'Screensize' );
-                                choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], ...
-                                                    'Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                                    'Continue preprocessing?', 'Yes', 'No','Yes');
-                                switch choice
-                                    case 'Yes'
-                                        continue;
-                                    case 'No'
-                                        stop_flag = 1;
-                                        break;
-                                end
+                                warning(ME.message)
+                                self.write_to_log(block.source_address, ...
+                                    ME.message);
+                                continue;
                             end
                         end
                     else
                         % File is new
-                        % Block creation extracts and updates automatically the rating 
-                        % information from the existing files, if any.
-                        block = Block(self, subject, file_name, ext, self.ds_rate, self.params);
-                        % If the block is not created due to unmatched
-                        % parameters just skip it.
-                        if( isempty(block.rate))
-                            files_count = files_count - 1;
-                            handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-                            main_pos = get(handle,'position');
-                            screen_size = get( groot, 'Screensize' );
-                            choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
-                                                'Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                                'Continue preprocessing?', 'Yes', 'No','Yes');
-                            switch choice
-                                case 'Yes'
-                                    continue;
-                                case 'No'
-                                    stop_flag = 1;
-                                    break;
+                        
+                        % Block creation extracts and updates automatically 
+                        % the rating information from the existing files, 
+                        % if any.
+                        try
+                            block = Block(self, subject, file_name);
+                        catch ME
+                            if ~contains(ME.identifier, 'Automagic')
+                               rethrow(ME); 
                             end
+                            files_count = files_count - 1;
+                            warning(ME.message)
+                            if exist('block', 'var')
+                                self.write_to_log(block.source_address, ...
+                                    ME.message);
+                            else
+                                self.write_to_log(file_name, ME.message);
+                            end
+                            continue;
                         end
                         map(block.unique_name) = block;
                         list{files_count} = block.unique_name;
@@ -689,12 +658,14 @@ classdef Project < handle
                         end
 
                        p_list{end + 1} = block.unique_name;
-                       preprocessed_file_count = preprocessed_file_count + 1;
+                       preprocessed_file_count = ...
+                           preprocessed_file_count + 1;
                        temp = temp + 1;
                     end
                 end
                 if (~isempty(raw_files) && temp == length(raw_files))
-                    preprocessed_subject_count = preprocessed_subject_count + 1; 
+                    preprocessed_subject_count = ...
+                        preprocessed_subject_count + 1; 
                 end
             end
             if(ishandle(h))
@@ -703,36 +674,50 @@ classdef Project < handle
             end
             
             % Inform user if result folder has been modified
-            if( preprocessed_file_count > self.processed_files || preprocessed_subject_count > self.processed_subjects)
+            if( preprocessed_file_count > self.processed_files || ...
+                    preprocessed_subject_count > self.processed_subjects)
                 if( preprocessed_subject_count > self.processed_subjects)
-                    popup_msg('New preprocessed results have been added to the project folder.', 'More results');
+                    popup_msg(['New preprocessed results have been added'...
+                        ' to the project folder.'], 'More results');
                 else
-                    popup_msg('New preprocessed results have been added to the project folder.', 'More results');
+                    popup_msg(['New preprocessed results have been added'...
+                        'to the project folder.'], 'More results');
                 end
             end
 
-            if( preprocessed_file_count < self.processed_files || preprocessed_subject_count < self.processed_subjects)
+            if( preprocessed_file_count < self.processed_files || ...
+                    preprocessed_subject_count < self.processed_subjects)
                 if( preprocessed_subject_count < self.processed_subjects)
-                    popup_msg('Some preprocessed results have been deleted from the project folder.', 'Less results');
+                    popup_msg(['Some preprocessed results have been'...
+                        ' deleted from the project folder.'], ...
+                        'Less results');
                 else
-                    popup_msg('Some preprocessed results have been deleted from the project folder.', 'Less results');
+                    popup_msg(['Some preprocessed results have been'...
+                        ' deleted from the project folder.'], ...
+                        'Less results');
                 end
             end
 
             % Inform user if data folder has been modified
-            if( files_count > self.file_count || s_count > self.subject_count)
+            if( files_count > self.file_count || ...
+                    s_count > self.subject_count)
                 if( s_count > self.subject_count)
-                    popup_msg('New subjects are added to data folder.', 'New subjects');
+                    popup_msg('New subjects are added to data folder.', ...
+                        'New subjects');
                 else
-                    popup_msg('New files are added to data folder.', 'New results');
+                    popup_msg('New files are added to data folder.', ...
+                        'New results');
                 end
             end
 
-            if( files_count < self.file_count || s_count < self.subject_count)
+            if( files_count < self.file_count || ...
+                    s_count < self.subject_count)
                 if( s_count < self.subject_count)
-                    popup_msg('You have lost some data files.', 'Less data');
+                    popup_msg('You have lost some data files.', ...
+                        'Less data');
                 else
-                    popup_msg('You have lost some data cosubjects.', 'Less data');
+                    popup_msg('You have lost some data cosubjects.', ...
+                        'Less data');
                 end
             end
             self.processed_files = preprocessed_file_count;
@@ -756,9 +741,11 @@ classdef Project < handle
                     self.current = 1;
                 end
             end
+            self.save_project();
         end
         
-        function self = update_addresses_form_state_file(self, project_folder, data_folder)
+        function self = update_addresses_form_state_file(self, ...
+                project_folder, data_folder)
             % This method must be called only when this project is a new
             % project loaded from a state file. The loaded project
             % may have not been created from this operating system, thus addresses
@@ -775,7 +762,8 @@ classdef Project < handle
         function rated_count = get_rated_numbers(self)
             % Return number of files that has been already rated
             rated_count = length(self.processed_list) - ...
-                          (length(self.not_rated_list) + length(self.interpolate_list));
+                          (length(self.not_rated_list) + ...
+                          length(self.interpolate_list));
         end
         
         function count = to_be_interpolated_count(self)
@@ -789,9 +777,17 @@ classdef Project < handle
             % update_data_structures must be called.
             data_changed = self.folder_is_changed(self.data_folder, ...
                 self.subject_count, self.file_count, self.mask);
-            result_changed = self.folder_is_changed(self.result_folder, []...
-                , self.processed_files, self.CGV.extensions(1).mat);
+            result_changed = self.folder_is_changed(self.result_folder, ...
+                [], self.processed_files, self.CGV.extensions(1).mat);
             modified = data_changed || result_changed;
+        end
+        
+        function slash = get.slash(self) %#ok<STOUT>
+            if(isunix)
+                slash = '/';
+            elseif(ispc)
+                slash = '\';
+            end
         end
         
         function save_project(self)
@@ -856,11 +852,6 @@ classdef Project < handle
             h = waitbar(0,'Setting up project. Please wait...');
             h.Children.Title.Interpreter = 'none';
            
-            if(isunix)
-                slash = '/';
-            elseif(ispc)
-                slash = '\';
-            end
             % Load subject folders
             subjects = self.list_subject_files();
             s_count = length(subjects);
@@ -879,23 +870,17 @@ classdef Project < handle
             files_count = 0;
             preprocessed_file_count = 0;
             preprocessed_subject_count = 0;
-            stop_flag = 0;
             for i = 1:length(subjects)
-                if(stop_flag)
-                    if(ishandle(h))
-                        close(h)
-                    end
-                    break;
-                end
                 if(ishandle(h))
                     waitbar((i-1) / length(subjects), h)
                 end
                 subject_name = subjects{i};
-                display(['Adding subject ', subject_name]);
+                fprintf(['Adding subject ', subject_name, '\n']);
                 subject = Subject([self.data_folder subject_name], ...
                                     [self.result_folder subject_name]);
 
-                raw_files = self.dir_nothiddens([self.data_folder subject_name slash '*' self.mask]);
+                raw_files = self.dir_nothiddens(...
+                    [self.data_folder subject_name self.slash '*' self.mask]);
                 temp = 0; 
                 for j = 1:length(raw_files)
                     files_count = files_count + 1;
@@ -903,34 +888,30 @@ classdef Project < handle
                     name_temp = file.name;
                     splits = strsplit(name_temp, ext);
                     file_name = splits{1};
-                    display(['...Adding file ', file_name]);
+                    fprintf(['...Adding file ', file_name, '\n']);
                     if(ishandle(h))
                         waitbar((i-1) / length(subjects), h, ...
-                            ['Setting up project. Please wait.', ' Adding file ', file_name, '...'])
+                            ['Setting up project. Please wait.', ...
+                            ' Adding file ', file_name, '...'])
                     end
-                    % Block creation extracts and updates automatically the rating 
-                    % information from the existing files, if any.
-                    block = Block(self, subject, file_name, ext, self.ds_rate, self.params);
-                    % If the block is not created due to unmatched
-                    % parameters just skip it.
-                    if( isempty(block.rate))
-                        files_count = files_count - 1;
-                        
-                        handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-                        main_pos = get(handle,'position');
-                        screen_size = get( groot, 'Screensize' );
-                        choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)],...
-                                            'Something went wrong. Would you like to continue for the remaining files and subject?', ...
-                                            'Continue preprocessing?', 'Yes', 'No','Yes');
-                        switch choice
-                            case 'Yes'
-                                continue;
-                            case 'No'
-                                stop_flag = 1;
-                                break;
+                    % Block creation extracts and updates automatically 
+                    % the rating information from the existing files, if any.
+                    try
+                        block = Block(self, subject, file_name);
+                    catch ME
+                        if ~contains(ME.identifier, 'Automagic')
+                               rethrow(ME); 
                         end
+                        files_count = files_count - 1;
+                        warning(ME.message)
+                        if exist('block', 'var')
+                            self.write_to_log(block.source_address, ...
+                                ME.message);
+                        else
+                            self.write_to_log(file_name, ME.message);
+                        end
+                        continue;
                     end
-                    
                     map(block.unique_name) = block;
                     list{files_count} = block.unique_name;
                     block.index = files_count;
@@ -951,12 +932,14 @@ classdef Project < handle
                         end
 
                        p_list{end + 1} = block.unique_name;      
-                       preprocessed_file_count = preprocessed_file_count + 1;
+                       preprocessed_file_count = ...
+                           preprocessed_file_count + 1;
                        temp = temp + 1;
                     end
                 end
                 if (~isempty(raw_files) && temp == length(raw_files))
-                    preprocessed_subject_count = preprocessed_subject_count + 1; 
+                    preprocessed_subject_count = ...
+                        preprocessed_subject_count + 1; 
                 end
             end
             if(ishandle(h))
@@ -982,6 +965,7 @@ classdef Project < handle
             else
                 self.current = -1;
             end
+            self.save_project();
         end
         
         function self = setName(self, name)
@@ -989,8 +973,9 @@ classdef Project < handle
             
             % Name must be a valid file name
             if (~isempty(regexp(name, '[/\*:?"<>|]', 'once')))
-                popup_msg(['Please enter a valid name not containing any of the following: '...
-                       '/ \ * : ? " < > |'], 'Error');
+                popup_msg(['Please enter a valid name not containing'
+                           ' any of the following: '...
+                           '/ \ * : ? " < > |'], 'Error');
                 return;
             end
             self.name = name;
@@ -1000,8 +985,8 @@ classdef Project < handle
             % Set the address of the data_folder
             
             if(~ exist(data_folder, 'dir') && isunix)
-               popup_msg(strcat('This data folder does not exist: ', data_folder),...
-                    'Error');
+               popup_msg(strcat(['This data folder does not exist: ', ...
+                   data_folder]), 'Error');
                 return;
             end
             
@@ -1020,18 +1005,20 @@ classdef Project < handle
         
         function skip = check_existings(self)
             % If there is already at least one preprocessed file in the
-            % result_folder, ask the user whether to overwrite them or skip them
+            % result_folder, ask the user whether to overwrite them or 
+            % skip them
 
             skip = 1;
             if( self.processed_files > 0)
                 handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
                 main_pos = get(handle,'position');
                 screen_size = get( groot, 'Screensize' );
-                choice = MFquestdlg([main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], ...
-                                    ['Some files are already processed. Would ',... 
-                                   'you like to overwrite them or skip them ?'], ...
-                                   'Pre-existing files in the project folder.',...
-                                   'Over Write', 'Skip','Over Write');
+                choice = MFquestdlg(...
+                    [main_pos(3)/2/screen_size(3) main_pos(4)/2/screen_size(4)], ...
+                    ['Some files are already processed. Would ',... 
+                   'you like to overwrite them or skip them ?'], ...
+                   'Pre-existing files in the project folder.',...
+                   'Over Write', 'Skip','Over Write');
                 switch choice
                     case 'Over Write'
                         skip = 0;
@@ -1048,8 +1035,76 @@ classdef Project < handle
             else
                 fileID = fopen(log_file_address,'w');
             end
-            fprintf(fileID, ['The data file ' source_address ' could not be preprocessed:' msg '\n']);
+            fprintf(fileID, ['The data file ' source_address ...
+                ' could not be preprocessed:' msg '\n']);
             fclose(fileID);
+        end
+        
+        
+        function parts = add_eeglab_path(self)
+
+            matlab_paths = genpath(...
+                ['..' self.slash 'matlab_scripts' self.slash]);
+            if(ispc)
+                parts = strsplit(matlab_paths, ';');
+            else
+                parts = strsplit(matlab_paths, ':');
+            end
+
+            IndexC = strfind(parts, 'compat');
+            Index = not(cellfun('isempty', IndexC));
+            parts(Index) = [];
+            IndexC = strfind(parts, 'neuroscope');
+            Index = not(cellfun('isempty', IndexC));
+            parts(Index) = [];
+            IndexC = strfind(parts, 'dpss');
+            Index = not(cellfun('isempty', IndexC));
+            parts(Index) = [];
+            if(ispc)
+                matlab_paths = strjoin(parts, ';');
+            else
+                matlab_paths = strjoin(parts, ':');
+            end
+            addpath(matlab_paths);
+
+        end 
+        
+        function add_necessary_paths(self)
+            % preprocess is checked as an example of a file in 
+            % preprocessing, it could be any other file in that folder.
+            if( ~exist('preprocess', 'file'))
+                addpath(['..' self.slash 'preprocessing']);
+            end
+
+            % pop_fileio is checked as an example of a file in 
+            % matlab_scripts, it could be any other file in that folder.
+            if(~exist('pop_fileio', 'file'))
+                self.add_eeglab_path();
+            end
+
+            if(~exist('main_gui', 'file'))
+                addpath(genpath(['..' self.slash 'gui' self.slash]));
+            end
+        end
+        
+        function update_main_gui(self)
+            % Update the main gui's data after rating processing
+            h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+            if( isempty(h))
+                h = main_gui;
+            end
+            handle = guidata(h);
+            handle.project_list(self.name) = self;
+            guidata(handle.main_gui, handle);
+            main_gui();
+        end
+        
+        function folder = add_slash(self, folder)
+            % Add "\" is not exists already ("\" for windows)
+            if( ~ isempty(folder) && ...
+                    isempty(regexp( folder ,['\' self.slash '$'],'match')))
+                folder = strcat(folder, self.slash);
+            end
         end
     end
     
@@ -1058,28 +1113,16 @@ classdef Project < handle
         function address = make_state_address(p_folder)
             % Return the address of the state file
             
-            address = strcat(p_folder, ConstantGlobalValues.state_file.PROJECT_NAME);
+            address = strcat(p_folder, ...
+                ConstantGlobalValues.state_file.PROJECT_NAME);
         end 
     end
     
     %% Private utility static methods
     methods(Static, Access=private)
-        function folder = add_slash(folder)
-            % Add "\" is not exists already ("\" for windows)
-            
-            if(isunix)
-                if( ~ isempty(folder) && isempty(regexp( folder ,'\/$','match')))
-                    folder = strcat(folder,'/');
-                end
-            elseif(ispc)
-                if( ~ isempty(folder) && isempty(regexp( folder ,'\\$','match')))
-                    folder = strcat(folder,'\');
-                end
-            end
-        end
         
         function subjects = list_subjects(root_folder)
-            % Return the list of subjects in the folder
+            % Return the list of subjects (dirs) in the folder
             % root_folder       the folder in which subjects are looked for
             
             subs = dir(root_folder);
@@ -1089,6 +1132,10 @@ classdef Project < handle
         end
         
         function files = dir_nothiddens(folder)
+            % Return the list of files in the folder. Excude the hidden
+            % files
+            % folder    The files in this filder are listed
+            
             files = dir(folder);
             idx = ~startsWith({files.name}, '.');
             files = files(idx);
@@ -1121,8 +1168,8 @@ classdef Project < handle
                 file_count = file_count + length(files);
             end
 
-            % NOTE: Very risky. The assumption is that for each result file, there is a
-            % corresponding reduced file as well.
+            % NOTE: Very risky. The assumption is that for each result 
+            % file, there is a corresponding reduced file as well.
             if(file_count ~= file_counts && file_count / 2 ~= file_counts)
                 modified = true;
             end

@@ -65,7 +65,6 @@ if nargin < 1
 elseif nargin < 2
     disp('No bad channel information...')
 end
-
 %% Data preparation
 % Data
 X = EEG.data;

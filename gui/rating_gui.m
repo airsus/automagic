@@ -136,10 +136,7 @@ if( project.current == -1)
     return;
 end
 
-block = get_current_block(handles);
-assert(block.is_interpolate())
 handles = turn_on_selection(handles);
-
 % Update handles structure
 guidata(hObject, handles);
 
@@ -155,8 +152,6 @@ if( project.current == -1)
     return;
 end
 
-block = get_current_block(handles);
-assert(block.is_interpolate())
 handles = turn_off_selection(handles);
 
 % Update handles structure
@@ -180,7 +175,7 @@ project = handles.project;
 
 next_idx = handles.project.current;
 val = get(handles.goodcheckbox, 'Value');
-block = get_current_block(handles);
+block = project.get_current_block();
 
 % If it's to be filtered and current must be changed
 if( ~ val && block.is_good() )
@@ -191,16 +186,10 @@ if( ~ val && block.is_good() )
 end
 
 % When nothing is shown and filter is off
-if((val && is_filtered(handles, project.current)) || ...
-        (val && block.is_good() ))
-    if(block.is_good()  && ...
-            ~ is_filtered(handles, project.current))
-        next_idx = handles.project.current;
-    else
-        next_idx = get_next_index(handles);
-        if(next_idx == -1)
-            next_idx = get_previous_index(handles);
-        end
+if((val && is_filtered(handles, project.current)))
+    next_idx = get_next_index(handles);
+    if(next_idx == -1)
+        next_idx = get_previous_index(handles);
     end
 end
 
@@ -226,7 +215,7 @@ function okcheckbox_Callback(hObject, eventdata, handles)
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.okcheckbox, 'Value');
-block = get_current_block(handles);
+block = project.get_current_block();
 if( ~ val && block.is_ok() )
     next_idx = get_next_index(handles);
     if(next_idx == -1)
@@ -234,17 +223,11 @@ if( ~ val && block.is_ok() )
     end
 end
 
-% When nothing is shown
-if((val && is_filtered(handles, project.current)) || ...
-        (val && block.is_ok() ))
-    if(block.is_ok()  && ...
-            ~ is_filtered(handles, project.current))
-        next_idx = handles.project.current;
-    else
-        next_idx = get_next_index(handles);
-        if(next_idx == -1)
-            next_idx = get_previous_index(handles);
-        end
+% When nothing is shown and filter is off
+if((val && is_filtered(handles, project.current)))
+    next_idx = get_next_index(handles);
+    if(next_idx == -1)
+        next_idx = get_previous_index(handles);
     end
 end
 handles.project.current = next_idx;
@@ -269,7 +252,7 @@ function badcheckbox_Callback(hObject, eventdata, handles)
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.badcheckbox, 'Value');
-block = get_current_block(handles);
+block = project.get_current_block();
 if( ~ val && block.is_bad() )
     next_idx = get_next_index(handles);
     if(next_idx == -1)
@@ -277,17 +260,11 @@ if( ~ val && block.is_bad() )
     end
 end
 
-% When nothing is shown
-if((val && is_filtered(handles, project.current)) || ...
-        (val && block.is_bad() ))
-    if(block.is_bad()  && ...
-            ~ is_filtered(handles, project.current))
-        next_idx = handles.project.current;
-    else
-        next_idx = get_next_index(handles);
-        if(next_idx == -1)
-            next_idx = get_previous_index(handles);
-        end
+% When nothing is shown and filter is off
+if((val && is_filtered(handles, project.current)))
+    next_idx = get_next_index(handles);
+    if(next_idx == -1)
+        next_idx = get_previous_index(handles);
     end
 end
 handles.project.current = next_idx;
@@ -312,7 +289,7 @@ function interpolatecheckbox_Callback(hObject, eventdata, handles)
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.interpolatecheckbox, 'Value');
-block = get_current_block(handles);
+block = project.get_current_block();
 if( ~ val && block.is_interpolate() )
     next_idx = get_next_index(handles);
     if(next_idx == -1)
@@ -320,17 +297,11 @@ if( ~ val && block.is_interpolate() )
     end
 end
 
-% When nothing is shown
-if((val && is_filtered(handles, project.current)) || ...
-        (val && block.is_interpolate() ))
-    if(block.is_interpolate()  && ...
-            ~ is_filtered(handles, project.current))
-        next_idx = handles.project.current;
-    else
-        next_idx = get_next_index(handles);
-        if(next_idx == -1)
-            next_idx = get_previous_index(handles);
-        end
+% When nothing is shown and filter is off
+if((val && is_filtered(handles, project.current)))
+    next_idx = get_next_index(handles);
+    if(next_idx == -1)
+        next_idx = get_previous_index(handles);
     end
 end
 handles.project.current = next_idx;
@@ -355,7 +326,7 @@ function notratedcheckbox_Callback(hObject, eventdata, handles)
 project = handles.project;
 next_idx = handles.project.current;
 val = get(handles.notratedcheckbox, 'Value');
-block = get_current_block(handles);
+block = project.get_current_block();
 if( ~ val && block.is_not_rated() )
     next_idx = get_next_index(handles);
     if(next_idx == -1)
@@ -363,17 +334,11 @@ if( ~ val && block.is_not_rated() )
     end
 end
 
-% When nothing is shown
-if((val && is_filtered(handles, project.current)) || ...
-        (val && block.is_not_rated() ))
-    if(block.is_not_rated()  && ...
-            ~ is_filtered(handles, project.current))
-        next_idx = handles.project.current;
-    else
-        next_idx = get_next_index(handles);
-        if(next_idx == -1)
-            next_idx = get_previous_index(handles);
-        end
+% When nothing is shown and filter is off
+if((val && is_filtered(handles, project.current)))
+    next_idx = get_next_index(handles);
+    if(next_idx == -1)
+        next_idx = get_previous_index(handles);
     end
 end
 handles.project.current = next_idx;
@@ -438,7 +403,7 @@ if(project.current == -1)
     return;
 end
 handles = get_rating_from_gui(handles);
-block = get_current_block(handles);
+block = project.get_current_block();
 update_lines(handles)
 if( block.is_interpolate() )
    handles = turn_on_selection(handles);
@@ -537,29 +502,10 @@ end
 
 if( isempty(handles.rategroup.SelectedObject))
     return;
-else
-    block = get_current_block(handles);
-    new_rate = handles.rategroup.SelectedObject.String;
-    is_manually_rated = ~ strcmp(new_rate, rateQuality(block, project.qualityCutoffs));
-    switch new_rate
-        case {handles.CGV.ratings.Good, handles.CGV.ratings.OK, ...
-                handles.CGV.ratings.Bad, handles.CGV.ratings.NotRated}
-            block.setRatingInfoAndUpdate(new_rate, ...
-                                        block.tobe_interpolated, ...
-                                        block.final_badchans, ...
-                                        block.is_interpolated, ...
-                                        is_manually_rated);
-        case handles.CGV.ratings.Interpolate
-                % The interpolate_list is untouched at this step. There maybe even
-                % conflicts in it which are not checked.
-                block.setRatingInfoAndUpdate(new_rate, ...
-                block.tobe_interpolated, ...
-                block.final_badchans, ...
-                block.is_interpolated, ...
-                is_manually_rated);
-    end
-    project.update_rating_lists(block);
 end
+block = project.get_current_block();
+new_rate = handles.rategroup.SelectedObject.String;
+block.setRatingInfoAndUpdate(struct('rate', new_rate));
 
 % --- Turn on the selection mode to choose channels that should be
 % interpolated
@@ -572,8 +518,9 @@ handles.selection_mode = true;
 % To update both oncall functions with new handles where the selection is
 % changed
 im = findobj(allchild(0), 'Tag', 'im');
-set(im, 'ButtonDownFcn', {@on_selection,handles})
-% update_lines(handles)
+set(im, 'ButtonDownFcn', {@on_selection, handles})
+update_lines(handles) % This is important, otherwise handles.selection_mode 
+                      % is not correctly updated
 
 set(gcf,'Pointer','crosshair');
 switch_gui('off', handles);
@@ -588,8 +535,9 @@ handles.selection_mode = false;
 % To update both oncall functions with new handles where the selection is
 % changed
 im = findobj(allchild(0), 'Tag', 'im');
-set(im, 'ButtonDownFcn', {@on_selection,handles})
-% update_lines(handles)
+set(im, 'ButtonDownFcn', {@on_selection, handles})
+update_lines(handles) % This is important, otherwise handles.selection_mode 
+                      % is not correctly updated
 
 set(gcf,'Pointer','arrow');
 switch_gui('on', handles);
@@ -601,12 +549,6 @@ function handles = save_state(handles)
 if ( ~ isa(handles,'struct') || handles.project.current == -1)
     return
 end
-
-% % Save the rating data into the preprocessing file
-% block = get_current_block(handles);
-% block.saveRatingsToFile();
-% % update five lists of ratings which are used to speed up the filtering
-% handles.project.update_rating_lists(block);
         
 % Save the stateS
 if(isa(handles.project, 'Project'))
@@ -716,7 +658,7 @@ function colorscale_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 new_value = int16(get(hObject,'Value'));
-set(handles.scaletext, 'String', ['[ -',num2str(new_value), ' ' ,num2str(new_value),']']);
+set(handles.scaletext, 'String', ['[ -',num2str(new_value), ' ' , num2str(new_value),']']);
 handles.project.colorScale = new_value;
 handles = load_project(handles);
 % Update handles structure
@@ -753,39 +695,7 @@ function eegplotpush_Callback(hObject, eventdata, handles)
 % hObject    handle to eegplotpush (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-if(ispc)
-    slash = '\';
-else
-    slash = '/';
-end
-
-% First add eeglab in path if not added yet
-if(~exist('pop_fileio', 'file'))
-    matlab_paths = genpath(['..' slash 'matlab_scripts' slash]);
-    if(ispc)
-        parts = strsplit(matlab_paths, ';');
-    else
-        parts = strsplit(matlab_paths, ':');
-    end
-    IndexC = strfind(parts, 'compat');
-    Index = not(cellfun('isempty', IndexC));
-    parts(Index) = [];
-    IndexC = strfind(parts, 'neuroscope');
-    Index = not(cellfun('isempty', IndexC));
-    parts(Index) = [];
-    if(ispc)
-        matlab_paths = strjoin(parts, ';');
-    else
-        matlab_paths = strjoin(parts, ':');
-    end
-    addpath(matlab_paths);
-    
-    % Add path for 10_20 system
-    IndexC = strfind(parts, 'BESA');
-    Index = not(cellfun('isempty', IndexC));
-end
-
+add_eeglab_path();
 
 % Plot
 [~, data] = load_current(handles, false);
@@ -818,19 +728,13 @@ function detectedpushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-block = get_current_block(handles);
+block = project.get_current_block();
 interpolated = block.final_badchans;
 tobe_interpolated = block.tobe_interpolated;
 autos = block.auto_badchans;
 autos = setdiff(autos, interpolated);
 tobe_interpolated = union(tobe_interpolated, autos);
-if(~isempty(tobe_interpolated))
-    rate = handles.CGV.ratings.Interpolate;
-else
-    rate = block.rate;
-end
-block.setRatingInfoAndUpdate(rate, tobe_interpolated', block.final_badchans, block.is_interpolated, block.is_manually_rated);
-handles.project.update_rating_lists(block);
+block.setRatingInfoAndUpdate(struct('tobe_interpolated', tobe_interpolated'));
 % Update handles structure
 guidata(hObject, handles);
 
@@ -856,7 +760,7 @@ set(handles.axes,'units','pixel');
 current_pos = get(handles.axes,'position');
 set(handles.axes,'units','normalized');
 
-block = get_current_block(handles);
+block = handles.project.get_current_block();
 file_add = strcat(block.image_address, '_orig.jpg');
 eeg_filtered = imread(file_add);
 

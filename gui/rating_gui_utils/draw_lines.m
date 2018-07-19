@@ -6,7 +6,7 @@ project = handles.project;
 if(project.current == -1)
     return;
 end
-block = get_current_block(handles);
+block = project.get_current_block();
 if strcmp(block.rate, handles.CGV.ratings.Interpolate)
     list = block.tobe_interpolated;
 else

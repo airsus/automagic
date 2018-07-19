@@ -8,7 +8,7 @@ project = handles.project;
 if(project.current == -1)
     return;
 end
-block = get_current_block(handles);
+block = project.get_current_block();
 badchans = block.auto_badchans;
 axe = handles.axes;
 axes(axe);
