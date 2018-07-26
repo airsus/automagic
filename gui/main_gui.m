@@ -778,7 +778,8 @@ switch choice
                 delete(Project.make_state_address(project_folder));
             end
         end
-        project = Project(name, data_folder, project_folder, ext, visualisation_params.ds_rate, params, visualisation_params.calcQuality_params, srate);
+        project = Project(name, data_folder, project_folder, ext, ...
+            params, visualisation_params, srate);
 end
 name = project.name; % Overwrite the name in case the project is loaded.
 

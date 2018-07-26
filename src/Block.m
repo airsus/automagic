@@ -111,7 +111,6 @@ classdef Block < handle
         
         srate 
         
-        
         % Parameters of the preprocessing. To learn more please see
         % preprocessing/preprocess.m
         params

@@ -178,8 +178,8 @@ classdef Project < handle
     
     %% Constructor
     methods
-        function self = Project(name, d_folder, p_folder, ext, ds, ...
-                params, qualityThresholds, varargin)
+        function self = Project(name, d_folder, p_folder, ext, ...
+                params, visualisation_params, varargin)
             
             self = self.setName(name);
             self = self.setData_folder(d_folder);
@@ -190,14 +190,15 @@ classdef Project < handle
             ext_split = strsplit(ext, '.');
             self.file_extension = strcat('.', ext_split{end});
             self.mask = ext;
-            self.qualityThresholds = qualityThresholds;
-            self.qualityCutoffs = self.CGV.default_visualisation_params.rateQuality_params;
+            self.qualityThresholds = visualisation_params.calcQuality_params;
+            def_vis = self.CGV.default_visualisation_params;
+            self.qualityCutoffs = def_vis.rateQuality_params;
             if(any(strcmp(self.file_extension, {self.CGV.extensions.text})))
                 self.srate = varargin{1};
             end
             
-            self.colorScale = self.CGV.default_visualisation_params.COLOR_SCALE;
-            self.dsrate = ds;
+            self.colorScale = def_vis.COLOR_SCALE;
+            self.dsrate = visualisation_params.ds_rate;
             self.params = params;
             self = self.create_rating_structure();
         end
@@ -225,51 +226,56 @@ classdef Project < handle
             block = self.get_current_block();
             current_index = block.index;
             % If no rating is filtered, simply return the next one in the list.
-            if( good_bool && ok_bool && bad_bool && interpolate_bool && notrated_bool)
+            if( good_bool && ok_bool && bad_bool && ...
+                    interpolate_bool && notrated_bool)
                 next = min(self.current + 1, length(self.processed_list));
-                if( next == 0)
+                if( next == 0) % 'current' could be -1 if a mock block
                     next = next + 1;
                 end
-            else
-                next_good = [];
-                next_ok = [];
-                next_bad = [];
-                next_interpolate = [];
-                next_notrated = [];
-                if(good_bool)
-                    possible_goods = find(self.good_list > current_index, 1);
-                    if( ~ isempty(possible_goods))
-                        next_good = self.good_list(possible_goods(1));
-                    end
+                return;
+            end
+            next_good = [];
+            next_ok = [];
+            next_bad = [];
+            next_interpolate = [];
+            next_notrated = [];
+            if(good_bool)
+                possible_goods = find(self.good_list > current_index, 1);
+                if( ~ isempty(possible_goods))
+                    next_good = self.good_list(possible_goods(1));
                 end
-                if(ok_bool)
-                   possible_oks = find(self.ok_list > current_index, 1);
-                    if( ~ isempty(possible_oks))
-                        next_ok = self.ok_list(possible_oks(1));
-                    end
+            end
+            if(ok_bool)
+               possible_oks = find(self.ok_list > current_index, 1);
+                if( ~ isempty(possible_oks))
+                    next_ok = self.ok_list(possible_oks(1));
                 end
-                if(bad_bool)
-                   possible_bads = find(self.bad_list > current_index, 1);
-                    if( ~ isempty(possible_bads))
-                        next_bad = self.bad_list(possible_bads(1));
-                    end
+            end
+            if(bad_bool)
+               possible_bads = find(self.bad_list > current_index, 1);
+                if( ~ isempty(possible_bads))
+                    next_bad = self.bad_list(possible_bads(1));
                 end
-                if(interpolate_bool)
-                   possible_interpolates = find(self.interpolate_list > current_index, 1);
-                    if( ~ isempty(possible_interpolates))
-                        next_interpolate = self.interpolate_list(possible_interpolates(1));
-                    end
+            end
+            if(interpolate_bool)
+               possible_interpolates = ...
+                   find(self.interpolate_list > current_index, 1);
+                if( ~ isempty(possible_interpolates))
+                    next_interpolate = ...
+                        self.interpolate_list(possible_interpolates(1));
                 end
-                if(notrated_bool)
-                   possible_notrateds = find(self.not_rated_list > current_index, 1);
-                    if( ~ isempty(possible_notrateds))
-                        next_notrated = self.not_rated_list(possible_notrateds(1));
-                    end
+            end
+            if(notrated_bool)
+               possible_notrateds = ...
+                   find(self.not_rated_list > current_index, 1);
+                if( ~ isempty(possible_notrateds))
+                    next_notrated = ...
+                        self.not_rated_list(possible_notrateds(1));
                 end
-                next = min([next_good next_ok next_bad next_interpolate next_notrated]);
-                if( isempty(next))
-                    next = next_idx;
-                end
+            end
+            next = min([next_good next_ok next_bad next_interpolate next_notrated]);
+            if( isempty(next))
+                next = next_idx;
             end
         end
         
@@ -279,8 +285,7 @@ classdef Project < handle
             block =  self.get_current_block();
             current_index = block.index;
             
-            % If nothing is filtered the previous one is simply the one 
-            % before the current one in the list
+            % If nothing is filtered simply return the previous in the list 
             if( good_bool && ok_bool && bad_bool && ...
                     interpolate_bool && notrated_bool)
                 previous = max(self.current - 1, 1);
@@ -295,7 +300,8 @@ classdef Project < handle
             previous_interpolate = [];
             previous_notrated = [];
             if(good_bool)
-                possible_goods = find(self.good_list < current_index, 1, 'last');
+                possible_goods = ...
+                    find(self.good_list < current_index, 1, 'last');
                 if( ~ isempty(possible_goods))
                     previous_good = self.good_list(possible_goods(end));
                 end
