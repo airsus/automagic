@@ -1,4 +1,4 @@
-function data = perform_ica(data, varargin)
+function EEG_clean = perform_ica(data, varargin)
 % perform_ica  perform Independent Component Analysis (ICA) on the data 
 %   data = perform_ica(data, params) where data is the EEGLAB data
 %   structure. params is an optional parameter which must be a structure
@@ -40,8 +40,10 @@ p = inputParser;
 validate_param = @(x) isa(x, 'containers.Map');
 addParameter(p,'chanloc_map', defaults.chanloc_map, validate_param);
 addParameter(p,'large_map', defaults.large_map);
+addParameter(p,'high', defaults.high, @isstruct);
 parse(p, varargin{:});
 chanloc_map = p.Results.chanloc_map;
+high = p.Results.high;
 
 % Change channel labels to their corresponding ones as required by 
 % processMARA. This is done only for those labels that are given in the map.
@@ -92,30 +94,39 @@ end
 
 %% Perform ICA
 display(constants.run_message);
-options = [0 1 0 0 1]; %#ok<NASGU>
-[~, ALLEEG, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data, data, 1, options)');
-data = EEG_Mara;
-% Get bak info before ica components were rejected
-[~, artcomps, MARAinfo] = evalc('MARA(ALLEEG(2))');
-data.automagic.ica.performed = 'yes';
-data.automagic.ica.prerejection.reject.MARAinfo = MARAinfo;
-data.automagic.ica.prerejection.reject.gcompreject(artcomps) = 1;
-data.automagic.ica.prerejection.icaact  = ALLEEG(2).icaact;
-data.automagic.ica.prerejection.icawinv     = ALLEEG(2).icawinv;
-data.automagic.ica.prerejection.icaweights  = ALLEEG(2).icaweights;
-data.automagic.ica.ica_rejected = find(data.automagic.ica.prerejection.reject.gcompreject == 1);
+data_filtered = data;
+if( ~isempty(high) )
+    [~, data_filtered] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
+    data_filtered.automagic.ica.highpass.performed = 'yes';
+    data_filtered.automagic.ica.highpass.freq = high.freq;
+    data_filtered.automagic.ica.highpass.order = high.order;
+else
+    data_filtered.automagic.ica.highpass.performed = 'no';
+end
+        
+options = [0 1 0 0 0]; %#ok<NASGU>
+[~, ALLEEG, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data_filtered, data_filtered, 1, options)');
+EEG_Mara.data = data.data;
+EEG_clean = pop_subcomp(EEG_Mara, []);
+
+EEG_clean.automagic.ica.performed = 'yes';
+EEG_clean.automagic.ica.prerejection.reject = EEG_Mara.reject;
+EEG_clean.automagic.ica.prerejection.icaact  = EEG_clean.icaact;
+EEG_clean.automagic.ica.prerejection.icawinv     = EEG_clean.icawinv;
+EEG_clean.automagic.ica.prerejection.icaweights  = EEG_clean.icaweights;
+EEG_clean.automagic.ica.ica_rejected = find(EEG_Mara.reject.gcompreject == 1);
 %% Return
 % Change back the labels to the original one
 if( ~ isempty(chanloc_map))
     for i = idx
-       data.chanlocs(1,i).labels = inverse_chanloc_map(...
-                                                data.chanlocs(1,i).labels);
+       EEG_clean.chanlocs(1,i).labels = inverse_chanloc_map(...
+                                                EEG_clean.chanlocs(1,i).labels);
     end
     
-    for i = 1:length(data.chanlocs)
+    for i = 1:length(EEG_clean.chanlocs)
         if(~ any(i == idx))
-            data.chanlocs(1,i).labels = strtok(...
-                data.chanlocs(1,i).labels, '_automagiced');
+            EEG_clean.chanlocs(1,i).labels = strtok(...
+                EEG_clean.chanlocs(1,i).labels, '_automagiced');
         end
     end
 end

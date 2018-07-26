@@ -532,7 +532,6 @@ prep_removed_chans = find(prep_removed_chans_mask);
 removed_chans = union(asr_removed_chans, prep_removed_chans);
 EEG_filtered.automagic.prep.removed_chans = prep_removed_chans;
 EEG_filtered.automagic.asr.removed_chans = asr_removed_chans;
-clear prep_removed_chans_mask asr_removed_chans_mask;
 
 
 % Remove effect of EOG
@@ -591,6 +590,7 @@ end
 highvar_rejected = find(highvar_removed_chans_mask);
 removed_chans = union(removed_chans, highvar_rejected);
 detrended.automagic.highvariance_rejection.removed_chans = highvar_rejected;
+clear prep_removed_chans_mask asr_removed_chans_mask highvar_removed_chans_mask;
 result = detrended;
 
 % Put back removed channels
