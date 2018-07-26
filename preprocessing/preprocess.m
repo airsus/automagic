@@ -407,10 +407,13 @@ data.automagic.channel_reduction.used_eog_channels = eog_channels;
 %% Preprocessing
 % Seperate EEG channels from EOG channels
 [~, EOG] = evalc('pop_select( data , ''channel'', eog_channels)');
-[~, EEG] = evalc('pop_select( data , ''channel'', channels)');
+[~, EEG_ref] = evalc('pop_select( data , ''channel'', channels)');
 % Map original channel lists to new ones after the above separation
 [~, idx] = ismember(eeg_system.ref_chan, channels);
 eeg_system.ref_chan = idx(idx ~= 0);
+
+% Remove the reference channel from the rest of preprocessing
+[~, EEG] = evalc('pop_select(EEG_ref, ''nochannel'', eeg_system.ref_chan)');
 data.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
 
 % Clean EEG using Artefact Supspace Reconstruction
@@ -523,32 +526,13 @@ display(PreprocessingConstants.filter_constants.run_message);
 EEG_filtered = perform_filter(EEG_cleaned, filter_params);
 EOG_filtered = perform_filter(EOG, filter_params);
 
-% Reject channels based on high variance
-[s, ~] = size(EEG.data);
-highvar_removed_chans_mask = false(1, s); clear s;
-EEG_filtered.automagic.highvariance_rejection.performed = 'no';
-if ~isempty(highvar_params)
-    highvar_rejected = high_variance_channel_rejection(EEG_filtered, highvar_params);
-    [~, EEG_filtered] = evalc('pop_select(EEG_filtered, ''nochannel'', highvar_rejected)');
-    
-    remaining_mask = find(~prep_removed_chans_mask & ~asr_removed_chans_mask);
-    highvar_removed_chans_mask(remaining_mask(highvar_rejected)) = true;
-
-    EEG_filtered.automagic.highvariance_rejection.performed = 'yes';
-    EEG_filtered.automagic.highvariance_rejection.params = find(highvar_removed_chans_mask);
-    clear highvar_rejected remaining_mask;
-end
-
-
 % Gather information from previous steps
 asr_removed_chans = find(asr_removed_chans_mask);
 prep_removed_chans = find(prep_removed_chans_mask);
-highvar_rejected = find(highvar_removed_chans_mask);
-removed_chans = union(asr_removed_chans, union(prep_removed_chans, highvar_rejected));
+removed_chans = union(asr_removed_chans, prep_removed_chans);
 EEG_filtered.automagic.prep.removed_chans = prep_removed_chans;
 EEG_filtered.automagic.asr.removed_chans = asr_removed_chans;
-EEG_filtered.automagic.highvariance_rejection.removed_chans = highvar_rejected;
-clear prep_removed_chans_mask asr_removed_chans_mask highvar_removed_chans_mask;
+clear prep_removed_chans_mask asr_removed_chans_mask;
 
 
 % Remove effect of EOG
@@ -585,27 +569,48 @@ end
 doubled_data = double(EEG_cleared.data);
 res = bsxfun(@minus, doubled_data, mean(doubled_data, 2));
 singled_data = single(res);
-
-result = EEG_cleared;
-result.data = singled_data;
+detrended = EEG_cleared;
+detrended.data = singled_data;
 clear doubled_data res singled_data;
+
+% Reject channels based on high variance
+[s, ~] = size(EEG.data);
+highvar_removed_chans_mask = false(1, s); clear s;
+detrended.automagic.highvariance_rejection.performed = 'no';
+if ~isempty(highvar_params)
+    highvar_rejected = high_variance_channel_rejection(detrended, highvar_params);
+    [~, detrended] = evalc('pop_select(detrended, ''nochannel'', highvar_rejected)');
+    
+    remaining_mask = find(~prep_removed_chans_mask & ~asr_removed_chans_mask);
+    highvar_removed_chans_mask(remaining_mask(highvar_rejected)) = true;
+
+    detrended.automagic.highvariance_rejection.performed = 'yes';
+    detrended.automagic.highvariance_rejection.params = find(highvar_removed_chans_mask);
+    clear highvar_rejected remaining_mask;
+end
+highvar_rejected = find(highvar_removed_chans_mask);
+removed_chans = union(removed_chans, highvar_rejected);
+detrended.automagic.highvariance_rejection.removed_chans = highvar_rejected;
+result = detrended;
+
 % Put back removed channels
 for chan_idx = 1:length(removed_chans)
     chan_nb = removed_chans(chan_idx);
-    if( chan_nb == eeg_system.ref_chan)
-        result.data = [result.data(1:chan_nb-1,:); ...
-                        zeros(1,size(result.data,2));...
-                        result.data(chan_nb:end,:)];
-    else
-        result.data = [result.data(1:chan_nb-1,:); ...
-                        NaN(1,size(result.data,2));...
-                        result.data(chan_nb:end,:)];
-    end
-    result.chanlocs = [result.chanlocs(1:chan_nb-1), EEG.chanlocs(chan_nb), ...
-                    result.chanlocs(chan_nb:end)];
+    result.data = [result.data(1:chan_nb-1,:); ...
+                  NaN(1,size(result.data,2));...
+                  result.data(chan_nb:end,:)];
+    result.chanlocs = [result.chanlocs(1:chan_nb-1), ...
+                      EEG.chanlocs(chan_nb), result.chanlocs(chan_nb:end)];
 end
-clear chan_nb;
+% Put back refrence channel
+re_chan = eeg_system.ref_chan;
+result.data = [result.data(1:re_chan-1,:); ...
+                        zeros(1,size(result.data,2));...
+                        result.data(re_chan:end,:)];
+result.chanlocs = [result.chanlocs(1:re_chan-1), EEG_ref.chanlocs(re_chan), ...
+                    result.chanlocs(re_chan:end)];                   
 result.nbchan = size(result.data,1);
+clear chan_nb re_chan;
 
 % Write back output
 result.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
