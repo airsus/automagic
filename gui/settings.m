@@ -81,30 +81,52 @@ for child_idx = 1:length(children)
     end
 end
 
-CGV = ConstantGlobalValues;
+% Get arguments
 params = varargin{1};
-visualisation_params = varargin{2};
 assert(isa(params, 'struct'));
+visualisation_params = varargin{2};
+CGV = ConstantGlobalValues;
+
+% Put them in the handle
 handles.params = params;
 handles.visualisation_params = visualisation_params;
 handles.CGV = CGV;
-
 
 assert( isempty(handles.params.pca_params) || ...
     isempty(handles.params.ica_params), ...
     'Either pca or ica, not both together.');
 
+% Set the gui components according to params
+handles = set_gui(handles, params, visualisation_params);
+handles = switch_components(handles);
+
+
+% Choose default command line output for settings
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes settings wait for user response (see UIRESUME)
+% uiwait(handles.settingsfigure);
+
+
+function handles = set_gui(handles, params, visualisation_params)
+DEFAULT_keyword = handles.CGV.DEFAULT_keyword;
+calcQuality_params = visualisation_params.calcQuality_params;
+ds_rate = visualisation_params.ds_rate;
+
 if ~isempty(params.filter_params)
     if ~isempty(params.filter_params.high)
         set(handles.highcheckbox, 'Value', 1);
         if isempty(params.filter_params.high.order)
-            set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
+            set(handles.highpassorderedit, 'String', DEFAULT_keyword);
         else
             set(handles.highpassorderedit, 'String', params.filter_params.high.order);
         end
         
         if isempty(params.filter_params.high.freq)
-            set(handles.highedit, 'String', CGV.DEFAULT_keyword);
+            set(handles.highedit, 'String', DEFAULT_keyword);
         else
             set(handles.highedit, 'String', params.filter_params.high.freq);
         end
@@ -117,13 +139,13 @@ if ~isempty(params.filter_params)
     if ~isempty(params.filter_params.low)
         set(handles.lowcheckbox, 'Value', 1);
         if isempty(params.filter_params.low.order)
-            set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
+            set(handles.lowpassorderedit, 'String', DEFAULT_keyword);
         else
             set(handles.lowpassorderedit, 'String', params.filter_params.low.order);
         end
         
         if isempty(params.filter_params.low.freq)
-            set(handles.lowedit, 'String', CGV.DEFAULT_keyword);
+            set(handles.lowedit, 'String', DEFAULT_keyword);
         else
             set(handles.lowedit, 'String', params.filter_params.low.freq);
         end
@@ -146,54 +168,74 @@ else
 end
 
 % Set Quality Rating Parameters. This can't be disabled
-calcQuality_params = visualisation_params.calcQuality_params;
 set(handles.overalledit, 'String', mat2str(calcQuality_params.overallThresh));
 set(handles.timeedit, 'String', mat2str(calcQuality_params.timeThresh));
 set(handles.channelthresholdedit, 'String', mat2str(calcQuality_params.chanThresh));
 
+set(handles.icacheckbox, 'Value', ~isempty(params.ica_params));
+if ~isempty(params.ica_params)
+    set(handles.largemapcheckbox, 'Value', params.ica_params.large_map)
+else
+    set(handles.largemapcheckbox, 'Value', 0)
+end
 
 if ~isempty(params.asr_params)
-   if( ~strcmp(params.asr_params.Highpass, 'off'))
+    if( ~strcmp(params.asr_params.Highpass, 'off'))
         set(handles.asrhighcheckbox, 'Value', 1);
     else
         set(handles.asrhighcheckbox, 'Value', 0);
     end
-    set(handles.asrhighedit, 'String', mat2str(params.asr_params.Highpass));
-    
-    if( ~strcmp(params.asr_params.ChannelCriterion, 'off'))
-        set(handles.channelcriterioncheckbox, 'Value', 1);
-    else
-        set(handles.channelcriterioncheckbox, 'Value', 0);
-    end
-    set(handles.channelcriterionedit, 'String', mat2str(params.asr_params.ChannelCriterion));
-    
+    set(handles.asrhighedit, 'String', ...
+            mat2str(params.asr_params.Highpass));
+        
     if( ~strcmp(params.asr_params.LineNoiseCriterion, 'off'))
         set(handles.linenoisecheckbox, 'Value', 1);
     else
         set(handles.linenoisecheckbox, 'Value', 0);
     end
-    set(handles.linenoiseedit, 'String', mat2str(params.asr_params.LineNoiseCriterion));
-    
+    set(handles.linenoiseedit, 'String', ...
+            params.asr_params.LineNoiseCriterion);
+        
+    if( ~strcmp(params.asr_params.ChannelCriterion, 'off'))
+        set(handles.channelcriterioncheckbox, 'Value', 1);
+    else
+        set(handles.channelcriterioncheckbox, 'Value', 0);
+    end
+    set(handles.channelcriterionedit, 'String', ...
+            params.asr_params.ChannelCriterion);
+        
     if( ~strcmp(params.asr_params.BurstCriterion, 'off'))
         set(handles.burstcheckbox, 'Value', 1);
     else
         set(handles.burstcheckbox, 'Value', 0);
     end
-    set(handles.burstedit, 'String', mat2str(params.asr_params.BurstCriterion));
-    
+    set(handles.burstedit, 'String', ...
+            params.asr_params.BurstCriterion);
+        
     if( ~strcmp(params.asr_params.WindowCriterion, 'off'))
         set(handles.windowcheckbox, 'Value', 1);
     else
         set(handles.windowcheckbox, 'Value', 0);
     end
-    set(handles.windowedit, 'String', mat2str(params.asr_params.WindowCriterion));
-end
-
-if( ~isempty(params.prep_params))
-    set(handles.rarcheckbox, 'Value', 1);
+    set(handles.windowedit, 'String', ...
+            params.asr_params.WindowCriterion);    
 else
-    set(handles.rarcheckbox, 'Value', 0);
+    set(handles.asrhighcheckbox, 'Value', 0);
+    set(handles.asrhighedit, 'String', '');
+    
+    set(handles.linenoisecheckbox, 'Value', 0);
+    set(handles.linenoiseedit, 'String', '');
+        
+    set(handles.channelcriterioncheckbox, 'Value', 0);
+    set(handles.channelcriterionedit, 'String', '');
+        
+    set(handles.burstcheckbox, 'Value', 0);
+    set(handles.burstedit, 'String', '');
+        
+    set(handles.windowcheckbox, 'Value', 0);
+    set(handles.windowedit, 'String', '');
 end
+set(handles.rarcheckbox, 'Value', ~isempty(params.prep_params));
 
 if( ~isempty(params.highvar_params))
     set(handles.highvarcheckbox, 'Value', 1);
@@ -203,166 +245,39 @@ else
     set(handles.highvaredit, 'String', '');
 end
 
-if( ~isempty(params.pca_params))
+if ~isempty(params.pca_params)
     set(handles.pcacheckbox, 'Value', 1);
-    if( isempty( params.pca_params.lambda ))
-       set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
+    if( isempty(params.pca_params.lambda))
+        set(handles.lambdaedit, 'String', DEFAULT_keyword);
     else
-        set(handles.lambdaedit, 'String', mat2str(params.pca_params.lambda)); 
+        set(handles.lambdaedit, 'String', params.pca_params.lambda);
     end
-    set(handles.toledit, 'String', mat2str(params.pca_params.tol));
-    set(handles.maxIteredit, 'String', mat2str(params.pca_params.maxIter));
+        set(handles.toledit, 'String', params.pca_params.tol);
+        set(handles.maxIteredit, 'String', params.pca_params.maxIter);
 else
     set(handles.pcacheckbox, 'Value', 0);
     set(handles.lambdaedit, 'String', '');
     set(handles.toledit, 'String', '');
     set(handles.maxIteredit, 'String', '');
 end
+IndexC = strfind(handles.interpolationpopupmenu.String, ...
+    params.interpolation_params.method);
+index = find(not(cellfun('isempty', IndexC)));
+set(handles.interpolationpopupmenu, 'Value', index);
 
-set(handles.icacheckbox, 'Value', ~isempty(params.ica_params));
-if ~isempty(params.ica_params)
-    set(handles.largemapcheckbox, 'Value', params.ica_params.large_map)
-end
 
-IndexC = strcmp(handles.interpolationpopupmenu.String, params.interpolation_params.method);
-Index = find(IndexC == 1);
-set(handles.interpolationpopupmenu,...
-    'String',handles.interpolationpopupmenu.String,...
-    'Value', Index);
+set(handles.eogcheckbox, 'Value', ...
+    params.eog_regression_params.perform_eog_regression)
 
-set(handles.eogcheckbox, 'Value', params.eog_regression_params.perform_eog_regression)
-
-% Set the downsampling rate
-ds = visualisation_params.ds;
 contents = cellstr(get(handles.dspopupmenu,'String'));
-index = find(contains(contents, int2str(ds)));
+index = find(contains(contents, int2str(ds_rate)));
 set(handles.dspopupmenu, 'Value', index);
 
-
 handles = switch_components(handles);
-
-
-% Choose default command line output for settings
-handles.output = hObject;
-
-% Update handles structure
-guidata(hObject, handles);
-
-% UIWAIT makes settings wait for user response (see UIRESUME)
-% uiwait(handles.settingsfigure);
-
-% --- Executes on button press in linenoisecheckbox.
-function linenoisecheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to linenoisecheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-if get(hObject,'Value')
-    recs = handles.CGV.rec_params;
-    set(handles.linenoiseedit, 'String', recs.asr_params.LineNoiseCriterion)
-end
-handles = switch_components(handles);
-% Update handles structure
-guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of linenoisecheckbox
-
-
-% --- Executes on button press in burstcheckbox.
-function burstcheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to burstcheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-if get(hObject,'Value')
-    recs = handles.CGV.rec_params;
-    set(handles.burstedit, 'String', recs.asr_params.BurstCriterion)
-    
-    % Warn the user if two filterings are about to happen
-    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
-            (get(handles.burstcheckbox, 'Value') || ...
-            get(handles.windowcheckbox, 'Value')))
-        popup_msg(['Warning! This will make the preprocessing apply two high',...
-            'pass filtering in your data. Please make sure what you are ',...
-            'about to do'], 'WARNING')
-    end
-end
-handles = switch_components(handles);
-% Update handles structure
-guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of burstcheckbox
-
-
-% --- Executes on button press in channelcriterioncheckbox.
-function channelcriterioncheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to channelcriterioncheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-if get(hObject,'Value')
-    recs = handles.CGV.rec_params;
-    set(handles.channelcriterionedit, 'String', recs.asr_params.ChannelCriterion)
-end
-handles = switch_components(handles);
-% Update handles structure
-guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of channelcriterioncheckbox
-
-% --- Executes on button press in pcacheckbox.
-function pcacheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to pcacheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
-    set(handles.icacheckbox, 'Value', 0);
-end
-if get(hObject,'Value')
-    recs = handles.CGV.rec_params;
-    if isempty(recs.pca_params.lambda)
-        set(handles.lambdaedit, 'String', handles.CGV.DEFAULT_keyword)
-    else
-        set(handles.lambdaedit, 'String', mat2str(recs.pca_params.lambda))
-    end
-    set(handles.toledit, 'String', mat2str(recs.pca_params.tol))
-    set(handles.maxIteredit, 'String', mat2str(recs.pca_params.maxIter))
-end
-handles = switch_components(handles);
-% Update handles structure
-guidata(hObject, handles);
-% Hint: get(hObject,'Value') returns toggle state of pcacheckbox
-
-% --- Executes on button press in icacheckbox.
-function icacheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to icacheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
-    set(handles.pcacheckbox, 'Value', 0);
-end
-
-handles = switch_components(handles);
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes on button press in okpushbutton.
-function okpushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to okpushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-try
-    handles = get_inputs(handles);
-catch
-    return;
-end
-% Update handles structure
-guidata(hObject, handles);
-
-close('settings');
 
 function handles = get_inputs(handles)
 params = handles.params;
 visualisation_params = handles.visualisation_params;
-h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
-main_gui_handle = guidata(h);
 
 ica_params = params.ica_params;
 if get(handles.icacheckbox, 'Value')
@@ -444,8 +359,10 @@ asr_params = params.asr_params;
 if( get(handles.asrhighcheckbox, 'Value') )
     highpass_val = str2num(get(handles.asrhighedit, 'String'));
     if(length(highpass_val) ~= 2)
-        popup_msg('High pass parameter for ASR must be an array of length 2 like [0.25 0.75]', 'Error');
-        error('High pass parameter for ASR must be an array of length 2 like [0.25 0.75]');
+        popup_msg(['High pass parameter for ASR must be an array of'...
+            ' length 2 like [0.25 0.75]'], 'Error');
+        error(['High pass parameter for ASR must be an array of '...
+            'length 2 like [0.25 0.75]']);
     end
     if( ~isnan(highpass_val))
         asr_params.Highpass = highpass_val; end
@@ -541,6 +458,9 @@ idx = get(handles.interpolationpopupmenu, 'Value');
 methods = get(handles.interpolationpopupmenu, 'String');
 method = methods{idx};
 
+h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+main_gui_handle = guidata(h);
+
 % Get EOG regression
 eog_regression_params = params.eog_regression_params;
 eog_regression_params.perform_eog_regression = get(handles.eogcheckbox, 'Value');
@@ -560,7 +480,7 @@ idx = get(handles.dspopupmenu, 'Value');
 dsrates = get(handles.dspopupmenu, 'String');
 ds = str2double(dsrates{idx});
 
-handles.visualisation_params.ds = ds;
+handles.visualisation_params.ds_rate = ds;
 handles.visualisation_params.calcQuality_params = calcQuality_params;
 handles.params.filter_params.high = high;
 handles.params.filter_params.low = low;
@@ -573,186 +493,12 @@ handles.params.pca_params = pca_params;
 handles.params.ica_params = ica_params;
 handles.params.interpolation_params.method = method;
 
-
-function handles = setNotchFilter(notch, handles)
-
-filt_cst = handles.CGV.preprocessing_constants.filter_constants;
-if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_eu)
-    set(handles.euradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_us)
-    set(handles.usradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~isempty(notch))
-    set(handles.otherradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-else
-    set(handles.otherradio, 'Value', 1)
-    set(handles.notchedit, 'String', '')
-end
-
-% --- Executes on button press in defaultpushbutton.
-function defaultpushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to defaultpushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-CGV = handles.CGV;
-defs = CGV.default_params;
-
-if ~isempty(defs.filter_params)
-    if ~isempty(defs.filter_params.high)
-        set(handles.highcheckbox, 'Value', 1);
-        if isempty(defs.filter_params.high.order)
-            set(handles.highpassorderedit, 'String', CGV.DEFAULT_keyword);
-        else
-            set(handles.highpassorderedit, 'String', defs.filter_params.high.order);
-        end
-        
-        if isempty(defs.filter_params.high.freq)
-            set(handles.highedit, 'String', CGV.DEFAULT_keyword);
-        else
-            set(handles.highedit, 'String', defs.filter_params.high.freq);
-        end
-    else
-        set(handles.highcheckbox, 'Value', 0);
-        set(handles.highpassorderedit, 'String', '')
-        set(handles.highedit, 'String', '');
-    end
-
-    if ~isempty(defs.filter_params.low)
-        set(handles.lowcheckbox, 'Value', 1);
-        if isempty(defs.filter_params.low.order)
-            set(handles.lowpassorderedit, 'String', CGV.DEFAULT_keyword);
-        else
-            set(handles.lowpassorderedit, 'String', defs.filter_params.low.order);
-        end
-        
-        if isempty(defs.filter_params.low.freq)
-            set(handles.lowedit, 'String', CGV.DEFAULT_keyword);
-        else
-            set(handles.lowedit, 'String', defs.filter_params.low.freq);
-        end
-    else
-        set(handles.lowcheckbox, 'Value', 0);
-        set(handles.lowpassorderedit, 'String', '')
-        set(handles.lowedit, 'String', '');
-    end
-    
-    setNotchFilter(defs.filter_params.notch, handles);
-else
-    set(handles.highcheckbox, 'Value', 0);
-    set(handles.lowcheckbox, 'Value', 0);
-    set(handles.highpassorderedit, 'String', '')
-    set(handles.highedit, 'String', '');
-    set(handles.lowpassorderedit, 'String', '')
-    set(handles.lowedit, 'String', '');
-    set(handles.notchedit, 'String', 'off')
-    set(handles.otherradio, 'Value', 1)
-end
-
-% Set Quality Rating Parameters. This can't be disabled
-calcQuality_params = CGV.calcQuality_params;
-set(handles.overalledit, 'String', mat2str(calcQuality_params.overallThresh));
-set(handles.timeedit, 'String', mat2str(calcQuality_params.timeThresh));
-set(handles.channelthresholdedit, 'String', mat2str(calcQuality_params.chanThresh));
-
-set(handles.icacheckbox, 'Value', ~isempty(defs.ica_params));
-if ~isempty(defs.ica_params)
-    set(handles.largemapcheckbox, 'Value', defs.ica_params.large_map)
-else
-    set(handles.largemapcheckbox, 'Value', 0)
-end
-
-if ~isempty(defs.asr_params)
-    if( ~strcmp(defs.asr_params.Highpass, 'off'))
-        set(handles.asrhighcheckbox, 'Value', 1);
-    else
-        set(handles.asrhighcheckbox, 'Value', 0);
-    end
-    set(handles.asrhighedit, 'String', ...
-            mat2str(defs.asr_params.Highpass));
-        
-    if( ~strcmp(defs.asr_params.LineNoiseCriterion, 'off'))
-        set(handles.linenoisecheckbox, 'Value', 1);
-    else
-        set(handles.linenoisecheckbox, 'Value', 0);
-    end
-    set(handles.linenoiseedit, 'String', ...
-            defs.asr_params.LineNoiseCriterion);
-        
-    if( ~strcmp(defs.asr_params.ChannelCriterion, 'off'))
-        set(handles.channelcriterioncheckbox, 'Value', 1);
-    else
-        set(handles.channelcriterioncheckbox, 'Value', 0);
-    end
-    set(handles.channelcriterionedit, 'String', ...
-            CGV.default_params.asr_params.ChannelCriterion);
-        
-    if( ~strcmp(defs.asr_params.BurstCriterion, 'off'))
-        set(handles.burstcheckbox, 'Value', 1);
-    else
-        set(handles.burstcheckbox, 'Value', 0);
-    end
-    set(handles.burstedit, 'String', ...
-            CGV.default_params.asr_params.BurstCriterion);
-        
-    if( ~strcmp(defs.asr_params.WindowCriterion, 'off'))
-        set(handles.windowcheckbox, 'Value', 1);
-    else
-        set(handles.windowcheckbox, 'Value', 0);
-    end
-    set(handles.windowedit, 'String', ...
-            CGV.default_params.asr_params.WindowCriterion);
-end
-set(handles.rarcheckbox, 'Value', ~isempty(defs.prep_params));
-
-if( ~isempty(defs.highvar_params))
-    set(handles.highvarcheckbox, 'Value', 1);
-    set(handles.highvaredit, 'String', mat2str(defs.highvar_params.sd));
-else
-    set(handles.highvarcheckbox, 'Value', 0);
-    set(handles.highvaredit, 'String', '');
-end
-
-if ~isempty(defs.pca_params)
-    set(handles.pcacheckbox, 'Value', 1);
-    if( isempty(defs.pca_params.lambda))
-        set(handles.lambdaedit, 'String', CGV.DEFAULT_keyword);
-    else
-        set(handles.lambdaedit, 'String', defs.pca_params.lambda);
-    end
-        set(handles.toledit, 'String', defs.pca_params.tol);
-        set(handles.maxIteredit, 'String', defs.pca_params.maxIter);
-else
-    set(handles.pcacheckbox, 'Value', 0);
-    set(handles.lambdaedit, 'String', '');
-    set(handles.toledit, 'String', '');
-    set(handles.maxIteredit, 'String', '');
-end
-IndexC = strfind(handles.interpolationpopupmenu.String, ...
-    defs.interpolation_params.method);
-index = find(not(cellfun('isempty', IndexC)));
-set(handles.interpolationpopupmenu, 'Value', index);
-
-
-set(handles.eogcheckbox, 'Value', defs.eog_regression_params.perform_eog_regression)
-
-% Set the downsampling rate (TODO: HARDCODED!)
-contents = cellstr(get(handles.dspopupmenu,'String'));
-index = find(contains(contents, '2'));
-set(handles.dspopupmenu, 'Value', index);
-
-
-handles = switch_components(handles);
-
-% Update handles structure
-guidata(hObject, handles);
-
 function handles = switch_components(handles)
 
 h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
 main_gui_handle = guidata(h);
-if(~ get(main_gui_handle.egiradio, 'Value') && get(handles.eogcheckbox, 'Value'))
+if(~ get(main_gui_handle.egiradio, 'Value') && ...
+        get(handles.eogcheckbox, 'Value'))
     set(handles.eogedit, 'enable', 'on');
 else
     set(handles.eogedit, 'enable', 'off');
@@ -843,6 +589,142 @@ else
     set(handles.preppushbutton, 'enable', 'off')
 end
 
+% --- Executes on button press in defaultpushbutton.
+function defaultpushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to defaultpushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles = set_gui(handles, handles.CGV.default_params, ...
+    handles.CGV.default_visualisation_params);
+
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes on button press in linenoisecheckbox.
+function linenoisecheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to linenoisecheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.linenoiseedit, 'String', recs.asr_params.LineNoiseCriterion)
+end
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of linenoisecheckbox
+
+
+% --- Executes on button press in burstcheckbox.
+function burstcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to burstcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.burstedit, 'String', recs.asr_params.BurstCriterion)
+    
+    % Warn the user if two filterings are about to happen
+    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+            (get(handles.burstcheckbox, 'Value') || ...
+            get(handles.windowcheckbox, 'Value')))
+        popup_msg(['Warning! This will make the preprocessing apply two high',...
+            'pass filtering in your data. Please make sure you know what you are ',...
+            'about to do'], 'WARNING')
+    end
+end
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of burstcheckbox
+
+
+% --- Executes on button press in channelcriterioncheckbox.
+function channelcriterioncheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to channelcriterioncheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    set(handles.channelcriterionedit, 'String', recs.asr_params.ChannelCriterion)
+end
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of channelcriterioncheckbox
+
+% --- Executes on button press in pcacheckbox.
+function pcacheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to pcacheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
+    set(handles.icacheckbox, 'Value', 0);
+end
+if get(hObject,'Value')
+    recs = handles.CGV.rec_params;
+    if isempty(recs.pca_params.lambda)
+        set(handles.lambdaedit, 'String', handles.CGV.DEFAULT_keyword)
+    else
+        set(handles.lambdaedit, 'String', mat2str(recs.pca_params.lambda))
+    end
+    set(handles.toledit, 'String', mat2str(recs.pca_params.tol))
+    set(handles.maxIteredit, 'String', mat2str(recs.pca_params.maxIter))
+end
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+% Hint: get(hObject,'Value') returns toggle state of pcacheckbox
+
+% --- Executes on button press in icacheckbox.
+function icacheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to icacheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if(get(handles.pcacheckbox, 'Value') && get(handles.icacheckbox, 'Value'))
+    set(handles.pcacheckbox, 'Value', 0);
+end
+
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes on button press in okpushbutton.
+function okpushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to okpushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+try
+    handles = get_inputs(handles);
+catch
+    return;
+end
+% Update handles structure
+guidata(hObject, handles);
+
+close('settings');
+
+function handles = setNotchFilter(notch, handles)
+
+filt_cst = handles.CGV.preprocessing_constants.filter_constants;
+if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_eu)
+    set(handles.euradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_us)
+    set(handles.usradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+elseif(~isempty(notch))
+    set(handles.otherradio, 'Value', 1)
+    set(handles.notchedit, 'String', num2str(notch.freq))
+else
+    set(handles.otherradio, 'Value', 1)
+    set(handles.notchedit, 'String', '')
+end
+
 % --- Executes on button press in cancelpushbutton.
 function cancelpushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to cancelpushbutton (see GCBO)
@@ -887,7 +769,8 @@ function highpassorderedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -910,7 +793,8 @@ function lowpassorderedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -934,7 +818,8 @@ function lambdaedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -957,7 +842,8 @@ function toledit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -980,7 +866,8 @@ function maxIteredit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'),...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1003,7 +890,8 @@ function interpolationpopupmenu_CreateFcn(hObject, eventdata, handles)
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1036,7 +924,8 @@ function highpasspopupmenu_CreateFcn(hObject, eventdata, handles)
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1059,7 +948,8 @@ function lowpasspopupmenu_CreateFcn(hObject, eventdata, handles)
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1082,7 +972,8 @@ function linenoiseedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1105,7 +996,8 @@ function burstedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1128,7 +1020,8 @@ function channelcriterionedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1163,7 +1056,7 @@ if get(hObject,'Value')
             (get(handles.burstcheckbox, 'Value') || ...
             get(handles.windowcheckbox, 'Value')))
         popup_msg(['Warning! This will make the preprocessing apply two high',...
-            'pass filtering in your data. Please make sure what you are ',...
+            'pass filtering in your data. Please make sure you know what you are ',...
             'about to do'], 'WARNING')
     end
 end
@@ -1237,42 +1130,55 @@ for k = 1:length(stepNames)
 end
 
 if ~isfield(rar_params, 'detrendChannels') || ...
-        (isfield(rar_params, 'detrendChannels') && rar_params.detrendChannels ~= userData.detrend.detrendChannels.value)
+        (isfield(rar_params, 'detrendChannels') && ...
+        rar_params.detrendChannels ~= userData.detrend.detrendChannels.value)
     userData.detrend.detrendChannels.value = -1;
 end
 
 if ~isfield(rar_params, 'referenceChannels') || ...
-        (isfield(rar_params, 'referenceChannels') && rar_params.referenceChannels ~= userData.reference.referenceChannels.value)
+        (isfield(rar_params, 'referenceChannels') && ...
+        rar_params.referenceChannels ~= ...
+        userData.reference.referenceChannels.value)
     userData.reference.referenceChannels.value = -1;
 end
 
 if ~isfield(rar_params, 'evaluationChannels') || ...
-        (isfield(rar_params, 'evaluationChannels') && rar_params.evaluationChannels ~= userData.reference.evaluationChannels.value)
+        (isfield(rar_params, 'evaluationChannels') && ...
+        rar_params.evaluationChannels ~= ...
+        userData.reference.evaluationChannels.value)
     userData.reference.evaluationChannels.value = -1;
 end
 
 if ~isfield(rar_params, 'rereferencedChannels') || ...
-        (isfield(rar_params, 'rereferencedChannels') && rar_params.rereferencedChannels ~= userData.reference.rereferencedChannels.value)
+        (isfield(rar_params, 'rereferencedChannels') && ...
+        rar_params.rereferencedChannels ~= ...
+        userData.reference.rereferencedChannels.value)
     userData.reference.rereferencedChannels.value = -1;
 end
 
 if ~isfield(rar_params, 'lineNoiseChannels') || ...
-        (isfield(rar_params, 'lineNoiseChannels') && rar_params.lineNoiseChannels ~= userData.lineNoise.lineNoiseChannels.value)
+        (isfield(rar_params, 'lineNoiseChannels') && ...
+        rar_params.lineNoiseChannels ~= ...
+        userData.lineNoise.lineNoiseChannels.value)
     userData.lineNoise.lineNoiseChannels.value = -1;
 end
 
 if ~isfield(rar_params, 'detrendCutoff') || ...
-        (isfield(rar_params, 'detrendCutoff') && rar_params.detrendCutoff ~= userData.detrend.detrendCutoff.value)
+        (isfield(rar_params, 'detrendCutoff') && ...
+        rar_params.detrendCutoff ~= userData.detrend.detrendCutoff.value)
     userData.detrend.detrendCutoff.value = [];
 end
 
 if ~isfield(rar_params, 'localCutoff') || ...
-        (isfield(rar_params, 'localCutoff') && rar_params.localCutoff ~= userData.globaltrend.localCutoff.value)
+        (isfield(rar_params, 'localCutoff') && ...
+        rar_params.localCutoff ~= userData.globaltrend.localCutoff.value)
     userData.globaltrend.localCutoff.value = [] ;
 end
 
 if ~isfield(rar_params, 'globalTrendChannels') || ...
-        (isfield(rar_params, 'globalTrendChannels') && rar_params.globalTrendChannels ~= userData.globaltrend.globalTrendChannels.value)
+        (isfield(rar_params, 'globalTrendChannels') && ...
+        rar_params.globalTrendChannels ~= ...
+        userData.globaltrend.globalTrendChannels.value)
     userData.globaltrend.globalTrendChannels.value = [];
 end
 
@@ -1282,17 +1188,20 @@ if ~isfield(rar_params, 'Fs') || ...
 end
 
 if ~isfield(rar_params, 'lineFrequencies') || ...
-        (isfield(rar_params, 'lineFrequencies') && rar_params.lineFrequencies ~= userData.lineNoise.lineFrequencies.value)
+        (isfield(rar_params, 'lineFrequencies') && ...
+        rar_params.lineFrequencies ~= userData.lineNoise.lineFrequencies.value)
     userData.lineNoise.lineFrequencies.value = [];
 end
 
 if ~isfield(rar_params, 'fPassBand') || ...
-        (isfield(rar_params, 'fPassBand') && rar_params.fPassBand ~= userData.lineNoise.fPassBand.value)
+        (isfield(rar_params, 'fPassBand') && ...
+        rar_params.fPassBand ~= userData.lineNoise.fPassBand.value)
     userData.lineNoise.fPassBand.value = [];
 end
 
 if ~isfield(rar_params, 'srate') || ...
-        (isfield(rar_params, 'srate') && rar_params.srate ~= userData.reference.srate.value)
+        (isfield(rar_params, 'srate') && ...
+        rar_params.srate ~= userData.reference.srate.value)
     userData.reference.srate.value = [];
 end
 
@@ -1315,39 +1224,47 @@ if okay
     end
     
     % Lists that are -1 are not set by the gui
-    if isfield(rar_params, 'detrendChannels') && rar_params.detrendChannels == -1
+    if isfield(rar_params, 'detrendChannels') && ...
+            rar_params.detrendChannels == -1
         rar_params = rmfield(rar_params, 'detrendChannels');
     end
     
     % Lists that are -1 are not set by the gui
-    if isfield(rar_params, 'lineNoiseChannels') && rar_params.lineNoiseChannels == -1
+    if isfield(rar_params, 'lineNoiseChannels') && ...
+            rar_params.lineNoiseChannels == -1
         rar_params = rmfield(rar_params, 'lineNoiseChannels');
     end
     
     % Lists that are -1 are not set by the gui
-    if isfield(rar_params, 'referenceChannels') && rar_params.referenceChannels == -1
+    if isfield(rar_params, 'referenceChannels') && ...
+            rar_params.referenceChannels == -1
         rar_params = rmfield(rar_params, 'referenceChannels');
     end
     
     % Lists that are -1 are not set by the gui
-    if isfield(rar_params, 'evaluationChannels') && rar_params.evaluationChannels == -1
+    if isfield(rar_params, 'evaluationChannels') && ...
+            rar_params.evaluationChannels == -1
         rar_params = rmfield(rar_params, 'evaluationChannels');
     end
     
     % Lists that are -1 are not set by the gui
-    if isfield(rar_params, 'rereferencedChannels') && rar_params.rereferencedChannels == -1
+    if isfield(rar_params, 'rereferencedChannels') && ...
+            rar_params.rereferencedChannels == -1
         rar_params = rmfield(rar_params, 'rereferencedChannels');
     end
     
-    if isfield(rar_params, 'detrendCutoff') && isempty(rar_params.detrendCutoff)
+    if isfield(rar_params, 'detrendCutoff') && ...
+            isempty(rar_params.detrendCutoff)
         rar_params = rmfield(rar_params, 'detrendCutoff');
     end
     
-    if isfield(rar_params, 'localCutoff') && isempty(rar_params.localCutoff)
+    if isfield(rar_params, 'localCutoff') && ...
+            isempty(rar_params.localCutoff)
         rar_params = rmfield(rar_params, 'localCutoff');
     end
     
-    if isfield(rar_params, 'globalTrendChannels') && isempty(rar_params.globalTrendChannels)
+    if isfield(rar_params, 'globalTrendChannels') && ...
+            isempty(rar_params.globalTrendChannels)
         rar_params = rmfield(rar_params, 'globalTrendChannels');
     end
     
@@ -1355,7 +1272,8 @@ if okay
         rar_params = rmfield(rar_params, 'Fs');
     end
     
-    if isfield(rar_params, 'lineFrequencies') && isempty(rar_params.lineFrequencies)
+    if isfield(rar_params, 'lineFrequencies') && ...
+            isempty(rar_params.lineFrequencies)
         rar_params = rmfield(rar_params, 'lineFrequencies');
     end
     
@@ -1407,7 +1325,8 @@ if get(hObject,'Value')
     set(handles.asrhighedit, 'String', mat2str(recs.asr_params.Highpass))
     
     % Warn the user if two filterings are about to happen
-    if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
+    if( get(handles.asrhighcheckbox, 'Value') && ...
+            get(handles.highcheckbox, 'Value') && ...
             (get(handles.burstcheckbox, 'Value') || ...
             get(handles.windowcheckbox, 'Value')))
         popup_msg(['Warning! This will make the preprocessing apply two high',...
@@ -1437,7 +1356,8 @@ function asrhighedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1550,15 +1470,8 @@ function lowcheckbox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 if (get(hObject,'Value') == get(hObject,'Max'))
-	set(handles.lowedit, 'enable', 'on');
-    set(handles.lowpassorderedit, 'enable', 'on');
-    if(~isempty(handles.CGV.default_params.filter_params.low))
-        val = num2str((handles.CGV.default_params.filter_params.low.freq));
-        val_order = num2str((handles.CGV.default_params.filter_params.low.order));
-    else
-        val = num2str((handles.CGV.rec_params.filter_params.low.freq));
-        val_order = num2str((handles.CGV.rec_params.filter_params.low.order));
-    end
+    val = num2str((handles.CGV.rec_params.filter_params.low.freq));
+    val_order = num2str((handles.CGV.rec_params.filter_params.low.order));
     set(handles.lowedit, 'String', val)
     if( isempty( val_order) )
         set(handles.lowpassorderedit, 'String', handles.CGV.DEFAULT_keyword);
@@ -1566,11 +1479,13 @@ if (get(hObject,'Value') == get(hObject,'Max'))
         set(handles.lowpassorderedit, 'String', val_order);
     end
 else
-	set(handles.lowedit, 'enable', 'off');
     set(handles.lowedit, 'String', '');
-    set(handles.lowpassorderedit, 'enable', 'off');
     set(handles.lowpassorderedit, 'String', '');
 end
+
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of lowcheckbox
 
 
@@ -1592,7 +1507,8 @@ function highedit_CreateFcn(hObject, eventdata, handles)
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
@@ -1603,22 +1519,14 @@ function highcheckbox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 if (get(hObject,'Value') == get(hObject,'Max'))
-	set(handles.highedit, 'enable', 'on');
-    set(handles.highpassorderedit, 'enable', 'on');
-    if(~isempty(handles.CGV.default_params.filter_params.high))
-        val = num2str((handles.CGV.default_params.filter_params.high.freq));
-        val_order = num2str((handles.CGV.default_params.filter_params.high.order));
-    else
-        val = num2str((handles.CGV.rec_params.filter_params.high.freq));
-        val_order = num2str((handles.CGV.rec_params.filter_params.high.order));
-    end
+    val = num2str((handles.CGV.rec_params.filter_params.high.freq));
+    val_order = num2str((handles.CGV.rec_params.filter_params.high.order));
     set(handles.highedit, 'String', val)
     if( isempty( val_order) )
         set(handles.highpassorderedit, 'String', handles.CGV.DEFAULT_keyword);
     else
         set(handles.highpassorderedit, 'String', val_order);
     end
-    
     
     % Warn the user if two filterings are about to happen
     if( get(handles.asrhighcheckbox, 'Value') && get(handles.highcheckbox, 'Value') &&...
@@ -1629,11 +1537,13 @@ if (get(hObject,'Value') == get(hObject,'Max'))
             'about to do'], 'WARNING')
     end
 else
-	set(handles.highedit, 'enable', 'off');
     set(handles.highedit, 'String', '');
-    set(handles.highpassorderedit, 'enable', 'off');
     set(handles.highpassorderedit, 'String', '');
 end
+
+handles = switch_components(handles);
+% Update handles structure
+guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of highcheckbox
 
 

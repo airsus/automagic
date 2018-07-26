@@ -75,6 +75,8 @@ classdef ConstantGlobalValues
                                  
         default_params = DefaultParameters
         
+        default_visualisation_params = DefaultVisualisationParameters
+        
         rec_params = RecommendedParameters
         
         preprocessing_constants = PreprocessingConstants
@@ -86,6 +88,9 @@ classdef ConstantGlobalValues
             % /preprocessing. Could be any other file in that folder
             if( ~ exist('DefaultParameters.m', 'file')) 
                 addpath('../preprocessing/');
+            end
+            if( ~ exist('DefaultVisualisationParameters.m', 'file')) 
+                addpath('../gui/');
             end
         end
     end

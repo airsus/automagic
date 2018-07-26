@@ -191,12 +191,12 @@ classdef Project < handle
             self.file_extension = strcat('.', ext_split{end});
             self.mask = ext;
             self.qualityThresholds = qualityThresholds;
-            self.qualityCutoffs = self.CGV.rateQuality_params;
+            self.qualityCutoffs = self.CGV.default_visualisation_params.rateQuality_params;
             if(any(strcmp(self.file_extension, {self.CGV.extensions.text})))
                 self.srate = varargin{1};
             end
             
-            self.colorScale = self.CGV.COLOR_SCALE;
+            self.colorScale = self.CGV.default_visualisation_params.COLOR_SCALE;
             self.dsrate = ds;
             self.params = params;
             self = self.create_rating_structure();

@@ -43,7 +43,7 @@ function Q = calcQuality(EEG, bad_chans, varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %% Parse and check parameters
-defaults = ConstantGlobalValues.calcQuality_params;
+defaults = ConstantGlobalValues.default_visualisation_params.calcQuality_params;
 
 p = inputParser;
 

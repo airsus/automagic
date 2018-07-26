@@ -260,7 +260,7 @@ function resetbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to resetbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-cutoffs = handles.CGV.rateQuality_params;
+cutoffs = handles.CGV.default_visualisation_params.rateQuality_params;
 renderChanges(handles, cutoffs);
 
 % --- Executes on button press in cancelbutton.

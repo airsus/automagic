@@ -13,7 +13,7 @@ if isfield(reduced, 'data')
 else
     data = [];
     unique_name = 'no image';
-    colorScale = handles.CGV.COLOR_SCALE;
+    colorScale = handles.CGV.default_visualisation_params.COLOR_SCALE;
 end
 
 

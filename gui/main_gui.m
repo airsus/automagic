@@ -238,8 +238,8 @@ name = names{Index};
 
 % Special case of New Project
 if(strcmp(name, handles.CGV.new_project.LIST_NAME))
-    handles.visualisation_params.calcQuality_params = handles.CGV.calcQuality_params;
-    handles.visualisation_params.ds = handles.CGV.ds_rate;
+    handles.visualisation_params.calcQuality_params = handles.CGV.default_visualisation_params.calcQuality_params;
+    handles.visualisation_params.ds_rate = handles.CGV.ds_rate;
     handles.params = make_default_params(handles.CGV.default_params);
     set(handles.projectname, 'String', handles.CGV.new_project.NAME);
     set(handles.datafoldershow, 'String', handles.CGV.new_project.DATA_FOLDER);
@@ -315,7 +315,7 @@ end
 % Load the project:
 project = handles.project_list(name);
 handles.params = project.params;
-handles.visualisation_params.ds = project.dsrate;
+handles.visualisation_params.ds_rate = project.dsrate;
 handles.visualisation_params.calcQuality_params = project.qualityThresholds;
 % Set the current_project to the selected project
 handles.current_project = Index;
@@ -778,7 +778,7 @@ switch choice
                 delete(Project.make_state_address(project_folder));
             end
         end
-        project = Project(name, data_folder, project_folder, ext, visualisation_params.ds, params, visualisation_params.calcQuality_params, srate);
+        project = Project(name, data_folder, project_folder, ext, visualisation_params.ds_rate, params, visualisation_params.calcQuality_params, srate);
 end
 name = project.name; % Overwrite the name in case the project is loaded.
 

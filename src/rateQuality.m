@@ -39,7 +39,7 @@ function R = rateQuality (qualityScore, varargin)
 %
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
-defaults = ConstantGlobalValues.rateQuality_params;
+defaults = ConstantGlobalValues.default_visualisation_params.rateQuality_params;
 rating_strs = ConstantGlobalValues.ratings;
 
 p = inputParser;
