@@ -1,5 +1,5 @@
 % --- Set the rating of the gui based on the current project
-function handles = set_gui_rating(handles)
+function handles = set_gui_rating(handles, cutoffs)
 % handles  structure with handles of the rating_gui
 
 project = handles.project;
@@ -24,4 +24,28 @@ switch block.rate
         set(handles.turnoffbutton,'Enable', 'on')
     case handles.CGV.ratings.NotRated
         set(handles.rategroup,'selectedobject', handles.notrate)
+end
+
+res = rateQuality(block.qualityScore, cutoffs);
+switch res
+    case handles.CGV.ratings.Good
+       set(handles.goodrate,'ForegroundColor','red')
+       set(handles.okrate,'ForegroundColor','black')
+       set(handles.badrate,'ForegroundColor','black')
+       set(handles.interpolaterate,'ForegroundColor','black')
+    case handles.CGV.ratings.OK
+       set(handles.goodrate,'ForegroundColor','black')
+       set(handles.okrate,'ForegroundColor','red')
+       set(handles.badrate,'ForegroundColor','black')
+       set(handles.interpolaterate,'ForegroundColor','black')
+    case handles.CGV.ratings.Bad
+       set(handles.goodrate,'ForegroundColor','black')
+       set(handles.okrate,'ForegroundColor','black')
+       set(handles.badrate,'ForegroundColor','red')
+       set(handles.interpolaterate,'ForegroundColor','black')
+    case handles.CGV.ratings.Interpolate
+       set(handles.goodrate,'ForegroundColor','black')
+       set(handles.okrate,'ForegroundColor','black')
+       set(handles.badrate,'ForegroundColor','black')
+       set(handles.interpolaterate,'ForegroundColor','red')
 end

@@ -4,7 +4,8 @@ function handles = load_project(handles)
 
 set_color_scale(handles);
 handles = set_gui_subjects_list(handles);
-set_gui_rating(handles);
+cutoffs = handles.project.qualityCutoffs;
+set_gui_rating(handles, cutoffs);
 handles = update_next_and_previous_button(handles);
 
 % Load and show the first image

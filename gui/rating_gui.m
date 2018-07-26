@@ -739,7 +739,9 @@ block.setRatingInfoAndUpdate(struct('tobe_interpolated', tobe_interpolated'));
 guidata(hObject, handles);
 
 draw_lines(handles)
-set_gui_rating(handles);
+
+cutoffs = handles.project.qualityCutoffs;
+set_gui_rating(handles, cutoffs);
 
 
 % --- Executes on button press in qualitybutton.

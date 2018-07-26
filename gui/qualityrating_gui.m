@@ -90,7 +90,7 @@ function renderChanges(handles, cutoffs)
 handles.project.qualityCutoffs = cutoffs;
 render_project(handles, cutoffs);
 renderAxes(handles, cutoffs);
-change_rating_gui(false);
+change_rating_gui(false, cutoffs);
 
 function handles = render_project(handles, cutoffs)
 
@@ -169,10 +169,10 @@ if get(handles.rbcradio, 'Value')
     cutoffs.BadChannelBadCutoff = get(handles.rbcslider2, 'Value');
 end
 
-function change_rating_gui(render_lines)
+function change_rating_gui(render_lines, cutoffs)
 h = findobj(allchild(0), 'flat', 'Tag', 'rating_gui');
 rating_gui_handle = guidata(h);
-set_gui_rating(rating_gui_handle);
+set_gui_rating(rating_gui_handle, cutoffs);
 if render_lines
     update_lines(rating_gui_handle);
 end
@@ -195,7 +195,7 @@ rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Manually Rated'},'O
 Y_axis_max = max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values));
 n_Y = Y_axis_max / 10.0;
 set(cutoffAxes, 'YTick', 0:ceil(n_Y):ceil(Y_axis_max))
-set(cutoffAxes,'fontsize',6)
+set(cutoffAxes,'fontsize', 6)
 title('Overview of dataset rating based on selected cutoffshow')
 if max(rateingHist.Values) ~= 0
     ylim([0 (max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values)))])
@@ -240,7 +240,7 @@ for i = 1:length(files)
     end
 end
 handles.project.qualityCutoffs = cutoffs;
-change_rating_gui(true);
+change_rating_gui(true, cutoffs);
 set(handles.qualityrating, 'pointer', 'arrow');
 ret_val = handles;
 
