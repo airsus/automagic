@@ -733,13 +733,18 @@ if ~ get(handles.egiradio, 'Value')
         popup_msg('Please choose the index of the reference channel',...
             'Error');
         return;
-    end
+   end
    
+    loc_file = eeg_system.loc_file;
     loc_type = eeg_system.file_loc_type;
-    if( isempty(loc_type) || ~ strcmp(loc_type(1), '.'))
+    if( ~isempty(loc_file) && (isempty(loc_type) || ~ strcmp(loc_type(1), '.')))
         popup_msg('Channel location: A correct file extension must be given.',...
             'Error');
         return;
+    elseif(isempty(loc_file))
+        popup_msg({'You have provided no channel location file. Please ' ...
+            'make sure the file location is at least provided in the EEG ' ...
+            'structure.'}, 'Channel location');
     end
 
    handles.params.eeg_system = eeg_system;
@@ -1197,13 +1202,12 @@ function excludecheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of excludecheckbox
-if( get(handles.excludecheckbox, 'Value'))
-    if(get(handles.othersysradio, 'Value'))
-       set(handles.excludeedit, 'enable', 'on');
-    end
-else
-    if(get(handles.othersysradio, 'Value'))
-       set(handles.excludeedit, 'enable', 'off');
+if(get(handles.othersysradio, 'Value'))
+    if( get(handles.excludecheckbox, 'Value'))
+           set(handles.excludeedit, 'enable', 'on');
+    else
+           set(handles.excludeedit, 'enable', 'off');
+           set(handles.excludeedit, 'String', '');
     end
 end
 
