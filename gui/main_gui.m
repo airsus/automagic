@@ -724,7 +724,7 @@ end
 
 % Get the EEG system
 if ~ get(handles.egiradio, 'Value')
-   eeg_system.name = CGV.default_params.eeg_system.Others_name;
+   eeg_system.name = CGV.preprocessing_constants.eeg_system_constants.Others_name;
    eeg_system.loc_file = get(handles.chanlocedit, 'String');
    eeg_system.file_loc_type = get(handles.loctypeedit, 'String');
    eeg_system.ref_chan = str2num(get(handles.hasreferenceedit, 'String'));
