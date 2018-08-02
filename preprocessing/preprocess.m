@@ -429,6 +429,7 @@ if ( ~isempty(asr_params) )
     % that the effect of high pass filtering is not there anymore
     if(strcmp(asr_params.BurstCriterion, 'off') && strcmp(asr_params.WindowCriterion, 'off'))
         etcfield = struct;
+        to_remove = [];
         if(isfield(EEG_cleaned, 'etc'))
             etcfield = EEG_cleaned.etc;
             
