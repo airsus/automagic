@@ -167,6 +167,7 @@ if (~isempty(eeg_system.name) && strcmp(eeg_system.name, constants.eeg_system_co
         data.data(end+1,:) = 0;
         data.nbchan = data.nbchan + 1;
         eeg_system.ref_chan = data.nbchan;
+        channels = [channels, data.nbchan];
     end
     
     if(isempty(data.chanlocs) || isempty([data.chanlocs.X]) || ...
