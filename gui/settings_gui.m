@@ -1,19 +1,19 @@
-function varargout = settings(varargin)
-% SETTINGS MATLAB code for settings.fig
-%      SETTINGS, by itself, creates a new SETTINGS or raises the existing
+function varargout = settings_gui(varargin)
+% SETTINGS_GUI MATLAB code for settings_gui.fig
+%      SETTINGS_GUI, by itself, creates a new SETTINGS_GUI or raises the existing
 %      singleton*.
 %
-%      H = SETTINGS returns the handle to a new SETTINGS or the handle to
+%      H = SETTINGS_GUI returns the handle to a new SETTINGS_GUI or the handle to
 %      the existing singleton*.
 %
-%      SETTINGS('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in SETTINGS.M with the given input arguments.
+%      SETTINGS_GUI('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in SETTINGS_GUI.M with the given input arguments.
 %
-%      SETTINGS('Property','Value',...) creates a new SETTINGS or raises the
+%      SETTINGS_GUI('Property','Value',...) creates a new SETTINGS_GUI or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before settings_OpeningFcn gets called.  An
+%      applied to the GUI before settings_gui_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to settings_OpeningFcn via varargin.
+%      stop.  All inputs are passed to settings_gui_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
@@ -35,14 +35,14 @@ function varargout = settings(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 02-Aug-2018 11:51:39
+% Last Modified by GUIDE v2.5 08-Aug-2018 11:08:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @settings_OpeningFcn, ...
-                   'gui_OutputFcn',  @settings_OutputFcn, ...
+                   'gui_OpeningFcn', @settings_gui_OpeningFcn, ...
+                   'gui_OutputFcn',  @settings_gui_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -57,13 +57,13 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before settings is made visible.
-function settings_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before settings_gui is made visible.
+function settings_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to settings (see VARARGIN)
+% varargin   command line arguments to settings_gui (see VARARGIN)
 
 if( nargin - 3 ~= 2 )
     error('wrong number of arguments. params and ds rate must be given as arguments.')
@@ -101,13 +101,13 @@ handles = set_gui(handles, params, visualisation_params);
 handles = switch_components(handles);
 
 
-% Choose default command line output for settings
+% Choose default command line output for settings_gui
 handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes settings wait for user response (see UIRESUME)
+% UIWAIT makes settings_gui wait for user response (see UIRESUME)
 % uiwait(handles.settingsfigure);
 
 
@@ -640,8 +640,6 @@ else
     set(handles.highvaredit, 'enable', 'off')
 end
 
-% TODO: This is temporarily disabled. Later remove the line.
-set(handles.rarcheckbox, 'enable', 'off')
 
 if( get(handles.rarcheckbox, 'Value'))
     set(handles.preppushbutton, 'enable', 'on')
@@ -787,7 +785,7 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
-close('settings');
+close('settings_gui');
 
 function handles = setNotchFilter(notch, handles)
 
@@ -812,7 +810,7 @@ function cancelpushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-close('settings')
+close('settings_gui')
 
 % --- Executes when user attempts to close settingsfigure.
 function settingsfigure_CloseRequestFcn(hObject, eventdata, handles)
@@ -978,7 +976,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = settings_OutputFcn(hObject, eventdata, handles) 
+function varargout = settings_gui_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
