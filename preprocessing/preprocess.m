@@ -188,7 +188,7 @@ end
 prep_removed_chans_mask = false(1, s); clear s;
 EEG_cleaned.automagic.prep.performed = 'no';
 if ( ~isempty(prep_params) )
-    fprintf(sprintf('Running Robust Average Referencing...\n'));
+    fprintf(sprintf('Running Prep...\n'));
     % Remove the ref_chan containing zeros from prep preprocessing
     rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
     if isfield(prep_params, 'referenceChannels')
