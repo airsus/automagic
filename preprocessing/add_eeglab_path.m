@@ -14,14 +14,11 @@ else
     parts = strsplit(matlab_paths, ':');
 end
 
-IndexC = strfind(parts, 'compat');
-Index = not(cellfun('isempty', IndexC));
+Index = not(~contains(parts, 'compat'));
 parts(Index) = [];
-IndexC = strfind(parts, 'neuroscope');
-Index = not(cellfun('isempty', IndexC));
+Index = not(~contains(parts, 'neuroscope'));
 parts(Index) = [];
-IndexC = strfind(parts, 'dpss');
-Index = not(cellfun('isempty', IndexC));
+Index = not(~contains(parts, 'dpss'));
 parts(Index) = [];
 if(ispc)
     matlab_paths = strjoin(parts, ';');
