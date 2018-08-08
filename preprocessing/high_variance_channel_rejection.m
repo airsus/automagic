@@ -1,4 +1,4 @@
-function rejected = high_variance_channel_rejection(EEG, varargin)
+function EEG_out = high_variance_channel_rejection(EEG_in, varargin)
 % high_variance_channel_rejection   reject bad channels based on standard
 %   deviation
 %   rejected = high_variance_channel_rejection(EEG, params)
@@ -30,6 +30,25 @@ addParameter(p,'sd', defaults.sd, @isnumeric);
 parse(p, varargin{:});
 sd_threshold = p.Results.sd;
 
-data = EEG.data;
-rejected = find(nanstd(data,[],2) > sd_threshold);
+removed_mask = EEG_in.automagic.preprocessing.removed_mask;
+
+[s, ~] = size(EEG_in.data);
+bad_chans_mask = false(1, s); clear s;
+
+EEG_out = EEG_in;
+EEG_out.automagic.highvariance_rejection.performed = 'no';
+rejected = find(nanstd(EEG_in.data,[],2) > sd_threshold);
+
+[~, EEG_out] = evalc('pop_select(EEG_in, ''nochannel'', rejected)');
+
+bad_chans_mask(rejected) = true;
+new_mask = removed_mask;
+old_mask = removed_mask;
+new_mask(~new_mask) = bad_chans_mask;
+bad_chans = setdiff(find(new_mask), find(old_mask));
+removed_mask = new_mask; 
+
+EEG_out.automagic.highvariance_rejection.performed = 'yes';
+EEG_out.automagic.highvariance_rejection.bad_chans = bad_chans;
+EEG_out.automagic.preprocessing.removed_mask = removed_mask;
 

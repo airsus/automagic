@@ -1,4 +1,4 @@
-function [result, varargout] = preprocess(data, varargin)
+function [EEG, varargout] = preprocess(data, varargin)
 % preprocess  preprocess the data 
 %   [result, fig] = preprocess(data, varargin)
 %   where data is the EEGLAB data structure and varargin is an 
@@ -126,134 +126,42 @@ download_and_add_paths(struct('prep_params', prep_params, ...
 
 
 % Remove the reference channel from the rest of preprocessing
-[~, EEG] = evalc('pop_select(EEG_ref, ''nochannel'', eeg_system.ref_chan)');
-data.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
+[~, EEG_orig] = evalc('pop_select(EEG_ref, ''nochannel'', eeg_system.ref_chan)');
+EEG_orig.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
+
+%% Preprocessing
+[s, ~] = size(EEG_orig.data);
+EEG_orig.automagic.preprocessing.to_remove = [];
+EEG_orig.automagic.preprocessing.removed_mask = false(1, s); clear s;
+
+% Robust Average Referecing with Prep
+[~, EEG] = evalc('perform_prep(EEG_orig, prep_params, eeg_system.ref_chan)');
 
 % Clean EEG using Artefact Supspace Reconstruction
-[s, ~] = size(EEG.data);
-asr_removed_chans_mask = false(1, s); clear s;
-EEG_cleaned = EEG;
-EEG_cleaned.automagic.asr.performed = 'no';
-if ( ~isempty(asr_params) )
-    fprintf('Detecting bad channels using routines of clean_raw_data()...\n');
-    [~, EEG_cleaned] = evalc('clean_artifacts(EEG, asr_params)');
-    
-    % If only channels are removed, remove them from the original EEG so
-    % that the effect of high pass filtering is not there anymore
-    if(strcmp(asr_params.BurstCriterion, 'off') && strcmp(asr_params.WindowCriterion, 'off'))
-        etcfield = struct;
-        to_remove = [];
-        if(isfield(EEG_cleaned, 'etc'))
-            etcfield = EEG_cleaned.etc;
-            
-            if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
-                remove_mask = ~EEG_cleaned.etc.clean_channel_mask;
-                to_remove = find(remove_mask);
-            end
-        end
-        
-        [~, EEG_cleaned] = evalc('pop_select(EEG, ''nochannel'', to_remove)');
-        EEG_cleaned.etc = etcfield;
-        clear etcfield to_remove remove_mask;
-    end
-    
-    EEG_cleaned.automagic.asr.performed = 'yes';
-    if(isfield(EEG_cleaned, 'etc'))
-        % Get the removed channels list
-        if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
-            asr_removed_chans_mask(~asr_removed_chans_mask) = ...
-                ~EEG_cleaned.etc.clean_channel_mask;
-        end
-
-        % Remove the same time-windows from the EOG channels
-       if(isfield(EEG_cleaned.etc, 'clean_sample_mask'))
-           removed = EEG_cleaned.etc.clean_sample_mask;
-           firsts = find(diff(removed) == -1) + 1;
-           seconds = find(diff(removed) == 1);
-           if(removed(1) == 0)
-               firsts = [1, firsts];
-           end
-           if(removed(end) == 0)
-               seconds = [seconds, length(removed)];
-           end
-           remove_range = [firsts; seconds]'; %#ok<NASGU>
-           [~, EOG] = evalc('pop_select(EOG, ''nopoint'', remove_range)');
-           clear remove_range firsts seconds removed;
-       end
-    end
-end
-
-% Robust Average Referecing
-[s, ~] = size(EEG.data);
-prep_removed_chans_mask = false(1, s); clear s;
-EEG_cleaned.automagic.prep.performed = 'no';
-if ( ~isempty(prep_params) )
-    fprintf(sprintf('Running Prep...\n'));
-    % Remove the ref_chan containing zeros from prep preprocessing
-    rar_chans = setdiff(1:EEG.nbchan, eeg_system.ref_chan);
-    if isfield(prep_params, 'referenceChannels')
-        prep_params.referenceChannels =  setdiff(prep_params.referenceChannels, eeg_system.ref_chan);
-    else
-        prep_params.referenceChannels = setdiff(rar_chans, eeg_system.ref_chan);
-    end
-    
-    if isfield(prep_params, 'evaluationChannels')
-        prep_params.evaluationChannels =  setdiff(prep_params.evaluationChannels, eeg_system.ref_chan);
-    else
-        prep_params.evaluationChannels = setdiff(rar_chans, eeg_system.ref_chan);
-    end
-    
-    if isfield(prep_params, 'rereference')
-        prep_params.rereference =  setdiff(prep_params.rereference, eeg_system.ref_chan);
-    else
-        prep_params.rereference = setdiff(rar_chans, eeg_system.ref_chan);
-    end
-    if isfield(filter_params, 'notch')
-        if isfield(filter_params.notch, 'freq')
-            freq = filter_params.notch.freq;
-            prep_params.lineFrequencies = freq:freq:((EEG.srate/2)-1);
-            clear freq;
-        end
-    end
-    [~, EEG_preped, ~] = evalc('prepPipeline(EEG, prep_params)');
-    info = EEG_preped.etc.noiseDetection;
-    prep_removed_chans = union(union(info.stillNoisyChannelNumbers, ...
-                                     info.interpolatedChannelNumbers), ...
-                                     info.removedChannelNumbers);
-    prep_removed_chans_mask(prep_removed_chans) = true;
-    EEG_cleaned.automagic.prep.refchan = info.reference.referenceSignal;
-    % Now convert the indices found in EEG to the corresponding indices
-    % in EEG_cleaned which may have less channels as they are already 
-    % removed by asr
-    to_remove = prep_removed_chans_mask & ~asr_removed_chans_mask;
-    to_remove = to_remove(~asr_removed_chans_mask); %#ok<NASGU>
-    
-    % And remove channels detected by prep which have not been detected by
-    % asr
-    [~, EEG_cleaned] = evalc('pop_select(EEG_cleaned, ''nochannel'', find(to_remove))');
-    EEG_cleaned.automagic.prep.performed = 'yes';
-    clear EEG_preped to_remove info rar_chans prep_removed_chans;
-end
+[~, EEG, EOG] = evalc('perform_cleanrawdata(EEG, EOG, asr_params)');
 
 % Filtering on the whole dataset
 display(PreprocessingConstants.filter_constants.run_message);
-EEG_filtered = perform_filter(EEG_cleaned, filter_params);
-EOG_filtered = perform_filter(EOG, filter_params);
+EEG = perform_filter(EEG, filter_params);
+EOG = perform_filter(EOG, filter_params);
 
-% Gather information from previous steps
-asr_removed_chans = find(asr_removed_chans_mask);
-prep_removed_chans = find(prep_removed_chans_mask);
-removed_chans = union(asr_removed_chans, prep_removed_chans);
-EEG_filtered.automagic.prep.removed_chans = prep_removed_chans;
-EEG_filtered.automagic.asr.removed_chans = asr_removed_chans;
-
+% Remove channels
+to_remove = EEG.automagic.preprocessing.to_remove;
+removed_mask = EEG.automagic.preprocessing.removed_mask;
+[~, new_to_remove] = intersect(find(~removed_mask), to_remove);
+[~, EEG] = evalc('pop_select(EEG, ''nochannel'', new_to_remove)');
+removed_mask(to_remove) = 1;
+to_remove = [];
+EEG.automagic.preprocessing.removed_mask = removed_mask;
+EEG.automagic.preprocessing.to_remove = to_remove;
+clear to_remove removed_mask new_to_remove;
 
 % Remove effect of EOG
-EEG_filtered.automagic.eog_regression.performed = 'no';
+EEG.automagic.eog_regression.performed = 'no';
 if( eog_regression_params.perform_eog_regression )
-    EEG_regressed = EOG_regression(EEG_filtered, EOG_filtered);
+    EEG_regressed = EOG_regression(EEG, EOG);
 else
-    EEG_regressed = EEG_filtered;
+    EEG_regressed = EEG;
 end
 
 
@@ -287,48 +195,32 @@ detrended.data = singled_data;
 clear doubled_data res singled_data;
 
 % Reject channels based on high variance
-[s, ~] = size(EEG.data);
-highvar_removed_chans_mask = false(1, s); clear s;
-detrended.automagic.highvariance_rejection.performed = 'no';
 if ~isempty(highvar_params)
-    highvar_rejected = high_variance_channel_rejection(detrended, highvar_params);
-    [~, detrended] = evalc('pop_select(detrended, ''nochannel'', highvar_rejected)');
-    
-    remaining_mask = find(~prep_removed_chans_mask & ~asr_removed_chans_mask);
-    highvar_removed_chans_mask(remaining_mask(highvar_rejected)) = true;
-
-    detrended.automagic.highvariance_rejection.performed = 'yes';
-    detrended.automagic.highvariance_rejection.params = find(highvar_removed_chans_mask);
-    clear highvar_rejected remaining_mask;
+    [~, EEG] = evalc('high_variance_channel_rejection(EEG, highvar_params)');
 end
-highvar_rejected = find(highvar_removed_chans_mask);
-removed_chans = union(removed_chans, highvar_rejected);
-detrended.automagic.highvariance_rejection.removed_chans = highvar_rejected;
-clear prep_removed_chans_mask asr_removed_chans_mask highvar_removed_chans_mask;
-result = detrended;
-
 % Put back removed channels
+removed_chans = find(EEG.automagic.preprocessing.removed_mask);
 for chan_idx = 1:length(removed_chans)
     chan_nb = removed_chans(chan_idx);
-    result.data = [result.data(1:chan_nb-1,:); ...
-                  NaN(1,size(result.data,2));...
-                  result.data(chan_nb:end,:)];
-    result.chanlocs = [result.chanlocs(1:chan_nb-1), ...
-                      EEG.chanlocs(chan_nb), result.chanlocs(chan_nb:end)];
+    EEG.data = [EEG.data(1:chan_nb-1,:); ...
+                  NaN(1,size(EEG.data,2));...
+                  EEG.data(chan_nb:end,:)];
+    EEG.chanlocs = [EEG.chanlocs(1:chan_nb-1), ...
+                      EEG_orig.chanlocs(chan_nb), EEG.chanlocs(chan_nb:end)];
 end
 % Put back refrence channel
-re_chan = eeg_system.ref_chan;
-result.data = [result.data(1:re_chan-1,:); ...
-                        zeros(1,size(result.data,2));...
-                        result.data(re_chan:end,:)];
-result.chanlocs = [result.chanlocs(1:re_chan-1), EEG_ref.chanlocs(re_chan), ...
-                    result.chanlocs(re_chan:end)];                   
-result.nbchan = size(result.data,1);
+ref_chan = eeg_system.ref_chan;
+EEG.data = [EEG.data(1:ref_chan-1,:); ...
+                        zeros(1,size(EEG.data,2));...
+                        EEG.data(ref_chan:end,:)];
+EEG.chanlocs = [EEG.chanlocs(1:ref_chan-1), EEG_ref.chanlocs(ref_chan), ...
+                    EEG.chanlocs(ref_chan:end)];                   
+EEG.nbchan = size(EEG.data,1);
 clear chan_nb re_chan;
 
 % Write back output
-result.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
-result.automagic.params = params;
+EEG.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
+EEG.automagic.params = params;
 %% Creating the final figure to save
 
 EEG_filtered_toplot = perform_filter(EEG, filter_params);
@@ -337,7 +229,7 @@ set(gcf, 'Color', [1,1,1])
 hold on
 % eog figure
 subplot(11,1,1)
-imagesc(EOG_filtered.data);
+imagesc(EOG.data);
 colormap jet
 caxis([-100 100])
 XTicks = [] ;
@@ -358,7 +250,7 @@ subplot(11,1,4:5)
 imagesc(EEG_filtered_toplot.data);
 axe = gca;
 hold on;
-bads = result.automagic.auto_badchans;
+bads = EEG.automagic.auto_badchans;
 for i = 1:length(bads)
     y = bads(i);
     p1 = [0, size(EEG_filtered_toplot.data, 2)];
@@ -424,14 +316,14 @@ caxis([-100 100])
 set(ax,'XTick', XTicks)
 set(ax,'XTickLabel', XTicketLabels)
 title_str = 'Filtered EEG data';
-if (strcmp(result.automagic.filtering.highpass.performed, 'yes'))
-    title_str = [title_str, ' highpass: ', num2str(result.automagic.filtering.highpass.freq) ' Hz'];
+if (strcmp(EEG.automagic.filtering.highpass.performed, 'yes'))
+    title_str = [title_str, ' highpass: ', num2str(EEG.automagic.filtering.highpass.freq) ' Hz'];
 end
-if (strcmp(result.automagic.filtering.lowpass.performed, 'yes'))
-    title_str = [title_str, ' lowpass: ', num2str(result.automagic.filtering.lowpass.freq) ' Hz'];
+if (strcmp(EEG.automagic.filtering.lowpass.performed, 'yes'))
+    title_str = [title_str, ' lowpass: ', num2str(EEG.automagic.filtering.lowpass.freq) ' Hz'];
 end
-if (strcmp(result.automagic.filtering.notch.performed, 'yes'))
-    title_str = [title_str, ' notch: ', num2str(result.automagic.filtering.notch.freq) ' Hz'];
+if (strcmp(EEG.automagic.filtering.notch.performed, 'yes'))
+    title_str = [title_str, ' notch: ', num2str(EEG.automagic.filtering.notch.freq) ' Hz'];
 end
 title(title_str, 'FontSize', 10)
 
