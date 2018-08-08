@@ -196,8 +196,8 @@ if ~isempty(params.ica_params)
 else
     set(handles.largemapcheckbox, 'Value', 0)
     set(handles.icahighpasscheckbox, 'Value', 0)
-    set(handles.icahighpassedit, 'Value', '')
-    set(handles.icahighpassorderedit, 'Value', '')
+    set(handles.icahighpassedit, 'String', '')
+    set(handles.icahighpassorderedit, 'String', '')
 end
 
 if ~isempty(params.asr_params)
