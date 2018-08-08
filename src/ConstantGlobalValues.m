@@ -41,7 +41,8 @@ classdef ConstantGlobalValues
         
         extensions = struct('mat', '.mat', ...
                             'text', {'.txt', '.asc', '.csv'}, ...
-                            'fif', '.fif')
+                            'fif', '.fif',...
+                            'set', '.set')
         COLOR_SCALE = 100;
         
         ds_rate = 2

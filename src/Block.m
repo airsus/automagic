@@ -544,13 +544,18 @@ classdef Block < handle
                 data = load(self.source_address);
                 data = data.EEG;
                 
-            % case if .txt file
+            % case of .txt file
             elseif(any(strcmp(self.file_extension, ...
                     {self.CGV.extensions.text})))
                 [~, data] = ...
                     evalc(['pop_importdata(''dataformat'',''ascii'',' ...
                     '''data'', self.source_address,''srate'', self.srate,' ...
                     '''pnts'',0,''xmin'',0)']);
+                
+            % case of .set file 
+            elseif(any(strcmp(self.file_extension, ...
+                    {self.CGV.extensions.set})))
+                [~ , data] = evalc('pop_loadset(self.source_address)');
             else
                 [~ , data] = evalc('pop_fileio(self.source_address)');
             end 
