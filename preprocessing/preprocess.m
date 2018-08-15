@@ -137,7 +137,7 @@ EEG.automagic.preprocessing.to_remove = [];
 EEG.automagic.preprocessing.removed_mask = false(1, s); clear s;
 
 % Running prep
-EEG = perform_prep(EEG, prep_params, eeg_system.ref_chan);
+EEG = perform_prep(EEG, EOG, prep_params, eeg_system.ref_chan);
 
 
 % Clean EEG using clean_rawdata()
@@ -221,7 +221,9 @@ clear chan_nb re_chan;
 EEG.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
 EEG.automagic.params = params;
 %% Creating the final figure to save
-EEG_filtered_toplot = perform_filter(EEG, filter_params);
+plot_filter_params.high.freq = 1;
+plot_filter_params.high.order = [];
+EEG_filtered_toplot = perform_filter(EEG_orig, plot_filter_params);
 fig1 = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])
 hold on
@@ -313,18 +315,8 @@ colormap jet
 caxis([-100 100])
 set(ax,'XTick', XTicks)
 set(ax,'XTickLabel', XTicketLabels)
-title_str = 'Filtered EEG data';
-if (strcmp(EEG.automagic.filtering.highpass.performed, 'yes'))
-    title_str = [title_str, ' highpass: ', num2str(EEG.automagic.filtering.highpass.freq) ' Hz'];
-end
-if (strcmp(EEG.automagic.filtering.lowpass.performed, 'yes'))
-    title_str = [title_str, ' lowpass: ', num2str(EEG.automagic.filtering.lowpass.freq) ' Hz'];
-end
-if (strcmp(EEG.automagic.filtering.notch.performed, 'yes'))
-    title_str = [title_str, ' notch: ', num2str(EEG.automagic.filtering.notch.freq) ' Hz'];
-end
+title_str = [num2str(plot_filter_params.high.freq) ' Hz High pass filtered EEG data'];
 title(title_str, 'FontSize', 10)
-
 
 varargout{1} = fig1;
 varargout{2} = fig2;

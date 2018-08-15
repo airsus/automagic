@@ -24,14 +24,19 @@ if ( ~isempty(params) )
             new_mask(~new_mask) = ~etcfield.clean_channel_mask;
             bad_chans = setdiff(find(new_mask), find(old_mask));
 
-            to_remove = union(to_remove, bad_chans);
+            new_to_remove = union(to_remove, bad_chans);
         end
         EOG_out.etc = etcfield;
     
         % Remove the same time-windows from the EOG channels
        if(isfield(EEG_cleaned.etc, 'clean_sample_mask'))
            EEG_out = EEG_cleaned;
-
+           
+           if(isfield(EEG_cleaned.etc, 'clean_channel_mask'))
+                removed_mask = new_mask;
+                new_to_remove = to_remove;
+            end
+           
            removed = EEG_cleaned.etc.clean_sample_mask;
            firsts = find(diff(removed) == -1) + 1;
            seconds = find(diff(removed) == 1);
@@ -48,6 +53,6 @@ if ( ~isempty(params) )
 
     EEG_out.automagic.asr.performed = 'yes';
     EEG_out.automagic.asr.bad_chans = bad_chans;
-    EEG_out.automagic.preprocessing.to_remove = to_remove;
+    EEG_out.automagic.preprocessing.to_remove = new_to_remove;
     EEG_out.automagic.preprocessing.removed_mask = removed_mask;
 end

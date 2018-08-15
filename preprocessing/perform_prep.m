@@ -1,4 +1,4 @@
-function EEG_out = perform_prep(EEG_in, prep_params, ref_chan)
+function [EEG_out, EOG_out] = perform_prep(EEG_in, EOG_in, prep_params, ref_chan)
 
 to_remove = EEG_in.automagic.preprocessing.to_remove;
 removed_mask = EEG_in.automagic.preprocessing.removed_mask;
@@ -8,30 +8,32 @@ bad_chans_mask = false(1, s); clear s;
 
 EEG_in.automagic.prep.performed = 'no';
 EEG_out = EEG_in;
+EOG_out = EOG_in;
 if ( ~isempty(prep_params) )
     fprintf(sprintf('Running Prep...\n'));
     
     % Remove the ref_chan containing zeros from prep preprocessing
-    rar_chans = setdiff(1:EEG_in.nbchan, ref_chan);
+    eeg_chans = setdiff(1:EEG_in.nbchan, ref_chan);
+    eog_chans = setdiff(1: EEG_in.nbchan + EOG_in.nbchan, eeg_chans);
     if isfield(prep_params, 'referenceChannels')
         prep_params.referenceChannels =  ...
             setdiff(prep_params.referenceChannels, ref_chan);
     else
-        prep_params.referenceChannels = rar_chans;
+        prep_params.referenceChannels = eeg_chans;
     end
     
     if isfield(prep_params, 'evaluationChannels')
         prep_params.evaluationChannels =  ...
             setdiff(prep_params.evaluationChannels, ref_chan);
     else
-        prep_params.evaluationChannels = rar_chans;
+        prep_params.evaluationChannels = eeg_chans;
     end
     
     if isfield(prep_params, 'rereference')
         prep_params.rereference =  ...
             setdiff(prep_params.rereference, ref_chan);
     else
-        prep_params.rereference = rar_chans;
+        prep_params.rereference = eeg_chans;
     end
     
     if isfield(prep_params, 'lineFrequencies')
@@ -41,10 +43,19 @@ if ( ~isempty(prep_params) )
         end
     end
     
+    % Combine both EEG and EOG for the analysis
+    new_EEG = EEG_in;
+    new_EEG.data = cat(1, EEG_in.data, EOG_in.data);
+    new_EEG.chanlocs = [EEG_in.chanlocs, EOG_in.chanlocs];
+    new_EEG.nbchan = EEG_in.nbchan + EOG_in.nbchan;
     
-    [~, EEG_out, ~] = evalc('prepPipeline(EEG_in, prep_params)');
+    [~, new_EEG, ~] = evalc('prepPipeline(new_EEG, prep_params)');
     
-    info = EEG_out.etc.noiseDetection;
+    % Separate EEG from EOG
+    [~, EEG_out] = evalc('pop_select( new_EEG , ''channel'', eeg_chans)');
+    [~, EOG_out] = evalc('pop_select( new_EEG , ''channel'', eog_chans)');
+    
+    info = new_EEG.etc.noiseDetection;
     % Cancel the interpolation and referecing of prep
     EEG_out.data = bsxfun(@plus, EEG_out.data, info.reference.referenceSignal);
 
@@ -53,6 +64,8 @@ if ( ~isempty(prep_params) )
                               info.interpolatedChannelNumbers), ...
                               info.removedChannelNumbers);
    
+    bad_chans = bad_chans(bad_chans < EEG_in.nbchan); % TODO: This looks like a hack.
+                                                      % Why should prep give EOG channels as bad channels?
     bad_chans_mask(bad_chans) = true;
     new_mask = removed_mask;
     old_mask = removed_mask;

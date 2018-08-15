@@ -83,8 +83,9 @@ if( ~isempty(notch) && ~isfield(notch, 'freq'))
 end
 
 %% Perform filtering
+data.automagic.filtering.performed = 'no';
 if( ~isempty(high) || ~isempty(low) || ~isempty(notch))
-
+    data.automagic.filtering.performed = 'yes';
     if( ~isempty(high) )
         [~, data] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
         data.automagic.filtering.highpass.performed = 'yes';
