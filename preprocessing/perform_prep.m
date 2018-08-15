@@ -64,7 +64,7 @@ if ( ~isempty(prep_params) )
                               info.interpolatedChannelNumbers), ...
                               info.removedChannelNumbers);
    
-    bad_chans = bad_chans(bad_chans < EEG_in.nbchan); % TODO: This looks like a hack.
+    bad_chans = bad_chans(bad_chans <= EEG_in.nbchan); % TODO: This looks like a hack.
                                                       % Why should prep give EOG channels as bad channels?
     bad_chans_mask(bad_chans) = true;
     new_mask = removed_mask;
@@ -73,7 +73,9 @@ if ( ~isempty(prep_params) )
     bad_chans = setdiff(find(new_mask), find(old_mask));
 
     EEG_out.automagic.prep.performed = 'yes';
-    EEG_out.automagic.prep.lineFrequencies = prep_params.lineFrequencies;
+    if isfield(prep_params, 'lineFrequencies')
+        EEG_out.automagic.prep.lineFrequencies = prep_params.lineFrequencies;
+    end
     EEG_out.automagic.prep.refchan = info.reference.referenceSignal;
     EEG_out.automagic.prep.bad_chans = bad_chans;
     EEG_out.automagic.preprocessing.to_remove = union(bad_chans, to_remove);
