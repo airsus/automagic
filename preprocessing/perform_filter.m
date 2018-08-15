@@ -103,7 +103,7 @@ if( ~isempty(high) || ~isempty(low) || ~isempty(notch))
         data.automagic.filtering.lowpass.performed = 'no';
     end
 
-    if( ~isempty(notch) && strcmp(data.automagic.prep.performed,'no')) % needed to check if notch should be done or not (temporary fix by AP)
+    if( ~isempty(notch) )
         [~, data] = evalc(['pop_eegfiltnew(data, notch.freq - 3,'...
                            'notch.freq + 3, [], 1)']); % Band-stop filter
         data.automagic.filtering.notch.performed = 'yes';

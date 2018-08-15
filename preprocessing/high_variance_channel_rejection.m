@@ -35,10 +35,7 @@ removed_mask = EEG_in.automagic.preprocessing.removed_mask;
 [s, ~] = size(EEG_in.data);
 bad_chans_mask = false(1, s); clear s;
 
-EEG_out = EEG_in;
-EEG_out.automagic.highvariance_rejection.performed = 'no';
 rejected = find(nanstd(EEG_in.data,[],2) > sd_threshold);
-
 [~, EEG_out] = evalc('pop_select(EEG_in, ''nochannel'', rejected)');
 
 bad_chans_mask(rejected) = true;

@@ -35,7 +35,7 @@ function varargout = settings_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 13-Aug-2018 13:39:40
+% Last Modified by GUIDE v2.5 15-Aug-2018 14:15:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -155,7 +155,7 @@ if ~isempty(params.filter_params)
         set(handles.lowedit, 'String', '');
     end
     
-    setNotchFilter(params.filter_params.notch, handles);
+    set(handles.notchcheckbox, 'Value', ~isempty(params.filter_params.notch));
 else
     set(handles.highcheckbox, 'Value', 0);
     set(handles.lowcheckbox, 'Value', 0);
@@ -257,6 +257,16 @@ else
     set(handles.windowedit, 'String', '');
 end
 set(handles.rarcheckbox, 'Value', ~isempty(params.prep_params));
+
+if ~isempty(params.filter_params.notch)
+    setLineNoise(params.filter_params.notch.freq, handles);
+elseif (~isempty(params.prep_params))
+    if isfield(params.prep_params, 'lineFrequencies') && ~isempty(params.prep_params.lineFrequencies)
+        setLineNoise(params.prep_params.lineFrequencies(1), handles);
+    end
+else
+    setLineNoise([], handles);
+end
 
 if( ~isempty(params.highvar_params))
     set(handles.highvarcheckbox, 'Value', 1);
@@ -379,10 +389,19 @@ end
 clear res;
 
 notch = params.filter_params.notch;
-res = str2double(get(handles.notchedit, 'String'));
-if ~isnan(res)
-    notch.freq = res; end
-clear res;
+if( get(handles.notchcheckbox, 'Value'))
+    if isempty(notch)
+        notch = struct(); end
+    res = str2double(get(handles.notchedit, 'String'));
+    if ~isnan(res)
+        notch.freq = res;
+    else
+        notch.freq = [];
+    end
+    clear res;
+else
+    notch = struct([]);
+end
 
 
 % Get Quality Rating Parameters.
@@ -462,6 +481,18 @@ if (rar_check && isempty(prep_params))
     prep_params = struct();
 elseif ~rar_check
     prep_params = struct([]);
+end
+
+if ~isempty(prep_params)
+   if( ~isfield(prep_params, 'lineFrequencies') || isempty(prep_params.lineFrequencies))
+        res = str2double(get(handles.notchedit, 'String'));
+        if ~isnan(res)
+            prep_params.lineFrequencies = res;
+        else
+            prep_params = rmfield(prep_params, 'lineFrequencies');
+        end
+        clear res;
+    end 
 end
 
 highvar_params = params.highvar_params;
@@ -787,18 +818,18 @@ guidata(hObject, handles);
 
 close('settings_gui');
 
-function handles = setNotchFilter(notch, handles)
+function handles = setLineNoise(freq, handles)
 
 filt_cst = handles.CGV.preprocessing_constants.filter_constants;
-if(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_eu)
+if(~ isempty(freq) && freq == filt_cst.notch_eu)
     set(handles.euradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~ isempty(notch) && ~isempty(notch.freq) && notch.freq == filt_cst.notch_us)
+    set(handles.notchedit, 'String', num2str(freq))
+elseif(~ isempty(freq) && freq == filt_cst.notch_us)
     set(handles.usradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
-elseif(~isempty(notch))
+    set(handles.notchedit, 'String', num2str(freq))
+elseif(~isempty(freq))
     set(handles.otherradio, 'Value', 1)
-    set(handles.notchedit, 'String', num2str(notch.freq))
+    set(handles.notchedit, 'String', num2str(freq))
 else
     set(handles.otherradio, 'Value', 1)
     set(handles.notchedit, 'String', '')
@@ -1501,8 +1532,8 @@ function notchedit_Callback(hObject, eventdata, handles)
 % hObject    handle to notchedit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-fake_notch.freq = str2double(get(hObject,'String'));
-setNotchFilter(fake_notch, handles)
+freq = str2double(get(hObject,'String'));
+setLineNoise(freq, handles)
 % Hints: get(hObject,'String') returns contents of notchedit as text
 %        str2double(get(hObject,'String')) returns contents of notchedit as a double
 
@@ -1827,3 +1858,12 @@ function euradio_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of euradio
+
+
+% --- Executes on button press in notchcheckbox.
+function notchcheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to notchcheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of notchcheckbox

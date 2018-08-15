@@ -120,36 +120,38 @@ download_and_add_paths(struct('prep_params', prep_params, ...
                               'pca_params', pca_params));
                           
 % Set system dependent parameters and eeparate EEG from EOG
-[EEG_ref, EOG, eeg_system, ica_params] = ...
+[EEG, EOG, eeg_system, ica_params] = ...
     system_dependent_params(data, eeg_system, channel_reduction_params, ...
     eog_regression_params, ica_params);
-
+EEG_ref = EEG;
 
 % Remove the reference channel from the rest of preprocessing
-[~, EEG_orig] = evalc('pop_select(EEG_ref, ''nochannel'', eeg_system.ref_chan)');
-EEG_orig.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
+[~, EEG] = evalc('pop_select(EEG, ''nochannel'', eeg_system.ref_chan)');
+EEG.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
+EEG_orig = EEG;
+
 
 %% Preprocessing
-[s, ~] = size(EEG_orig.data);
-EEG_orig.automagic.preprocessing.to_remove = [];
-EEG_orig.automagic.preprocessing.removed_mask = false(1, s); clear s;
+[s, ~] = size(EEG.data);
+EEG.automagic.preprocessing.to_remove = [];
+EEG.automagic.preprocessing.removed_mask = false(1, s); clear s;
 
-EEG = perform_prep(EEG_orig, prep_params, filter_params,eeg_system.ref_chan);
+% Running prep
+EEG = perform_prep(EEG, prep_params, eeg_system.ref_chan);
 
 
-% Clean EEG using Artefact Supspace Reconstruction
+% Clean EEG using clean_rawdata()
 [EEG, EOG] = perform_cleanrawdata(EEG, EOG, asr_params);
 
 % Filtering on the whole dataset
 display(PreprocessingConstants.filter_constants.run_message);
-EOG.automagic = EEG.automagic; % needed to check if notch should be done or not (temporary fix by AP)
 EEG = perform_filter(EEG, filter_params);
 EOG = perform_filter(EOG, filter_params);
 
 % Remove channels
 to_remove = EEG.automagic.preprocessing.to_remove;
 removed_mask = EEG.automagic.preprocessing.removed_mask;
-[~, new_to_remove] = intersect(find(~removed_mask), to_remove);
+[~, new_to_remove] = intersect(find(~removed_mask), to_remove); %#ok<ASGLU>
 [~, EEG] = evalc('pop_select(EEG, ''nochannel'', new_to_remove)');
 removed_mask(to_remove) = 1;
 to_remove = [];
@@ -160,45 +162,41 @@ clear to_remove removed_mask new_to_remove;
 % Remove effect of EOG
 EEG.automagic.eog_regression.performed = 'no';
 if( eog_regression_params.perform_eog_regression )
-    EEG_regressed = EOG_regression(EEG, EOG);
-else
-    EEG_regressed = EEG;
+    EEG = EOG_regression(EEG, EOG);
 end
-
+EEG_regressed = EEG;
 
 % PCA or ICA
-EEG_regressed.automagic.ica.performed = 'no';
-EEG_regressed.automagic.pca.performed = 'no';
+EEG.automagic.ica.performed = 'no';
+EEG.automagic.pca.performed = 'no';
 if ( ~isempty(ica_params) )
     try
-        EEG_cleared = perform_ica(EEG_regressed, ica_params);
+        EEG = perform_ica(EEG, ica_params);
     catch ME
         message = ['ICA is not done on this subject, continue with the next steps: ' ...
             ME.message];
         warning(message)
-        EEG_cleared = EEG_regressed;
-        EEG_cleared.automagic.ica.performed = 'FAILED';
-        EEG_cleared.automagic.error_msg = message;
+        EEG.automagic.ica.performed = 'FAILED';
+        EEG.automagic.error_msg = message;
     end
 elseif ( ~isempty(pca_params))
-    [EEG_cleared, pca_noise] = perform_pca(EEG_regressed, pca_params);
-else
-    EEG_cleared = EEG_regressed;
+    [EEG, pca_noise] = perform_pca(EEG, pca_params);
 end
+EEG_cleared = EEG;
 
-
-% detrending
-doubled_data = double(EEG_cleared.data);
+% Detrending
+doubled_data = double(EEG.data);
 res = bsxfun(@minus, doubled_data, mean(doubled_data, 2));
 singled_data = single(res);
-detrended = EEG_cleared;
-detrended.data = singled_data;
+EEG.data = singled_data;
 clear doubled_data res singled_data;
 
 % Reject channels based on high variance
+EEG.automagic.highvariance_rejection.performed = 'no';
 if ~isempty(highvar_params)
     [~, EEG] = evalc('high_variance_channel_rejection(EEG, highvar_params)');
 end
+
 % Put back removed channels
 removed_chans = find(EEG.automagic.preprocessing.removed_mask);
 for chan_idx = 1:length(removed_chans)
@@ -220,11 +218,9 @@ EEG.nbchan = size(EEG.data,1);
 clear chan_nb re_chan;
 
 % Write back output
-EEG.automagic  = EEG_cleared.automagic;
 EEG.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
 EEG.automagic.params = params;
 %% Creating the final figure to save
-
 EEG_filtered_toplot = perform_filter(EEG, filter_params);
 fig1 = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])

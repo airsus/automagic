@@ -39,7 +39,7 @@ if (~isempty(eeg_system.name) && ...
     % with an arbitrary location.
     if (size(data.chanlocs,2) ~= size(data.data,1))
         data.chanlocs(size(data.data,1)) = data.chanlocs(end);
-        data.chanlocs(end).labels = 'REF'
+        data.chanlocs(end).labels = 'REF';
     end
     
     

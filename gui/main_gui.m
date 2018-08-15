@@ -239,7 +239,7 @@ name = names{Index};
 % Special case of New Project
 if(strcmp(name, handles.CGV.new_project.LIST_NAME))
     handles.visualisation_params.calcQuality_params = handles.CGV.default_visualisation_params.calcQuality_params;
-    handles.visualisation_params.ds_rate = handles.CGV.ds_rate;
+    handles.visualisation_params.ds_rate = handles.CGV.default_visualisation_params.ds_rate;
     handles.params = make_default_params(handles.CGV.default_params);
     set(handles.projectname, 'String', handles.CGV.new_project.NAME);
     set(handles.datafoldershow, 'String', handles.CGV.new_project.DATA_FOLDER);
