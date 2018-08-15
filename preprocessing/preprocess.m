@@ -134,14 +134,15 @@ EEG_orig.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
 EEG_orig.automagic.preprocessing.to_remove = [];
 EEG_orig.automagic.preprocessing.removed_mask = false(1, s); clear s;
 
-% Robust Average Referecing with Prep
-[~, EEG] = evalc('perform_prep(EEG_orig, prep_params, eeg_system.ref_chan)');
+EEG = perform_prep(EEG_orig, prep_params, filter_params,eeg_system.ref_chan);
+
 
 % Clean EEG using Artefact Supspace Reconstruction
-[~, EEG, EOG] = evalc('perform_cleanrawdata(EEG, EOG, asr_params)');
+[EEG, EOG] = perform_cleanrawdata(EEG, EOG, asr_params);
 
 % Filtering on the whole dataset
 display(PreprocessingConstants.filter_constants.run_message);
+EOG.automagic = EEG.automagic; % needed to check if notch should be done or not (temporary fix by AP)
 EEG = perform_filter(EEG, filter_params);
 EOG = perform_filter(EOG, filter_params);
 
@@ -219,6 +220,7 @@ EEG.nbchan = size(EEG.data,1);
 clear chan_nb re_chan;
 
 % Write back output
+EEG.automagic  = EEG_cleared.automagic;
 EEG.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
 EEG.automagic.params = params;
 %% Creating the final figure to save

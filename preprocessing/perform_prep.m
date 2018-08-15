@@ -1,4 +1,4 @@
-function EEG_out = perform_prep(EEG_in, prep_params, ref_chan)
+function EEG_out = perform_prep(EEG_in, prep_params, filter_params, ref_chan)
 
 to_remove = EEG_in.automagic.preprocessing.to_remove;
 removed_mask = EEG_in.automagic.preprocessing.removed_mask;
@@ -7,6 +7,9 @@ removed_mask = EEG_in.automagic.preprocessing.removed_mask;
 bad_chans_mask = false(1, s); clear s;
 
 EEG_in.automagic.prep.performed = 'no';
+EEG_out = EEG_in; % needed so clean_raw_data() runs, when PREP has not run.
+
+
 if ( ~isempty(prep_params) )
     fprintf(sprintf('Running Prep...\n'));
     
@@ -33,7 +36,18 @@ if ( ~isempty(prep_params) )
         prep_params.rereference = rar_chans;
     end
     
-    [~, EEG_out, ~] = evalc('prepPipeline(EEG_in, prep_params)');
+    if isfield(filter_params, 'notch')
+        if isfield(filter_params.notch, 'freq')
+            freq = filter_params.notch.freq;
+            prep_params.lineFrequencies = freq:freq:((EEG_in.srate/2)-1);
+            
+        end
+    end
+
+    
+    
+    
+    [EEG_out, ~] = prepPipeline(EEG_in, prep_params);
     
     info = EEG_out.etc.noiseDetection;
     % Cancel the interpolation and referecing of prep

@@ -35,7 +35,7 @@ function varargout = settings_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 08-Aug-2018 11:08:34
+% Last Modified by GUIDE v2.5 13-Aug-2018 13:39:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1818,3 +1818,12 @@ function icahighpassorderedit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in euradio.
+function euradio_Callback(hObject, eventdata, handles)
+% hObject    handle to euradio (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of euradio

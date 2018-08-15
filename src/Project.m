@@ -395,7 +395,7 @@ classdef Project < handle
             self.update_main_gui();
             end_time = cputime - start_time;
             fprintf(['*******Pre-processing finished. Total elapsed '...
-                'time: ', num2str(end_time),'***************\n'])
+                'time: ', num2str(end_time),'***************\n'])         
         end
         
         function self = interpolate_selected(self)

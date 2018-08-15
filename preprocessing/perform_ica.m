@@ -105,7 +105,7 @@ else
 end
         
 options = [0 1 0 0 0]; %#ok<NASGU>
-[~, ALLEEG, EEG_Mara, ~] = evalc('processMARA_with_no_popup(data_filtered, data_filtered, 1, options)');
+[~, ALLEEG, EEG_Mara, ~,retVar,MARAinfo] = evalc('processMARA_with_no_popup(data_filtered, data_filtered, 1, options)');
 EEG_Mara.data = data.data;
 EEG_clean = pop_subcomp(EEG_Mara, []);
 
@@ -115,6 +115,8 @@ EEG_clean.automagic.ica.prerejection.icaact  = EEG_clean.icaact;
 EEG_clean.automagic.ica.prerejection.icawinv     = EEG_clean.icawinv;
 EEG_clean.automagic.ica.prerejection.icaweights  = EEG_clean.icaweights;
 EEG_clean.automagic.ica.ica_rejected = find(EEG_Mara.reject.gcompreject == 1);
+EEG_clean.automagic.ica.retainedVariance = retVar;
+EEG_clean.automagic.ica.postArtefactProb = MARAinfo.posterior_artefactprob;
 %% Return
 % Change back the labels to the original one
 if( ~ isempty(chanloc_map))
@@ -133,7 +135,7 @@ end
 
 end
 
-function [ALLEEG,EEG,CURRENTSET] = processMARA_with_no_popup(ALLEEG,EEG,CURRENTSET,varargin) %#ok<DEFNU>
+function [ALLEEG,EEG,CURRENTSET,retVar,MARAinfo] = processMARA_with_no_popup(ALLEEG,EEG,CURRENTSET,varargin) %#ok<DEFNU>
 % This is only an (almost) exact copy of the function processMARA where few
 % of the paramters are changed for our need. (Mainly to supress outputs)
 
@@ -184,6 +186,9 @@ addpath('../matlab_scripts');
 
     %% classify artifactual components with MARA
     [artcomps, MARAinfo] = MARA(EEG);
+    
+    [~, retVar]  = compvar(EEG.data,{EEG.icasphere EEG.icaweights},EEG.icawinv,setdiff(EEG.icachansind,artcomps)); 
+    
     EEG.reject.MARAinfo = MARAinfo; 
     disp('MARA marked the following components for rejection: ')
     if isempty(artcomps)
@@ -191,6 +196,8 @@ addpath('../matlab_scripts');
     else
         disp(artcomps)    
         disp(' ')
+        % get the retained % of variance 
+
     end
    
     

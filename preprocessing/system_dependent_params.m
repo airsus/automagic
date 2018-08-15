@@ -35,6 +35,14 @@ if (~isempty(eeg_system.name) && ...
     eeg_channels = setdiff(all_chans, union(eog_channels, tobe_excluded_chans));
     clear tobe_excluded_chans all_chans;
     
+    % if the reference channel is not included in chanlocs, add it there
+    % with an arbitrary location.
+    if (size(data.chanlocs,2) ~= size(data.data,1))
+        data.chanlocs(size(data.data,1)) = data.chanlocs(end);
+        data.chanlocs(end).labels = 'REF'
+    end
+    
+    
     % If chanloc is not a provided field load it from the provided file
     if(isempty(data.chanlocs) || isempty([data.chanlocs.X]) || ...
         length(data.chanlocs) ~= data.nbchan)
