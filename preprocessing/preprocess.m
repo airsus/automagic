@@ -137,7 +137,7 @@ EEG.automagic.preprocessing.to_remove = [];
 EEG.automagic.preprocessing.removed_mask = false(1, s); clear s;
 
 % Running prep
-EEG = perform_prep(EEG, EOG, prep_params, eeg_system.ref_chan);
+[EEG, EOG] = perform_prep(EEG, EOG, prep_params, eeg_system.ref_chan);
 
 
 % Clean EEG using clean_rawdata()

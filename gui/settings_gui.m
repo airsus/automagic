@@ -475,6 +475,14 @@ else
         asr_params.WindowCriterion = 'off'; end
 end
 
+if (    strcmp(asr_params.LineNoiseCriterion, 'off') && ...
+        strcmp(asr_params.ChannelCriterion, 'off') && ...
+        strcmp(asr_params.BurstCriterion, 'off') && ...
+        strcmp(asr_params.WindowCriterion, 'off') && ... 
+        strcmp(asr_params.Highpass, 'off'))
+    asr_params = struct([]);
+end
+
 prep_params = params.prep_params;
 rar_check = get(handles.rarcheckbox, 'Value');
 if (rar_check && isempty(prep_params))
