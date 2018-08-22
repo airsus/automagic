@@ -299,7 +299,7 @@ classdef Block < handle
             if isfield(updates, 'rate')
                 self.rate = updates.rate;
                 self.is_manually_rated = ~ strcmp(updates.rate, ...
-                    rateQuality(self.qualityScore, self.project.qualityCutoffs));
+                    rateQuality(self.getCurrentQualityScore(), self.project.qualityCutoffs));
                 if ~ strcmp(self.rate, self.CGV.ratings.Interpolate)
                     if ~ isfield(updates, 'tobe_interpolated')
                         % If new rate is not Interpolate and no (empty) list 
@@ -361,7 +361,13 @@ classdef Block < handle
             end
             qScore  = calcQuality(EEG, unique(self.final_badchans), ...
                 self.project.qualityThresholds); 
-            qRate = rateQuality(qScore, self.project.qualityCutoffs);
+            qScoreIdx.OHA = arrayfun(@(x) ceil(length(x.OHA)/2), qScore);
+            qScoreIdx.THV = arrayfun(@(x) ceil(length(x.THV)/2), qScore);
+            qScoreIdx.CHV = arrayfun(@(x) ceil(length(x.CHV)/2), qScore);
+            qScoreIdx.MAV = arrayfun(@(x) ceil(length(x.MAV)/2), qScore);
+            qScoreIdx.RBC = arrayfun(@(x) ceil(length(x.RBC)/2), qScore);
+            self.project.qualityScoreIdx = qScoreIdx;
+            qRate = rateQuality(self.getIdxQualityScore(qScore, qScoreIdx), self.project.qualityCutoffs);
             
             self.setRatingInfoAndUpdate(struct('rate', qRate, ...
                 'tobe_interpolated', EEG.automagic.auto_badchans, ...
@@ -404,8 +410,14 @@ classdef Block < handle
 
             qScore  = calcQuality(EEG, ...
                 unique([self.final_badchans interpolate_chans]), ...
-                self.project.qualityThresholds); 
-            qRate = rateQuality(qScore, self.project.qualityCutoffs);
+                self.project.qualityThresholds);
+            qScoreIdx.OHA = arrayfun(@(x) ceil(length(x.OHA)/2), qScore);
+            qScoreIdx.THV = arrayfun(@(x) ceil(length(x.THV)/2), qScore);
+            qScoreIdx.CHV = arrayfun(@(x) ceil(length(x.CHV)/2), qScore);
+            qScoreIdx.MAV = arrayfun(@(x) ceil(length(x.MAV)/2), qScore);
+            qScoreIdx.RBC = arrayfun(@(x) ceil(length(x.RBC)/2), qScore);
+            self.project.qualityScoreIdx = qScoreIdx;
+            qRate = rateQuality(self.getIdxQualityScore(qScore, qScoreIdx), self.project.qualityCutoffs);
 
             % Put the channels back to NaN if they were not to be interpolated
             % originally
@@ -482,6 +494,10 @@ classdef Block < handle
             % It keeps track of the history of all interpolations.
             automagic.final_badchans = self.final_badchans;
             preprocessed.automagic = automagic;
+        end
+        
+        function qScore = getCurrentQualityScore(self)
+            qScore = self.getIdxQualityScore(self.qualityScore, self.project.qualityScoreIdx);
         end
         
         function slash = get.slash(self) %#ok<MANU>
@@ -618,6 +634,13 @@ classdef Block < handle
     
     %% Private utility static methods
     methods(Static, Access=private)
+        function qScore = getIdxQualityScore(qScore, qScoreIdx)
+            qScore.OHA = qScore.OHA(qScoreIdx.OHA);
+            qScore.THV = qScore.THV(qScoreIdx.THV);
+            qScore.CHV = qScore.CHV(qScoreIdx.CHV);
+            qScore.MAV = qScore.MAV(qScoreIdx.MAV);
+            qScore.RBC = qScore.RBC(qScoreIdx.RBC);
+        end
         
         function reduced_address = extract_reduced_address(...
                 result_address, dsrate)

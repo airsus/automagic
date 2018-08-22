@@ -406,9 +406,9 @@ end
 
 % Get Quality Rating Parameters.
 calcQuality_params = visualisation_params.calcQuality_params;
-overallThresh = str2double(get(handles.overalledit, 'String'));
-timeThresh = str2double(get(handles.timeedit, 'String'));
-chanThresh = str2double(get(handles.channelthresholdedit, 'String'));
+overallThresh = str2num(get(handles.overalledit, 'String'));
+timeThresh = str2num(get(handles.timeedit, 'String'));
+chanThresh = str2num(get(handles.channelthresholdedit, 'String'));
 if ~isnan(overallThresh)
     calcQuality_params.overallThresh = overallThresh;
 end

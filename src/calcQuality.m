@@ -20,12 +20,6 @@ function Q = calcQuality(EEG, bad_chans, varargin)
 %    Options not modifiable from the GUI of Automagic:
 %
 %   'avRef'         - If no average reference should be used set this
-%                     option to 0 [1]
-%   'plotFig'       - When set to 1, plots a figure with the Quality
-%                     measures [0]
-%   'saveFig'       - When 1, saves the figure to the plotFileName [0]
-%   'plotFileName'  - file name of figure to be saved {''}
-%
 %
 % Copyright (C) 2018  Andreas Pedroni, anpedroni@gmail.com
 %
@@ -50,11 +44,6 @@ p = inputParser;
 addParameter(p,'overallThresh', defaults.overallThresh,@isnumeric );
 addParameter(p,'timeThresh', defaults.timeThresh,@isnumeric );
 addParameter(p,'chanThresh', defaults.chanThresh,@isnumeric );
-
-addParameter(p,'plotFileName', defaults.plotFileName,@isstr );
-addParameter(p,'plotFig', defaults.plotFig,@isnumeric );
-
-addParameter(p,'saveFig', defaults.saveFig,@isnumeric );
 addParameter(p,'avRef', defaults.avRef,@isnumeric );
 
 parse(p, varargin{:});
@@ -82,18 +71,13 @@ end
 OHA = nansum(abs(X(:)) > settings.overallThresh)./(t.*c);
 
 % ratio of timepoints of high variance
-THV = nansum(std(X,[],1) > settings.timeThresh)./t;
+THV = nansum(bsxfun(@gt, std(X,[],1)', settings.timeThresh), 1) ./t;
 
 % ratio of channels that have been interpolated
 RBC = numel(bad_chans)./c;
 
-% ratio of channels with high variance
-
-% get index for plotting...
-CIX = find(nanstd(X,[],2) > settings.chanThresh);
 % get the number of channels above threshold...
-CHV = numel(find(nanstd(X,[],2) > settings.chanThresh))./c;
-
+CHV = sum(nanstd(X,[],2) > settings.chanThresh, 1)./c;
 % unthresholded mean absolute voltage
 MAV = nanmean(abs(X(:)));
 
@@ -105,49 +89,7 @@ MAV = nanmean(abs(X(:)));
 % CrossCorr = diag(corr(EEGtemplateMaps.data,EEGtemplateMapsInterpolated.data));
 % P90 = prctile(CrossCorr,90);
 
-%% Optional Plotting
-thrOHA = reshape(abs(X(:)) > settings.overallThresh,c,t);
 
-if settings.plotFig == 1
-    
-    figure('pos',[0 0 1000 500])
-    subplot(2,1,1)
-    % Original data
-    imagesc(X,[-100  100])
-    colormap('jet')
-    xlabel('time')
-    ylabel('channels')
-    
-    % Quality Measures
-    subplot(2,1,2)
-    
-    hold on
-    % time windows red
-    bar((std(X,[],1) > settings.timeThresh).*c,'r')
-    
-    im = image(double(thrOHA));
-    im.AlphaData = double(thrOHA==1);
-    
-    % channels over threshold
-    if ~isempty(CIX)
-        plot([0 t],[CIX CIX],'g')
-    end
-    
-    if ~isempty(bad_chans)
-        plot([0 t],[bad_chans bad_chans],'m')
-    end
-    
-    ylim([0,c])
-    axis ij
-    xlabel('time')
-    ylabel('channels')
-    
-    if settings.saveFig == 1
-        saveas(gcf,[settings.plotFileName '.png']);
-        close(gcf)
-    end
-    
-end
 
 %% Output
 % quality metrics

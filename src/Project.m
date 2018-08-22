@@ -92,6 +92,8 @@ classdef Project < handle
         colorScale
         
         qualityCutoffs
+        
+        qualityScoreIdx
     end
     
     properties(SetAccess=private)
@@ -341,6 +343,7 @@ classdef Project < handle
             end
             
         end
+        
         function self = preprocess_all(self)
             % preprocesses all the files in the data_folder of this project
             
@@ -749,6 +752,27 @@ classdef Project < handle
             end
             self.save_project();
         end
+    
+        function ratings = get_qualityratings(self, cutoffs)
+            blocks = values(self.block_map, self.processed_list);
+            ratings = cellfun( @(block) rateQuality(block.getCurrentQualityScore(), cutoffs), blocks, 'uniform', 0);
+            ratings = cellfun( @self.make_rating_manually, blocks, ratings, 'uniform', 0);
+        end
+        
+        function apply_qualityratings(self, cutoffs, apply_to_manually_rated)
+            files = self.processed_list;
+            blocks = self.block_map;
+            for i = 1:length(files)
+                file = files{i};
+                block = blocks(file);
+                new_rate = rateQuality(block.getCurrentQualityScore(), cutoffs);
+                if (apply_to_manually_rated || ~ block.is_manually_rated)
+                    block.setRatingInfoAndUpdate(struct('rate', new_rate));
+                    block.saveRatingsToFile();
+                end
+            end
+            self.qualityCutoffs = cutoffs;
+        end
         
         function self = update_addresses_form_state_file(self, ...
                 project_folder, data_folder)
@@ -1126,6 +1150,13 @@ classdef Project < handle
     
     %% Private utility static methods
     methods(Static, Access=private)
+        function rate = make_rating_manually(block, qRate)
+            if block.is_manually_rated
+                rate = 'Manually Rated';
+            else
+                rate = qRate;
+            end
+        end
         
         function subjects = list_subjects(root_folder)
             % Return the list of subjects (dirs) in the folder

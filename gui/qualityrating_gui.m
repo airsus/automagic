@@ -177,21 +177,10 @@ if render_lines
     update_lines(rating_gui_handle);
 end
 
-function rate = make_rating_manually(block, qRate)
-    if block.is_manually_rated
-        rate = 'Manually Rated';
-    else
-        rate = qRate;
-    end
-
 function renderAxes(handles, cutoffs)
-block_map = handles.project.block_map;
-processed = handles.project.processed_list;
-blocks = values(block_map, processed);
-res = cellfun( @(block) rateQuality(block.qualityScore, cutoffs), blocks, 'uniform', 0);
-res = cellfun( @make_rating_manually, blocks, res, 'uniform', 0);
+ratings = handles.project.get_qualityratings(cutoffs);
 cutoffAxes = handles.cutoffaxes;
-rateingHist = histogram(categorical(res, {'Good' 'OK' 'Bad' 'Manually Rated'},'Ordinal',true), 'Parent', cutoffAxes);
+rateingHist = histogram(categorical(ratings, {'Good' 'OK' 'Bad' 'Manually Rated'},'Ordinal',true), 'Parent', cutoffAxes);
 Y_axis_max = max(rateingHist.Values) + ceil(0.1 * max(rateingHist.Values));
 n_Y = Y_axis_max / 10.0;
 set(cutoffAxes, 'YTick', 0:ceil(n_Y):ceil(Y_axis_max))
@@ -206,8 +195,6 @@ function ret_val = apply_to_all(handles, cutoffs)
 % Change rating of everyfile
 ret_val = [];
 project = handles.project;
-files = project.processed_list;
-blocks = project.block_map;
 
 question = 'Would you like to apply changes on also manually rated files';
 handle = findobj(allchild(0), 'flat', 'Tag', 'qualityrating');
@@ -230,16 +217,7 @@ end
 
 set(handles.qualityrating, 'pointer', 'watch')
 drawnow;
-for i = 1:length(files)
-    file = files{i};
-    block = blocks(file);
-    new_rate = rateQuality(block.qualityScore, cutoffs);
-    if (apply_to_manually_rated || ~ block.is_manually_rated)
-        block.setRatingInfoAndUpdate(struct('rate', new_rate));
-        block.saveRatingsToFile();
-    end
-end
-handles.project.qualityCutoffs = cutoffs;
+project.apply_qualityratings(cutoffs, apply_to_manually_rated);
 change_rating_gui(true, cutoffs);
 set(handles.qualityrating, 'pointer', 'arrow');
 ret_val = handles;
