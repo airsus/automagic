@@ -272,20 +272,25 @@ set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
 title('EOG regressed out');
 %figure;
-subplot(11,1,8:9)
+ica_subplot = subplot(11,1,8:9);
 imagesc(EEG_cleared.data);
 colormap jet
 caxis([-100 100])
 set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
 if (~isempty(ica_params))
-    title_text = 'ICA';
+    if strcmp(EEG.automagic.ica.performed, 'FAILED')
+        title_text = '\color{red}ICA FALIED';
+        cla(ica_subplot)
+    else
+        title_text = 'ICA corrected clean data';
+    end
 elseif(~isempty(pca_params))
-    title_text = 'PCA';
+    title_text = 'PCA corrected clean data';
 else
     title_text = '';
 end
-title([title_text ' corrected clean data'])
+title(title_text)
 %figure;
 if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_params.lambda ~= -1))
     subplot(11,1,10:11)

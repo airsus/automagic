@@ -142,6 +142,7 @@ if( ~ isempty(chanloc_map))
     end
 end
 
+EEG_clean.data(1,1) = complex(3,4);
 if(~isreal(EEG_clean.data))
     msg = 'ICA returns complex values. Probably due to rank deficiency.';
     ME = MException('Automagic:ICA:complexValuesReturned', msg);
