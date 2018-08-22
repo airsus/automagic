@@ -36,7 +36,7 @@ if isfield(prep_params, 'rereference')
     prep_params.rereference =  ...
         setdiff(prep_params.rereference, ref_chan);
 else
-    prep_params.rereference = [eeg_chans, eog_chans];
+    prep_params.rereference = eeg_chans;
 end
 
 if isfield(prep_params, 'lineFrequencies')
@@ -61,15 +61,12 @@ new_EEG.nbchan = EEG_in.nbchan + EOG_in.nbchan;
 info = new_EEG.etc.noiseDetection;
 % Cancel the interpolation and referecing of prep
 EEG_out.data = bsxfun(@plus, EEG_out.data, info.reference.referenceSignal);
-EOG_out.data = bsxfun(@plus, EOG_out.data, info.reference.referenceSignal);
 
 % Get list of channels to be removed/interpolated later
 bad_chans = union(union(info.stillNoisyChannelNumbers, ...
                           info.interpolatedChannelNumbers), ...
                           info.removedChannelNumbers);
 
-bad_chans = bad_chans(bad_chans <= EEG_in.nbchan); % TODO: This looks like a hack.
-                                                  % Why should prep give EOG channels as bad channels?
 bad_chans_mask(bad_chans) = true;
 new_mask = removed_mask;
 old_mask = removed_mask;
