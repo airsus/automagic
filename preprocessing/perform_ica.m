@@ -142,6 +142,12 @@ if( ~ isempty(chanloc_map))
     end
 end
 
+if(~isreal(EEG_clean.data))
+    msg = 'ICA returns complex values. Probably due to rank deficiency.';
+    ME = MException('Automagic:ICA:complexValuesReturned', msg);
+    throw(ME)
+end
+
 end
 
 function [ALLEEG,EEG,CURRENTSET] = processMARA_with_no_popup(ALLEEG,EEG,CURRENTSET,varargin) %#ok<DEFNU>

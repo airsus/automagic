@@ -3,7 +3,7 @@ function [EEG_out, EOG_out] = perform_cleanrawdata(EEG_in, EOG_in, varargin)
 EEG_out = EEG_in;
 EOG_out = EOG_in;
 EEG_out.automagic.asr.performed = 'no';
-if isempty(varargin)
+if isempty(varargin{:})
     return; end
 
 defaults = DefaultParameters.asr_params;
