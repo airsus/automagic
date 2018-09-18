@@ -22,7 +22,7 @@ function varargout = qualityrating_gui(varargin)
 
 % Edit the above text to modify the response to help qualityrating_gui
 
-% Last Modified by GUIDE v2.5 08-Jun-2018 14:15:40
+% Last Modified by GUIDE v2.5 22-Aug-2018 17:48:15
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -93,6 +93,18 @@ renderAxes(handles, cutoffs);
 change_rating_gui(false, cutoffs);
 
 function handles = render_project(handles, cutoffs)
+
+set(handles.ohapopupmenu,...
+    'String',handles.project.qualityThresholds.overallThresh, ...
+    'Value', handles.project.qualityScoreIdx.OHA);
+
+set(handles.thvpopupmenu,...
+    'String',handles.project.qualityThresholds.timeThresh, ...
+    'Value', handles.project.qualityScoreIdx.THV);
+
+set(handles.chvpopupmenu,...
+    'String',handles.project.qualityThresholds.chanThresh, ...
+    'Value', handles.project.qualityScoreIdx.CHV);
 
 if any(strfind(cutoffs.Qmeasure,'OHA'))
     set(handles.oharadio, 'Value', 1);
@@ -557,3 +569,103 @@ function qualityrating_CloseRequestFcn(hObject, eventdata, handles)
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+
+
+% --- Executes on selection change in chvpopupmenu.
+function chvpopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to chvpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+contents = cellstr(get(hObject,'String'));
+val = contents{get(hObject,'Value')};
+idx = find(handles.project.qualityThresholds.chanThresh == str2num(val));
+handles.project.qualityScoreIdx.CHV = idx;
+renderAxes(handles, handles.project.qualityCutoffs);
+change_rating_gui(false, handles.project.qualityCutoffs);
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+% Hints: contents = cellstr(get(hObject,'String')) returns chvpopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from chvpopupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function chvpopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to chvpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in thvpopupmenu.
+function thvpopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to thvpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+contents = cellstr(get(hObject,'String'));
+val = contents{get(hObject,'Value')};
+idx = find(handles.project.qualityThresholds.timeThresh == str2num(val));
+handles.project.qualityScoreIdx.THV = idx;
+renderAxes(handles, handles.project.qualityCutoffs);
+change_rating_gui(false, handles.project.qualityCutoffs);
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% Hints: contents = cellstr(get(hObject,'String')) returns thvpopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from thvpopupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function thvpopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to thvpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in ohapopupmenu.
+function ohapopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to ohapopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+contents = cellstr(get(hObject,'String'));
+val = contents{get(hObject,'Value')};
+idx = find(handles.project.qualityThresholds.overallThresh == str2num(val));
+handles.project.qualityScoreIdx.OHA = idx;
+renderAxes(handles, handles.project.qualityCutoffs);
+change_rating_gui(false, handles.project.qualityCutoffs);
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+% Hints: contents = cellstr(get(hObject,'String')) returns ohapopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ohapopupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function ohapopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ohapopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

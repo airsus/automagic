@@ -728,7 +728,7 @@ function detectedpushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-block = project.get_current_block();
+block = handles.project.get_current_block();
 interpolated = block.final_badchans;
 tobe_interpolated = block.tobe_interpolated;
 autos = block.auto_badchans;
