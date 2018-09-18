@@ -26,7 +26,7 @@ switch block.rate
         set(handles.rategroup,'selectedobject', handles.notrate)
 end
 
-res = rateQuality(block.qualityScore, cutoffs);
+res = rateQuality(block.getCurrentQualityScore(), cutoffs);
 set(handles.qualityscoretext, 'FontSize', 6)
 set(handles.qualityscoretext, 'String', evalc('disp(block.qualityScore)'))
 switch res
