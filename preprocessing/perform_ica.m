@@ -96,10 +96,12 @@ end
 display(constants.run_message);
 data_filtered = data;
 if( ~isempty(high) )
-    [~, data_filtered] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
+    [~, data_filtered,~,b] = evalc('pop_eegfiltnew(data, high.freq, 0, high.order)');
     data_filtered.automagic.ica.highpass.performed = 'yes';
     data_filtered.automagic.ica.highpass.freq = high.freq;
-    data_filtered.automagic.ica.highpass.order = high.order;
+    data_filtered.automagic.ica.highpass.order = length(b)-1; 
+    data_filtered.automagic.ica.highpass.transitionBandWidth = 3.3 / (length(b)-1) * data.srate;
+    
 else
     data_filtered.automagic.ica.highpass.performed = 'no';
 end
