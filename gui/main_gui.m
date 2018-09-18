@@ -41,7 +41,7 @@ function varargout = main_gui(varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% Last Modified by GUIDE v2.5 05-Jun-2018 10:31:31
+% Last Modified by GUIDE v2.5 12-Sep-2018 16:38:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1301,3 +1301,11 @@ handles = setEEGSystem(new_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of othersysradio
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over existingpopupmenu.
+function existingpopupmenu_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to existingpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
