@@ -1,67 +1,82 @@
 classdef Project < handle
-    %Project is a class representing a project created in the main_gui.
+    %Project is a class representing a project created in the mainGUI.
     %   A Project contains the entire relevant information for each
     %   project. This information include the name of the project, address
-    %   of the data_folder, result_folder, list of all exisiting blocks,
+    %   of the dataFolder, resultFolder, list of all exisiting blocks,
     %   list of all preprocessed blocks, five different list of ratings
-    %   corresponding to each rate and more. Please see the properties for 
-    %   more information.
+    %   corresponding to each rate and many more. Please see the properties 
+    %   for more information.
     %
     %   Project is a subclass of handle, meaning it's a refrence to an
     %   object. Use accordingly.
     %
     %Project Methods:
     %   Project - To create a project following arguments must be given:
-    %   myProject = Project(name, d_folder, p_folder, ext, ds, params)
-    %   where name is a char specifying the desired project name, d_folder
-    %   is the address of the folder where raw data is placed, p_folder is
+    %   myProject = Project(name, dFolder, pFolder, ext, params, vParams, ...
+    %                       varargin)
+    %   where name is a char specifying the desired project name, dFolder
+    %   is the address of the folder where raw data is placed, pFolder is
     %   the address of the folder where you want the results to be saved,
-    %   ext is the file_extension of raw files, ds is the downsampling rate
-    %   that will be used to create smaller versions of raw data in order
-    %   to plot faster and params is a struct that contains parameters for 
-    %   preprocessing.
-    %   This constructor calls create_rating_structures in order to create
-    %   and initialise corresponding data structures.
+    %   ext is the fileExtension of raw files, params is a struct that 
+    %   contains parameters of preprocessing, vParams is a struct that
+    %   contains parameters of visualisation and varargin is can be the 
+    %   sampling rate in case the extension file is .txt
     %
-    %   preprocess_all - It is called from the main_gui to start
-    %   preprocessing. It iterates on all the raw files in data_folder,
-    %   preprocess them all and put the results in result_folder. 
-    %   If some files have been already preprocessed, in the beginning the
+    %   preprocessAll - Start the preprocessing. It iterates on all the 
+    %   raw files in dataFolder, preprocess them all and put the results 
+    %   in resultFolder. If some files have been already preprocessed, 
     %   user is asked to whether overwrite the previous results or just
     %   skip them and continue with the rest of unpreprocessed files.
     %
-    %   interpolate_selected - Called from the main_gui to interpolate all
-    %   the selected channels during the manual rating in rating_gui.
+    %   interpolateSelected - Interpolate all the channels selected to be
+    %   interpolated.
     %   
-    %   update_rating_structures - Whenever changes has been made to the
-    %   data_folder or result_folder, this method must be called to update
+    %   getCurrentBlock - Return the current selected block. Used mostly in
+    %   ratingGUI for visualisation.
+    %
+    %   getNextIndex - Return the index of the next (not filtered) block 
+    %   in the list. Used mostly in ratingGUI for visualisation.
+    %
+    %   getPreviousIndex - Return the index of the prebious (not filtered) 
+    %   block in the list. Used mostly in ratingGUI for visualisation.
+    %
+    %   updateRatingStructures - Whenever changes has been made to the
+    %   dataFolder or resultFolder, this method must be called to update
     %   the data structures accordingly. The process may take long time
     %   depending on the number of existing files in each folder. See the
     %   method to learn more on how it works.
     %
-    %   update_addresses_form_state_file - The method is to be called
-    %   just after a project is "loaded" from a state file. The loaded project
-    %   may have not been created from this operating system, thus addresses
-    %   to the folders (which can be on the server as well) could be 
-    %   different on this system, and they must be updated.
+    %   updateRatingLists - Update the five rating lists. This is used each
+    %   time the rating of a single block is changed.
+    %
+    %   updateAddressesFormStateFile - The method is to be called
+    %   just after a project is "loaded" from a state file. The loaded 
+    %   project may have not been created from this operating system, 
+    %   therefore addresses to the folders (which can even be on a server) 
+    %   could be different on this system, and they must be updated.
     %   
-    %   get_rated_numbers - Return the number of rated blocks in this
+    %   getQualityratings - Return the quality ratings of
+    %   all blocks given the cutoffs.
+    %
+    %   applyQualityratings - Apply the new quality ratings to all the blocks.
+    %
+    %   getRatedCount - Return the number of rated blocks in this
     %   project.
     %   
-    %   to_be_interpolated_count - Return number of blocks rated to be
+    %   toBeInterpolatedCount - Return number of blocks rated to be
     %   interpolated in this project.
     %   
-    %   folders_are_changed - Return a boolean. It's true if any of the
-    %   data_folder or result_folder has been changed since the last update.
-    %   It can be used to decide whether to call
-    %   update_rating_structures or not. Note that at this stage this
-    %   method only returns based on the number of files in the folder.
+    %   areFoldersChanged - Return a boolean. It's true if any of the
+    %   dataFolder or resultFolder has been changed since the last update.
+    %   It can be used to decide whether to call updateRatingStructures or 
+    %   not. Note that at this stage this method only returns based on the 
+    %   number of files in the folder.
     %   
-    %   save_project - Save the entire project class in a .m file
+    %   saveProject - Save the entire project class in a .m file
     %   
-    %   list_subject_files - List all folders in the data_folder
+    %   getSubjectFilesList - List all folders in the dataFolder
     %   
-    %   list_preprocessed_subjects - List all folders in the result_folder
+    %   getPreprocessedFilesList - List all folders in the resultFolder
     %
     % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
     % 
@@ -80,7 +95,7 @@ classdef Project < handle
         
     properties
         
-        % The index of the current block that must be shown in rating_gui.
+        % The index of the current block that must be shown in ratingGUI.
         current
         
         % Maximum value for the X-axis in the plot. Needed for the visual
@@ -102,25 +117,23 @@ classdef Project < handle
         name
         
         % Adress of the folder where raw data are stored.
-        data_folder
+        dataFolder
         
         % Address of the folder where results are (to be) saved. 
-        result_folder
+        resultFolder
         
         % Sampling rate to crate reduced files.
-        dsrate
+        dsRate
         
         % Sampling rate of the recorded data. This is necessary only in the
-        % case of file_extension = '.txt'
-        srate
+        % case of fileExtension = '.txt'
+        sRate
         
-        % File extension of the raw files in this project. Can be .raw,
-        % .RAW, .dat , .fif , .txt or even .mat if it's saved as a matlab 
-        % file
-        file_extension
+        % File extension of the raw files in this project. (ie. .raw)
+        fileExtension
         
         % All files with this mask at the end are loaded. It must include 
-        % the file_extension in itself 
+        % the fileExtension in itself (ie. ***_EEG.raw) 
         mask
         
         % Parameters of the preprocessing. To learn more please see
@@ -128,49 +141,50 @@ classdef Project < handle
         params
         
         % List of names of all preprocessed blocks so far.
-        processed_list
+        processedList
          
         % Map each block name to the block itself.
-        block_map
-        
-        % Number of all existing blocks.
-        file_count
-        
-        % Number of all existing subjects.
-        subject_count
-        
-        % Number of preprocessed blocks.
-        processed_files
-        
-        % Number of preprocessed subjects.
-        processed_subjects
+        blockMap
         
         qualityThresholds
         
+        % Number of all existing blocks.
+        nBlock
+        
+        % Number of all existing subjects.
+        nSubject
+        
+        % Number of preprocessed blocks.
+        nProcessedFiles
+        
+        % Number of preprocessed subjects.
+        nProcessedSubjects
+        
         % Address of the state file corresponding to this project. By
-        % default it's in the result_folder and is name project_state.mat.
-        state_address
+        % default it's in the resultFolder and is called project_state.mat.
+        stateAddress
         
     end
     
     properties(SetAccess=private, GetAccess=private)
-       % List of names of all existing blocks in the data_folder.
-        block_list
+        
+       % List of names of all existing blocks in the dataDolder.
+        blockList
         
         % List of indices of blocks that are rated as Interpolate.
-        interpolate_list
+        interpolateList
         
         % List of indices of blocks that are rated as Good.
-        good_list
+        goodList
         
         % List of indices of blocks that are rated as Bad.
-        bad_list
+        badList
         
         % List of indices of blocks that are rated as OK.
-        ok_list
+        okList
         
         % List of indices of blocks that are not rated (or rated as Not Rated).
-        not_rated_list 
+        notRatedList 
         
         % Constant Global Variables
         CGV
@@ -180,36 +194,36 @@ classdef Project < handle
     
     %% Constructor
     methods
-        function self = Project(name, d_folder, p_folder, ext, ...
-                params, visualisation_params, varargin)
+        function self = Project(name, dFolder, pFolder, ext, params, ...
+                vParams, varargin)
             
             self = self.setName(name);
-            self = self.setData_folder(d_folder);
-            self = self.setResult_folder(p_folder);
+            self = self.setDataFolder(dFolder);
+            self = self.setResultFolder(pFolder);
             self.CGV = ConstantGlobalValues;
-            self.state_address = self.make_state_address(self.result_folder);
+            self.stateAddress = self.makeStateAddress(self.resultFolder);
             
-            ext_split = strsplit(ext, '.');
-            self.file_extension = strcat('.', ext_split{end});
+            extSplit = strsplit(ext, '.');
+            self.fileExtension = strcat('.', extSplit{end});
             self.mask = ext;
-            self.qualityThresholds = visualisation_params.calcQuality_params;
-            def_vis = self.CGV.default_visualisation_params;
-            self.qualityCutoffs = def_vis.rateQuality_params;
-            if(any(strcmp(self.file_extension, {self.CGV.extensions.text})))
-                self.srate = varargin{1};
+            self.qualityThresholds = vParams.CalcQualityParams;
+            defVis = self.CGV.DefaultVisualisationParams;
+            self.qualityCutoffs = defVis.RateQualityParams;
+            if(any(strcmp(self.fileExtension, {self.CGV.EXTENSIONS.text})))
+                self.sRate = varargin{1};
             end
             
-            self.colorScale = def_vis.COLOR_SCALE;
-            self.dsrate = visualisation_params.ds_rate;
+            self.colorScale = defVis.COLOR_SCALE;
+            self.dsRate = vParams.dsRate;
             self.params = params;
-            self = self.create_rating_structure();
+            self = self.createRatingStructure();
         end
     end
     
     %% Public Methods
     methods
-        function block = get_current_block(self)
-            % Returns the block pointed by the current index. If 
+        function block = getCurrentBlock(self)
+            % Return the block pointed by the current index. If 
             % current == -1, a mock block is returned.
 
             if( self.current == -1)
@@ -218,163 +232,180 @@ classdef Project < handle
                 block.index = -1;
                 return;
             end
-            unique_name = self.processed_list{self.current};
-            block = self.block_map(unique_name);
+            
+            uniqueName = self.processedList{self.current};
+            block = self.blockMap(uniqueName);
         end
         
-        function next = get_next_index(self, next_idx, good_bool, ok_bool, ...
-                bad_bool, interpolate_bool, notrated_bool)
+        function next = getNextIndex(self, nextIdx, goodBool, okBool, ...
+                badBool, interpolateBool, notratedBool)
+            % Return the index of the next block in the list. The boolean
+            % parameters indicate if the next block to be returned should
+            % have the corresponding rating or not. These are so called
+            % filters in the ratingGUI.
+            % nextIdx - Return this block if no other next block exists in
+            % the list. This should be usually the current index.
+            % ***Bool - Whether to return the block if it has this rating
+            % or not.
             
-            block = self.get_current_block();
-            current_index = block.index;
+            block = self.getCurrentBlock();
+            currentIndex = block.index;
             % If no rating is filtered, simply return the next one in the list.
-            if( good_bool && ok_bool && bad_bool && ...
-                    interpolate_bool && notrated_bool)
-                next = min(self.current + 1, length(self.processed_list));
+            if( goodBool && okBool && badBool && ...
+                    interpolateBool && notratedBool)
+                next = min(self.current + 1, length(self.processedList));
                 if( next == 0) % 'current' could be -1 if a mock block
                     next = next + 1;
                 end
                 return;
             end
-            next_good = [];
-            next_ok = [];
-            next_bad = [];
-            next_interpolate = [];
-            next_notrated = [];
-            if(good_bool)
-                possible_goods = find(self.good_list > current_index, 1);
-                if( ~ isempty(possible_goods))
-                    next_good = self.good_list(possible_goods(1));
+            nextGood = [];
+            nextOk = [];
+            nextBad = [];
+            nextInterpolate = [];
+            nextNotrated = [];
+            if(goodBool)
+                possibleGoods = find(self.goodList > currentIndex, 1);
+                if( ~ isempty(possibleGoods))
+                    nextGood = self.goodList(possibleGoods(1));
                 end
             end
-            if(ok_bool)
-               possible_oks = find(self.ok_list > current_index, 1);
-                if( ~ isempty(possible_oks))
-                    next_ok = self.ok_list(possible_oks(1));
+            if(okBool)
+               possibleOks = find(self.okList > currentIndex, 1);
+                if( ~ isempty(possibleOks))
+                    nextOk = self.okList(possibleOks(1));
                 end
             end
-            if(bad_bool)
-               possible_bads = find(self.bad_list > current_index, 1);
-                if( ~ isempty(possible_bads))
-                    next_bad = self.bad_list(possible_bads(1));
+            if(badBool)
+               possibleBads = find(self.badList > currentIndex, 1);
+                if( ~ isempty(possibleBads))
+                    nextBad = self.badList(possibleBads(1));
                 end
             end
-            if(interpolate_bool)
-               possible_interpolates = ...
-                   find(self.interpolate_list > current_index, 1);
-                if( ~ isempty(possible_interpolates))
-                    next_interpolate = ...
-                        self.interpolate_list(possible_interpolates(1));
+            if(interpolateBool)
+               possibleInterpolates = ...
+                   find(self.interpolateList > currentIndex, 1);
+                if( ~ isempty(possibleInterpolates))
+                    nextInterpolate = ...
+                        self.interpolateList(possibleInterpolates(1));
                 end
             end
-            if(notrated_bool)
-               possible_notrateds = ...
-                   find(self.not_rated_list > current_index, 1);
-                if( ~ isempty(possible_notrateds))
-                    next_notrated = ...
-                        self.not_rated_list(possible_notrateds(1));
+            if(notratedBool)
+               possibleNotrateds = ...
+                   find(self.notRatedList > currentIndex, 1);
+                if( ~ isempty(possibleNotrateds))
+                    nextNotrated = ...
+                        self.notRatedList(possibleNotrateds(1));
                 end
             end
-            next = min([next_good next_ok next_bad next_interpolate next_notrated]);
+            next = min([nextGood nextOk nextBad nextInterpolate nextNotrated]);
             if( isempty(next))
-                next = next_idx;
+                next = nextIdx;
             end
         end
         
-        function previous = get_previous_index(self, previous_idx, good_bool, ...
-                ok_bool, bad_bool, interpolate_bool, notrated_bool)
+        function previous = getPreviousIndex(self, previousIdx, goodBool, ...
+                okBool, badBool, interpolateBool, notratedBool)
+            % Return the index of the prebious block in the list. The boolean
+            % parameters indicate if the previous block to be returned should
+            % have the corresponding rating or not. These are so called
+            % filters in the ratingGUI.
+            % previousIdx - Return this block if no other previous block 
+            %   exists in the list. This should be usually the current index.
+            % ***Bool - Whether to return the block if it has this rating
+            % or not.
+            
             % Get the current project and file
-            block =  self.get_current_block();
-            current_index = block.index;
+            block =  self.getCurrentBlock();
+            currentIndex = block.index;
             
             % If nothing is filtered simply return the previous in the list 
-            if( good_bool && ok_bool && bad_bool && ...
-                    interpolate_bool && notrated_bool)
+            if( goodBool && okBool && badBool && ...
+                    interpolateBool && notratedBool)
                 previous = max(self.current - 1, 1);
                 return;
             end
 
             % Now for each rating, find the possible choices, and then 
             % choose the closest one
-            previous_good = [];
-            previous_ok = [];
-            previous_bad = [];
-            previous_interpolate = [];
-            previous_notrated = [];
-            if(good_bool)
-                possible_goods = ...
-                    find(self.good_list < current_index, 1, 'last');
-                if( ~ isempty(possible_goods))
-                    previous_good = self.good_list(possible_goods(end));
+            previousGood = [];
+            previousOk = [];
+            previousBad = [];
+            previousInterpolate = [];
+            previousNotrated = [];
+            if(goodBool)
+                possibleGoods = ...
+                    find(self.goodList < currentIndex, 1, 'last');
+                if( ~ isempty(possibleGoods))
+                    previousGood = self.goodList(possibleGoods(end));
                 end
             end
-            if(ok_bool)
-               possible_oks = find(self.ok_list < current_index, 1, 'last');
-                if( ~ isempty(possible_oks))
-                    previous_ok = self.ok_list(possible_oks(end));
+            if(okBool)
+               possibleOks = find(self.okList < currentIndex, 1, 'last');
+                if( ~ isempty(possibleOks))
+                    previousOk = self.okList(possibleOks(end));
                 end
             end
-            if(bad_bool)
-               possible_bads = find(self.bad_list < current_index, 1, 'last');
-                if( ~ isempty(possible_bads))
-                    previous_bad = self.bad_list(possible_bads(end));
+            if(badBool)
+               possibleBads = find(self.badList < currentIndex, 1, 'last');
+                if( ~ isempty(possibleBads))
+                    previousBad = self.badList(possibleBads(end));
                 end
             end
-            if(interpolate_bool)
-               possible_interpolates = ...
-                   find(self.interpolate_list < current_index, 1, 'last');
-                if( ~ isempty(possible_interpolates))
-                    previous_interpolate = ...
-                        self.interpolate_list(possible_interpolates(end));
+            if(interpolateBool)
+               possibleInterpolates = ...
+                   find(self.interpolateList < currentIndex, 1, 'last');
+                if( ~ isempty(possibleInterpolates))
+                    previousInterpolate = ...
+                        self.interpolateList(possibleInterpolates(end));
                 end
             end
-            if(notrated_bool)
-               possible_notrateds = ...
-                   find(self.not_rated_list < current_index, 1, 'last');
-                if( ~ isempty(possible_notrateds))
-                    previous_notrated = ...
-                        self.not_rated_list(possible_notrateds(end));
+            if(notratedBool)
+               possibleNotrateds = ...
+                   find(self.notRatedList < currentIndex, 1, 'last');
+                if( ~ isempty(possibleNotrateds))
+                    previousNotrated = ...
+                        self.notRatedList(possibleNotrateds(end));
                 end
             end
-            previous = max([previous_good previous_ok previous_bad ...
-                previous_interpolate previous_notrated]);
+            previous = max([previousGood previousOk previousBad ...
+                previousInterpolate previousNotrated]);
             if( isempty(previous))
-                previous = previous_idx;
+                previous = previousIdx;
             end
             
         end
         
-        function self = preprocess_all(self)
-            % preprocesses all the files in the data_folder of this project
+        function self = preprocessAll(self)
+            % Preprocesse all the files in the dataFolder of this project
             
-            assert(exist(self.result_folder, 'dir') > 0 , ...
+            assert(exist(self.resultFolder, 'dir') > 0 , ...
                 'The project folder does not exist or is not reachable.' );
 
-            self.add_necessary_paths();
+            self.addNecessaryPaths();
             
             % Ask to overwrite the existing preprocessed files, if any
-            skip = self.check_existings();
+            skip = self.checkExistings();
 
             fprintf('*******Start preprocessing all dataset*******\n');
-            start_time = cputime;
-            % Iterate on all subjects
-            for i = 1:length(self.block_list)
-                unique_name = self.block_list{i};
-                block = self.block_map(unique_name);
-                block.update_addresses(self.data_folder, self.result_folder);
-                subject_name = block.subject.name;
+            startTime = cputime;
+            for i = 1:length(self.blockList)
+                uniqueName = self.blockList{i};
+                block = self.blockMap(uniqueName);
+                block.updateAddresses(self.dataFolder, self.resultFolder);
+                subjectName = block.subject.name;
 
-                fprintf(['Processing file ', block.unique_name ,' ...', ... 
+                fprintf(['Processing file ', block.uniqueName ,' ...', ... 
                     '(file ', int2str(i), ' out of ', ...
-                    int2str(length(self.block_list)), ')\n']); 
+                    int2str(length(self.blockList)), ')\n']); 
 
                 % Create the subject folder if it doesn't exist yet
-                if(~ exist([self.result_folder subject_name], 'dir'))
-                    mkdir([self.result_folder subject_name]);
+                if(~ exist([self.resultFolder subjectName], 'dir'))
+                    mkdir([self.resultFolder subjectName]);
                 end
 
                 % Don't preprocess the file if skip
-                if skip && exist(block.potential_result_address, 'file')
+                if skip && exist(block.potentialResultAddress, 'file')
                     fprintf(['Results already exits. Skipping '...
                              'prerocessing for this subject...\n']);
                     continue;
@@ -385,202 +416,207 @@ classdef Project < handle
 
                 if( isempty(EEG) || isfield(automagic, 'error_msg'))
                     message = automagic.error_msg;
-                    self.write_to_log(block.source_address, message);
+                    self.writeToLog(block.sourceAddress, message);
                    continue; 
                 end
                 
                 if( self.current == -1)
                     self.current = 1; 
                 end
-                self.save_project();
+                self.saveProject();
             end
             
-            self.update_main_gui();
-            end_time = cputime - start_time;
+            self.updatemainGUI();
+            endTime = cputime - startTime;
             fprintf(['*******Pre-processing finished. Total elapsed '...
-                'time: ', num2str(end_time),'***************\n'])         
+                'time: ', num2str(endTime),'***************\n'])         
         end
         
-        function self = interpolate_selected(self)
-            % Interpolates all the channels selected to be interpolated
-            % during the manual rating in rating_gui.
+        function self = interpolateSelected(self)
+            % Interpolate all the channels selected to be interpolated
 
-            self.add_necessary_paths();
+            self.addNecessaryPaths();
 
-            if(isempty(self.interpolate_list))
+            if(isempty(self.interpolateList))
                 popup_msg('No subjects to interpolate. Please first rate.',...
                     'Error');
                 return;
             end
 
             fprintf('*******Start Interpolation**************\n');
-            start_time = cputime;
-            int_list = self.interpolate_list;
-            for i = 1:length(int_list)
-                index = int_list(i);
-                unique_name = self.block_list{index};
-                block = self.block_map(unique_name);
-                block.update_addresses(self.data_folder, self.result_folder);
+            startTime = cputime;
+            intList = self.interpolateList;
+            for i = 1:length(intList)
+                index = intList(i);
+                uniqueName = self.blockList{index};
+                block = self.blockMap(uniqueName);
+                block.updateAddresses(self.dataFolder, self.resultFolder);
 
-                fprintf(['Processing file ', block.unique_name ,' ...', '(file ', ...
-                    int2str(i), ' out of ', int2str(length(int_list)), ')\n']); 
-                assert(strcmp(block.rate, self.CGV.ratings.Interpolate) == 1);
+                fprintf(['Processing file ', block.uniqueName ,' ...', '(file ', ...
+                    int2str(i), ' out of ', int2str(length(intList)), ')\n']); 
+                assert(strcmp(block.rate, self.CGV.RATINGS.Interpolate) == 1);
 
                 block.interpolate();
                 
-                self.save_project();
+                self.saveProject();
             end
-            end_time = cputime - start_time;
-            self.update_main_gui();
+            endTime = cputime - startTime;
+            self.updatemainGUI();
             fprintf(['Interpolation finished. Total elapsed time: ', ...
-                num2str(end_time), '\n'])
+                num2str(endTime), '\n'])
         end
         
-        function self = update_rating_lists(self, block)
+        function self = updateRatingLists(self, block)
+            % Update the five rating lists depending on the rating of the
+            % given block. It removes the block from its previous rating
+            % list and adds it to its new rating list.
+            % block - The block fro which the rating has changed.
+            
             switch block.rate
-                case self.CGV.ratings.Good
-                    if( ~ ismember(block.index, self.good_list ) )
-                        self.good_list = [self.good_list block.index];
-                        self.not_rated_list(...
-                            self.not_rated_list == block.index) = [];
-                        self.ok_list(self.ok_list == block.index) = [];
-                        self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(...
-                            self.interpolate_list == block.index) = [];
-                        self.good_list = sort(unique(self.good_list));
+                case self.CGV.RATINGS.Good
+                    if( ~ ismember(block.index, self.goodList ) )
+                        self.goodList = [self.goodList block.index];
+                        self.notRatedList(...
+                            self.notRatedList == block.index) = [];
+                        self.okList(self.okList == block.index) = [];
+                        self.badList(self.badList == block.index) = [];
+                        self.interpolateList(...
+                            self.interpolateList == block.index) = [];
+                        self.goodList = sort(unique(self.goodList));
 
                     end
-                case self.CGV.ratings.OK
-                    if( ~ ismember(block.index, self.ok_list ) )
-                        self.ok_list = [self.ok_list block.index];
-                        self.not_rated_list(...
-                            self.not_rated_list == block.index) = [];
-                        self.good_list(self.good_list == block.index) = [];
-                        self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(...
-                            self.interpolate_list == block.index) = [];
-                        self.ok_list = sort(unique(self.ok_list));
+                case self.CGV.RATINGS.OK
+                    if( ~ ismember(block.index, self.okList ) )
+                        self.okList = [self.okList block.index];
+                        self.notRatedList(...
+                            self.notRatedList == block.index) = [];
+                        self.goodList(self.goodList == block.index) = [];
+                        self.badList(self.badList == block.index) = [];
+                        self.interpolateList(...
+                            self.interpolateList == block.index) = [];
+                        self.okList = sort(unique(self.okList));
                     end
-                case self.CGV.ratings.Bad
-                    if( ~ ismember(block.index, self.bad_list ) )
-                        self.bad_list = [self.bad_list block.index];
-                        self.not_rated_list(...
-                            self.not_rated_list == block.index) = [];
-                        self.ok_list(self.ok_list == block.index) = [];
-                        self.good_list(self.good_list == block.index) = [];
-                        self.interpolate_list(...
-                            self.interpolate_list == block.index) = [];
-                        self.bad_list = sort(unique(self.bad_list));
+                case self.CGV.RATINGS.Bad
+                    if( ~ ismember(block.index, self.badList ) )
+                        self.badList = [self.badList block.index];
+                        self.notRatedList(...
+                            self.notRatedList == block.index) = [];
+                        self.okList(self.okList == block.index) = [];
+                        self.goodList(self.goodList == block.index) = [];
+                        self.interpolateList(...
+                            self.interpolateList == block.index) = [];
+                        self.badList = sort(unique(self.badList));
                     end
-                case self.CGV.ratings.Interpolate
-                    if( ~ ismember(block.index, self.interpolate_list ) )
-                        self.interpolate_list = ...
-                            [self.interpolate_list block.index];
-                        self.not_rated_list(...
-                            self.not_rated_list == block.index) = [];
-                        self.ok_list(self.ok_list == block.index) = [];
-                        self.bad_list(self.bad_list == block.index) = [];
-                        self.good_list(self.good_list == block.index) = [];
-                        self.interpolate_list = ...
-                            sort(unique(self.interpolate_list));
+                case self.CGV.RATINGS.Interpolate
+                    if( ~ ismember(block.index, self.interpolateList ) )
+                        self.interpolateList = ...
+                            [self.interpolateList block.index];
+                        self.notRatedList(...
+                            self.notRatedList == block.index) = [];
+                        self.okList(self.okList == block.index) = [];
+                        self.badList(self.badList == block.index) = [];
+                        self.goodList(self.goodList == block.index) = [];
+                        self.interpolateList = ...
+                            sort(unique(self.interpolateList));
                     end
-                case self.CGV.ratings.NotRated
-                    if( ~ ismember(block.index, self.not_rated_list ) )
-                        self.not_rated_list = ...
-                            [self.not_rated_list block.index];
-                        self.good_list(self.good_list == block.index) = [];
-                        self.ok_list(self.ok_list == block.index) = [];
-                        self.bad_list(self.bad_list == block.index) = [];
-                        self.interpolate_list(...
-                            self.interpolate_list == block.index) = [];
-                        self.not_rated_list = sort(unique(self.not_rated_list));
+                case self.CGV.RATINGS.NotRated
+                    if( ~ ismember(block.index, self.notRatedList ) )
+                        self.notRatedList = ...
+                            [self.notRatedList block.index];
+                        self.goodList(self.goodList == block.index) = [];
+                        self.okList(self.okList == block.index) = [];
+                        self.badList(self.badList == block.index) = [];
+                        self.interpolateList(...
+                            self.interpolateList == block.index) = [];
+                        self.notRatedList = sort(unique(self.notRatedList));
                     end
             end
         end
         
-        function self = update_rating_structures(self)
+        function self = updateRatingStructures(self)
             % Updates the data structures of this project. Look
-            % create_rating_structure for more info.
+            % createRatingStructure() for more info.
             % This method may be time consuming depending on the number of 
-            % files in both data_folder and result_folder as it goes 
+            % files in both dataFolder and resultFolder as it goes 
             % through every block and fetches relevant information.
             %
             % This functionality helps to merge different projects
-            % together. As it goes through all files in the data_folder and
-            % result_folder, it finds out the new files that are added to
+            % together. As it goes through all files in the dataFolder and
+            % resultFolder, it finds out the new files that are added to
             % these folders, and updates the data correspondigly. If
-            % there are raw files added to the data_folder only, it means some
+            % there are raw files added to the dataFolder only, it means some
             % new subjects are added. If there are raw files added to the
-            % data_folder and they have also their corresponding new
-            % preprocessed files in the result_folder, it means that some
+            % dataFolder and they have also their corresponding new
+            % preprocessed files in the resultFolder, it means that some
             % data from another projects are added to this project. If
             % there are some new preprocessed files added to the
-            % result_folder only , they will be considered only if a
-            % corresponding raw_data in the data_folder exist. Else they
+            % resultFolder only , they will be considered only if a
+            % corresponding rawData in the dataFolder exist. Otherwise they
             % are ignored.
             % If on the other hand, any files is deleted from any of those
             % two folders, they are not copied to the new data structures
             % and considered as deleted files in the project.
+            
             h = waitbar(0,'Updating project. Please wait...');
             h.Children.Title.Interpreter = 'none';
 
             % Load subject folders
-            subjects = self.list_subject_files();
-            s_count = length(subjects);
-            preprocessed_subject_count = 0;
-            ext = self.file_extension;
+            subjects = self.listSubjectFiles();
+            sCount = length(subjects);
+            nPreprocessedSubject = 0;
+            ext = self.fileExtension;
             map = containers.Map;
             list = {};
-            p_list = {};
-            i_list = [];
-            g_list = [];
-            b_list = [];
-            o_list = [];
-            n_list = [];
+            pList = {};
+            iList = [];
+            gList = [];
+            bList = [];
+            oList = [];
+            nList = [];
 
-            files_count = 0;
-            preprocessed_file_count = 0;
+            filesCount = 0;
+            nPreprocessedFile = 0;
             for i = 1:length(subjects)
                 if(ishandle(h))
                     waitbar((i-1) / length(subjects), h)
                 end
                 
-                subject_name = subjects{i};
-                subject = Subject([self.data_folder subject_name], ...
-                                    [self.result_folder subject_name]);
+                subjectName = subjects{i};
+                subject = Subject([self.dataFolder subjectName], ...
+                                    [self.resultFolder subjectName]);
                 
-                raw_files = self.dir_nothiddens(...
-                    [self.data_folder subject_name self.slash '*' self.mask]);
+                rawFiles = self.dirNotHiddens(...
+                    [self.dataFolder subjectName self.slash '*' self.mask]);
                 temp = 0;
-                for j = 1:length(raw_files)
-                    files_count = files_count + 1;
-                    file = raw_files(j);
-                    name_tmp = file.name;
-                    splits = strsplit(name_tmp, ext);
-                    file_name = splits{1};
-                    unique_name = strcat(subject_name, '_', file_name);
+                for j = 1:length(rawFiles)
+                    filesCount = filesCount + 1;
+                    file = rawFiles(j);
+                    nameTmp = file.name;
+                    splits = strsplit(nameTmp, ext);
+                    fileName = splits{1};
+                    uniqueName = strcat(subjectName, '_', fileName);
 
-                    fprintf(['...Adding file ', file_name, '\n']);
+                    fprintf(['...Adding file ', fileName, '\n']);
                     if(ishandle(h))
                         waitbar((i-1) / length(subjects), h, ...
                             ['Setting up project. Please wait.', ...
-                            ' Adding file ', file_name, '...'])
+                            ' Adding file ', fileName, '...'])
                     end
-                    % Merge data and update block_list
-                    if isKey(self.block_map, unique_name) 
+                    % Merge data and update blockList
+                    if isKey(self.blockMap, uniqueName) 
                         % File has been here
                         
-                        block = self.block_map(unique_name);
+                        block = self.blockMap(uniqueName);
                         % Add it to the new list anyways. So that if 
                         % anything has been deleted, it's not copied to 
                         % this new list.
-                        map(block.unique_name) = block; 
-                        list{files_count} = block.unique_name;
-                        block.index = files_count;
-                        if (~ isempty(block.potential_result_address)) 
+                        map(block.uniqueName) = block; 
+                        list{filesCount} = block.uniqueName;
+                        block.index = filesCount;
+                        if (~ isempty(block.potentialResultAddress)) 
                             % Some results exist
                             
-                            IndexC = strfind(self.processed_list, unique_name);
+                            IndexC = strfind(self.processedList, uniqueName);
                             Index = find(not(cellfun('isempty', IndexC)), 1);
                             if( ~isempty(Index))
                                 % Currently a result file exists. There has 
@@ -590,35 +626,35 @@ classdef Project < handle
                             else % The result is new
                                 % Update the rating info of the block
                                 try
-                                    block.update_rating_info_from_file_if_any();
+                                    block.updateRatingInfoFromFile();
                                 catch ME
                                     if ~contains(ME.identifier, 'Automagic')
                                         rethrow(ME); 
                                     end
-                                    list{files_count} = [];
-                                    files_count = files_count - 1;
-                                    remove(map, block.unique_name);
+                                    list{filesCount} = [];
+                                    filesCount = filesCount - 1;
+                                    remove(map, block.uniqueName);
 
                                     warning(ME.message)
-                                    self.write_to_log(...
-                                        block.source_address, ME.message);
+                                    self.writeToLog(...
+                                        block.sourceAddress, ME.message);
                                     continue;
                                 end
                             end
                         else
                             % In any case, no file exists, so resets the rating info
                             try
-                                block.update_rating_info_from_file_if_any();
+                                block.updateRatingInfoFromFile();
                             catch ME
                                 if ~contains(ME.identifier, 'Automagic')
                                     rethrow(ME); 
                                 end
-                                list{files_count} = [];
-                                files_count = files_count - 1;
-                                remove(map, block.unique_name);
+                                list{filesCount} = [];
+                                filesCount = filesCount - 1;
+                                remove(map, block.uniqueName);
                                 
                                 warning(ME.message)
-                                self.write_to_log(block.source_address, ...
+                                self.writeToLog(block.sourceAddress, ...
                                     ME.message);
                                 continue;
                             end
@@ -630,51 +666,51 @@ classdef Project < handle
                         % the rating information from the existing files, 
                         % if any.
                         try
-                            block = Block(self, subject, file_name);
+                            block = Block(self, subject, fileName);
                         catch ME
                             if ~contains(ME.identifier, 'Automagic')
                                rethrow(ME); 
                             end
-                            files_count = files_count - 1;
+                            filesCount = filesCount - 1;
                             warning(ME.message)
                             if exist('block', 'var')
-                                self.write_to_log(block.source_address, ...
+                                self.writeToLog(block.sourceAddress, ...
                                     ME.message);
                             else
-                                self.write_to_log(file_name, ME.message);
+                                self.writeToLog(fileName, ME.message);
                             end
                             continue;
                         end
-                        map(block.unique_name) = block;
-                        list{files_count} = block.unique_name;
-                        block.index = files_count;
+                        map(block.uniqueName) = block;
+                        list{filesCount} = block.uniqueName;
+                        block.index = filesCount;
                     end
 
-                    % Update the processed_list 
-                    if (~ isempty(block.potential_result_address))
+                    % Update the processedList 
+                    if (~ isempty(block.potentialResultAddress))
 
                         switch block.rate
-                        case self.CGV.ratings.Good
-                            g_list = [g_list block.index];
-                        case self.CGV.ratings.OK
-                            o_list = [o_list block.index];
-                        case self.CGV.ratings.Bad
-                            b_list = [b_list block.index];
-                        case self.CGV.ratings.Interpolate
-                            i_list = [i_list block.index];
-                        case self.CGV.ratings.NotRated
-                            n_list = [n_list block.index];
+                        case self.CGV.RATINGS.Good
+                            gList = [gList block.index];
+                        case self.CGV.RATINGS.OK
+                            oList = [oList block.index];
+                        case self.CGV.RATINGS.Bad
+                            bList = [bList block.index];
+                        case self.CGV.RATINGS.Interpolate
+                            iList = [iList block.index];
+                        case self.CGV.RATINGS.NotRated
+                            nList = [nList block.index];
                         end
 
-                       p_list{end + 1} = block.unique_name;
-                       preprocessed_file_count = ...
-                           preprocessed_file_count + 1;
+                       pList{end + 1} = block.uniqueName;
+                       nPreprocessedFile = ...
+                           nPreprocessedFile + 1;
                        temp = temp + 1;
                     end
                 end
-                if (~isempty(raw_files) && temp == length(raw_files))
-                    preprocessed_subject_count = ...
-                        preprocessed_subject_count + 1; 
+                if (~isempty(rawFiles) && temp == length(rawFiles))
+                    nPreprocessedSubject = ...
+                        nPreprocessedSubject + 1; 
                 end
             end
             if(ishandle(h))
@@ -683,9 +719,9 @@ classdef Project < handle
             end
             
             % Inform user if result folder has been modified
-            if( preprocessed_file_count > self.processed_files || ...
-                    preprocessed_subject_count > self.processed_subjects)
-                if( preprocessed_subject_count > self.processed_subjects)
+            if( nPreprocessedFile > self.nProcessedFiles || ...
+                    nPreprocessedSubject > self.nProcessedSubjects)
+                if( nPreprocessedSubject > self.nProcessedSubjects)
                     popup_msg(['New preprocessed results have been added'...
                         ' to the project folder.'], 'More results');
                 else
@@ -694,9 +730,9 @@ classdef Project < handle
                 end
             end
 
-            if( preprocessed_file_count < self.processed_files || ...
-                    preprocessed_subject_count < self.processed_subjects)
-                if( preprocessed_subject_count < self.processed_subjects)
+            if( nPreprocessedFile < self.nProcessedFiles || ...
+                    nPreprocessedSubject < self.nProcessedSubjects)
+                if( nPreprocessedSubject < self.nProcessedSubjects)
                     popup_msg(['Some preprocessed results have been'...
                         ' deleted from the project folder.'], ...
                         'Less results');
@@ -708,9 +744,9 @@ classdef Project < handle
             end
 
             % Inform user if data folder has been modified
-            if( files_count > self.file_count || ...
-                    s_count > self.subject_count)
-                if( s_count > self.subject_count)
+            if( filesCount > self.nBlock || ...
+                    sCount > self.nSubject)
+                if( sCount > self.nSubject)
                     popup_msg('New subjects are added to data folder.', ...
                         'New subjects');
                 else
@@ -719,9 +755,9 @@ classdef Project < handle
                 end
             end
 
-            if( files_count < self.file_count || ...
-                    s_count < self.subject_count)
-                if( s_count < self.subject_count)
+            if( filesCount < self.nBlock || ...
+                    sCount < self.nSubject)
+                if( sCount < self.nSubject)
                     popup_msg('You have lost some data files.', ...
                         'Less data');
                 else
@@ -729,90 +765,105 @@ classdef Project < handle
                         'Less data');
                 end
             end
-            self.processed_files = preprocessed_file_count;
-            self.processed_subjects = preprocessed_subject_count;   
-            self.processed_list = p_list;
-            self.block_map = map;
-            self.block_list = list;
-            self.file_count = files_count;
-            self.subject_count = s_count;
-            self.interpolate_list = i_list;
-            self.good_list = g_list;
-            self.bad_list = b_list;
-            self.ok_list = o_list;
-            self.not_rated_list = n_list;
+            self.nProcessedFiles = nPreprocessedFile;
+            self.nProcessedSubjects = nPreprocessedSubject;   
+            self.processedList = pList;
+            self.blockMap = map;
+            self.blockList = list;
+            self.nBlock = filesCount;
+            self.nSubject = sCount;
+            self.interpolateList = iList;
+            self.goodList = gList;
+            self.badList = bList;
+            self.okList = oList;
+            self.notRatedList = nList;
 
             % Assign current index
-            if( isempty(self.processed_list))
+            if( isempty(self.processedList))
                 self.current = -1;
             else
                 if( self.current == -1)
                     self.current = 1;
                 end
             end
-            self.save_project();
+            self.saveProject();
         end
     
-        function ratings = get_qualityratings(self, cutoffs)
-            blocks = values(self.block_map, self.processed_list);
+        function ratings = getQualityRatings(self, cutoffs)
+            % Return the quality ratings of all blocks given the cutoffs
+            % cutoffs - the cutoffs for which the quality ratings are
+            % returned
+            
+            blocks = values(self.blockMap, self.processedList);
             ratings = cellfun( @(block) rateQuality(block.getCurrentQualityScore(), cutoffs), blocks, 'uniform', 0);
-            ratings = cellfun( @self.make_rating_manually, blocks, ratings, 'uniform', 0);
+            ratings = cellfun( @self.makeRatingManually, blocks, ratings, 'uniform', 0);
         end
         
-        function apply_qualityratings(self, cutoffs, apply_to_manually_rated)
-            files = self.processed_list;
-            blocks = self.block_map;
+        function applyQualityRatings(self, cutoffs, applyToManuallyRated)
+            % Modify all the blocks to have the new ratings given by this
+            % cutoffs. If applyToManuallyRated, then apply to every single
+            % block. Otherwise, don't apply on the blocks for which the
+            % rating has been manually selected in the ratingGUI.
+            % cutoffs - The cutoffs for which the quality ratings are
+            % returned
+            % applyToManuallyRated - boolean indicating whether to apply on
+            % all blocks or only those that are not manually rated.
+            
+            files = self.processedList;
+            blocks = self.blockMap;
             for i = 1:length(files)
                 file = files{i};
                 block = blocks(file);
-                new_rate = rateQuality(block.getCurrentQualityScore(), cutoffs);
-                if (apply_to_manually_rated || ~ block.is_manually_rated)
-                    block.setRatingInfoAndUpdate(struct('rate', new_rate));
+                newRate = rateQuality(block.getCurrentQualityScore(), cutoffs);
+                if (applyToManuallyRated || ~ block.isManuallyRated)
+                    block.setRatingInfoAndUpdate(struct('rate', newRate));
                     block.saveRatingsToFile();
                 end
             end
             self.qualityCutoffs = cutoffs;
         end
         
-        function self = update_addresses_form_state_file(self, ...
-                project_folder, data_folder)
+        function self = updateAddressesFormStateFile(self, ...
+                pFolder, dataFolder)
             % This method must be called only when this project is a new
             % project loaded from a state file. The loaded project
             % may have not been created from this operating system, thus addresses
             % to the folders (which can be on the server as well) could be 
             % different on this system, and they must be updated.
-            % project_folder - the new address of the result_folder
-            % data_folder - the new address of the data_folder
-            self = self.setData_folder(data_folder);
-            self = self.setResult_folder(project_folder);
-            self.state_address = self.make_state_address(project_folder);
-            self.save_project();
+            % pFolder - the new address of the resultFolder
+            % dataFolder - the new address of the dataFolder
+            
+            self = self.setDataFolder(dataFolder);
+            self = self.setResultFolder(pFolder);
+            self.stateAddress = self.makeStateAddress(pFolder);
+            self.saveProject();
         end
         
-        function rated_count = get_rated_numbers(self)
+        function ratedCount = getRatedCount(self)
             % Return number of files that has been already rated
-            rated_count = length(self.processed_list) - ...
-                          (length(self.not_rated_list) + ...
-                          length(self.interpolate_list));
+            ratedCount = length(self.processedList) - ...
+                          (length(self.notRatedList) + ...
+                          length(self.interpolateList));
         end
         
-        function count = to_be_interpolated_count(self)
+        function count = toBeInterpolatedCount(self)
             % Return the number of files that are rated as interpolate
-            count = length(self.interpolate_list);
+            count = length(self.interpolateList);
         end
         
-        function modified = folders_are_changed(self)
-            % Return True if any change has happended to data_folder or
-            % result_folder since the last update. If it's true,
-            % update_data_structures must be called.
-            data_changed = self.folder_is_changed(self.data_folder, ...
-                self.subject_count, self.file_count, self.mask);
-            result_changed = self.folder_is_changed(self.result_folder, ...
-                [], self.processed_files, self.CGV.extensions(1).mat);
-            modified = data_changed || result_changed;
+        function modified = areFoldersChanged(self)
+            % Return True if any change has happended to dataFolder or
+            % resultFolder since the last update. If it's true,
+            % updateDataStructures must be called.
+            
+            dataChanged = self.isFolderChanged(self.dataFolder, ...
+                self.nSubject, self.nBlock, self.mask);
+            resultChanged = self.isFolderChanged(self.resultFolder, ...
+                [], self.nProcessedFiles, self.CGV.EXTENSIONS(1).mat);
+            modified = dataChanged || resultChanged;
         end
         
-        function slash = get.slash(self) %#ok<STOUT>
+        function slash = get.slash(self)
             if(isunix)
                 slash = '/';
             elseif(ispc)
@@ -820,50 +871,50 @@ classdef Project < handle
             end
         end
         
-        function save_project(self)
+        function saveProject(self)
             % Save this class to the state file
-            save(self.state_address, 'self');
+            save(self.stateAddress, 'self');
         end
         
-        function list = list_subject_files(self)
-           % List all folders in the data_folder
-           list = self.list_subjects(self.data_folder);
+        function list = listSubjectFiles(self)
+           % List all folders in the dataFolder
+           list = self.listSubjects(self.dataFolder);
         end
         
-        function list = list_preprocessed_subjects(self)
-            % List all folders in the result_folder
-            list = self.list_subjects(self.result_folder);
+        function list = listPreprocessedSubjects(self)
+            % List all folders in the resultFolder
+            list = self.listSubjects(self.resultFolder);
         end
         
     end
     
     %% Private Methods
     methods(Access=private)
-        function self = create_rating_structure(self)
+        function self = createRatingStructure(self)
             % This method is called from the constructor to create and
             % initialise all data structures based on the data on both
-            % data_folder and result_folder. This method may be time
+            % dataFolder and resultFolder. This method may be time
             % consuming depending on the number of files in both
-            % data_folder and result_folder as it goes through every block
+            % dataFolder and resultFolder as it goes through every block
             % and fetches relevant information.
             % In case there are already preprocessed files in the
-            % result_folder, the rating data structures are initialised
+            % resultFolder, the rating data structures are initialised
             % based on those preprocessed blocks and their corresponding
             % ratings.
             %
             % The following properties are created/updated:
-            %   block_list
-            %   processed_list
-            %   block_map
-            %   processed_subjects
-            %   processed_files
-            %   file_count
+            %   blockList
+            %   processedList
+            %   blockMap
+            %   nProcessedSubjects
+            %   nProcessedFiles
+            %   nBlock
             %   current
-            %   interpolate_list
-            %   good_list
-            %   bad_list
-            %   ok_list
-            %   not_rated_list
+            %   interpolateList
+            %   goodList
+            %   badList
+            %   okList
+            %   notRatedList
             %   (Look at their corresponding docs for more info)
             %
             % Why are there 5 lists for each rating ?
@@ -871,105 +922,106 @@ classdef Project < handle
             % instance of the class Block, but there is also one list
             % corresponding to that rate which contains the list of
             % indices of all blocks that have this rate. This helps to
-            % speed up the operations next and previous of the rating_gui
+            % speed up the operations getNextIdx and getPreviousIdx
             % whenver a filter on ratings is applied.
             
             % How this works ?
-            % The methods goes through every single exising block in the
-            % data_folder, then tries to find the corresponding
-            % preprocessed file in the result_folder, if any. Then updates
-            % the data_structure based on the preprocessed result.
+            % The method goes through every single exising block in the
+            % dataFolder, then tries to find the corresponding
+            % preprocessed file in the resultFolder, if any. Then updates
+            % the data structure based on the preprocessed result.
+            
             h = waitbar(0,'Setting up project. Please wait...');
             h.Children.Title.Interpreter = 'none';
            
             % Load subject folders
-            subjects = self.list_subject_files();
-            s_count = length(subjects);
+            subjects = self.listSubjectFiles();
+            sCount = length(subjects);
             map = containers.Map;
             list = {};
             self.maxX = 0;
-            ext = self.file_extension;
-            p_list = {};
-            i_list = [];
-            g_list = [];
-            b_list = [];
-            o_list = [];
-            n_list = [];
+            ext = self.fileExtension;
+            pList = {};
+            iList = [];
+            gList = [];
+            bList = [];
+            oList = [];
+            nList = [];
 
             
-            files_count = 0;
-            preprocessed_file_count = 0;
-            preprocessed_subject_count = 0;
+            filesCount = 0;
+            nPreprocessedFile = 0;
+            nPreprocessedSubject = 0;
             for i = 1:length(subjects)
                 if(ishandle(h))
                     waitbar((i-1) / length(subjects), h)
                 end
-                subject_name = subjects{i};
-                fprintf(['Adding subject ', subject_name, '\n']);
-                subject = Subject([self.data_folder subject_name], ...
-                                    [self.result_folder subject_name]);
+                subjectName = subjects{i};
+                fprintf(['Adding subject ', subjectName, '\n']);
+                subject = Subject([self.dataFolder subjectName], ...
+                                    [self.resultFolder subjectName]);
 
-                raw_files = self.dir_nothiddens(...
-                    [self.data_folder subject_name self.slash '*' self.mask]);
+                rawFiles = self.dirNotHiddens(...
+                    [self.dataFolder subjectName self.slash '*' self.mask]);
                 temp = 0; 
-                for j = 1:length(raw_files)
-                    files_count = files_count + 1;
-                    file = raw_files(j);
-                    name_temp = file.name;
-                    splits = strsplit(name_temp, ext);
-                    file_name = splits{1};
-                    fprintf(['...Adding file ', file_name, '\n']);
+                for j = 1:length(rawFiles)
+                    filesCount = filesCount + 1;
+                    file = rawFiles(j);
+                    nameTemp = file.name;
+                    splits = strsplit(nameTemp, ext);
+                    fileName = splits{1};
+                    fprintf(['...Adding file ', fileName, '\n']);
                     if(ishandle(h))
                         waitbar((i-1) / length(subjects), h, ...
                             ['Setting up project. Please wait.', ...
-                            ' Adding file ', file_name, '...'])
+                            ' Adding file ', fileName, '...'])
                     end
                     % Block creation extracts and updates automatically 
                     % the rating information from the existing files, if any.
                     try
-                        block = Block(self, subject, file_name);
+                        block = Block(self, subject, fileName);
                     catch ME
                         if ~contains(ME.identifier, 'Automagic')
                                rethrow(ME); 
                         end
-                        files_count = files_count - 1;
+                        filesCount = filesCount - 1;
                         warning(ME.message)
                         if exist('block', 'var')
-                            self.write_to_log(block.source_address, ...
+                            self.writeToLog(block.sourceAddress, ...
                                 ME.message);
                         else
-                            self.write_to_log(file_name, ME.message);
+                            self.writeToLog(fileName, ME.message);
                         end
                         continue;
                     end
-                    map(block.unique_name) = block;
-                    list{files_count} = block.unique_name;
-                    block.index = files_count;
+                    map(block.uniqueName) = block;
+                    list{filesCount} = block.uniqueName;
+                    block.index = filesCount;
 
-                    if ( ~ isempty(block.potential_result_address))       
+                    if ( ~ isempty(block.potentialResultAddress))       
 
                         switch block.rate
-                        case self.CGV.ratings.Good
-                            g_list = [g_list block.index];
-                        case self.CGV.ratings.OK
-                            o_list = [o_list block.index];
-                        case self.CGV.ratings.Bad
-                            b_list = [b_list block.index];
-                        case self.CGV.ratings.Interpolate
-                            i_list = [i_list block.index];
-                        case self.CGV.ratings.NotRated
-                            n_list = [n_list block.index];
+                        case self.CGV.RATINGS.Good
+                            gList = [gList block.index];
+                        case self.CGV.RATINGS.OK
+                            oList = [oList block.index];
+                        case self.CGV.RATINGS.Bad
+                            bList = [bList block.index];
+                        case self.CGV.RATINGS.Interpolate
+                            iList = [iList block.index];
+                        case self.CGV.RATINGS.NotRated
+                            nList = [nList block.index];
                         end
 
-                       p_list{end + 1} = block.unique_name;      
-                       preprocessed_file_count = ...
-                           preprocessed_file_count + 1;
+                       pList{end + 1} = block.uniqueName;      
+                       nPreprocessedFile = ...
+                           nPreprocessedFile + 1;
                        temp = temp + 1;
                     end
                 end
-                if (~isempty(raw_files) && temp == length(raw_files))
-                    preprocessed_subject_count = ...
-                        preprocessed_subject_count + 1; 
+                if (~isempty(rawFiles) && temp == length(rawFiles))
+                    nPreprocessedSubject = ...
+                        nPreprocessedSubject + 1; 
                 end
             end
             if(ishandle(h))
@@ -977,25 +1029,25 @@ classdef Project < handle
                 close(h)
             end
             
-            self.processed_list = p_list;
-            self.processed_files = preprocessed_file_count;
-            self.processed_subjects = preprocessed_subject_count; 
-            self.file_count = files_count;
-            self.subject_count = s_count;
-            self.block_map = map;
-            self.block_list = list;
-            self.interpolate_list = i_list;
-            self.good_list = g_list;
-            self.bad_list = b_list;
-            self.ok_list = o_list;
-            self.not_rated_list = n_list;
+            self.processedList = pList;
+            self.nProcessedFiles = nPreprocessedFile;
+            self.nProcessedSubjects = nPreprocessedSubject; 
+            self.nBlock = filesCount;
+            self.nSubject = sCount;
+            self.blockMap = map;
+            self.blockList = list;
+            self.interpolateList = iList;
+            self.goodList = gList;
+            self.badList = bList;
+            self.okList = oList;
+            self.notRatedList = nList;
             % Assign current index
-            if( ~ isempty(self.processed_list))
+            if( ~ isempty(self.processedList))
                 self.current = 1;
             else
                 self.current = -1;
             end
-            self.save_project();
+            self.saveProject();
         end
         
         function self = setName(self, name)
@@ -1011,36 +1063,36 @@ classdef Project < handle
             self.name = name;
         end
         
-        function self = setData_folder(self, data_folder)
-            % Set the address of the data_folder
+        function self = setDataFolder(self, dataFolder)
+            % Set the address of the dataFolder
             
-            if(~ exist(data_folder, 'dir') && isunix)
+            if(~ exist(dataFolder, 'dir') && isunix)
                popup_msg(strcat(['This data folder does not exist: ', ...
-                   data_folder]), 'Error');
+                   dataFolder]), 'Error');
                 return;
             end
             
-            self.data_folder = self.add_slash(data_folder);
+            self.dataFolder = self.addSlash(dataFolder);
         end
         
-        function self = setResult_folder(self, result_folder)
-            % Set the address of the result_folder
+        function self = setResultFolder(self, resultFolder)
+            % Set the address of the resultFolder
             
-            if(~ exist(result_folder, 'dir'))
-                mkdir(result_folder);
+            if(~ exist(resultFolder, 'dir'))
+                mkdir(resultFolder);
             end
             
-            self.result_folder = self.add_slash(result_folder);
+            self.resultFolder = self.addSlash(resultFolder);
         end
         
-        function skip = check_existings(self)
+        function skip = checkExistings(self)
             % If there is already at least one preprocessed file in the
-            % result_folder, ask the user whether to overwrite them or 
+            % resultFolder, ask the user whether to overwrite them or 
             % skip them
 
             skip = 1;
-            if( self.processed_files > 0)
-                handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+            if( self.nProcessedFiles > 0)
+                handle = findobj(allchild(0), 'flat', 'Tag', 'mainGUI');
                 main_pos = get(handle,'position');
                 screen_size = get( groot, 'Screensize' );
                 choice = MFquestdlg(...
@@ -1058,48 +1110,54 @@ classdef Project < handle
             end
         end
         
-        function write_to_log(self, source_address, msg)
-            log_file_address = [self.result_folder 'preprocessing.log'];
-            if( exist(log_file_address, 'file'))
-                fileID = fopen(log_file_address,'a');
+        function writeToLog(self, sourceAddress, msg)
+            % Write special events happenned during preprocessing into the
+            % log file.
+            % sourceAddress - The block file for which the error is
+            % printed
+            % msg - The msg to be written in the log file.
+            
+            logFileAddress = [self.resultFolder 'preprocessing.log'];
+            if( exist(logFileAddress, 'file'))
+                fileID = fopen(logFileAddress,'a');
             else
-                fileID = fopen(log_file_address,'w');
+                fileID = fopen(logFileAddress,'w');
             end
-            fprintf(fileID, [datestr(datetime('now')) ' The data file ' source_address ...
+            fprintf(fileID, [datestr(datetime('now')) ' The data file ' sourceAddress ...
                 ' could not be preprocessed:' msg '\n']);
             fclose(fileID);
         end
         
         
-        function parts = add_eeglab_path(self)
-
-            matlab_paths = genpath(...
+        function parts = addEeglabPath(self)
+            % Add the path to eeglab
+            
+            matlabPaths = genpath(...
                 ['..' self.slash 'matlab_scripts' self.slash]);
             if(ispc)
-                parts = strsplit(matlab_paths, ';');
+                parts = strsplit(matlabPaths, ';');
             else
-                parts = strsplit(matlab_paths, ':');
+                parts = strsplit(matlabPaths, ':');
             end
 
-            IndexC = strfind(parts, 'compat');
-            Index = not(cellfun('isempty', IndexC));
+            Index = not(~contains(parts, 'compat'));
             parts(Index) = [];
-            IndexC = strfind(parts, 'neuroscope');
-            Index = not(cellfun('isempty', IndexC));
+            Index = not(~contains(parts, 'neuroscope'));
             parts(Index) = [];
-            IndexC = strfind(parts, 'dpss');
-            Index = not(cellfun('isempty', IndexC));
+            Index = not(~contains(parts, 'dpss'));
             parts(Index) = [];
             if(ispc)
-                matlab_paths = strjoin(parts, ';');
+                matlabPaths = strjoin(parts, ';');
             else
-                matlab_paths = strjoin(parts, ':');
+                matlabPaths = strjoin(parts, ':');
             end
-            addpath(matlab_paths);
+            addpath(matlabPaths);
 
         end 
         
-        function add_necessary_paths(self)
+        function addNecessaryPaths(self)
+            % Add the path to other folders
+            
             % preprocess is checked as an example of a file in 
             % preprocessing, it could be any other file in that folder.
             if( ~exist('preprocess', 'file'))
@@ -1109,28 +1167,30 @@ classdef Project < handle
             % pop_fileio is checked as an example of a file in 
             % matlab_scripts, it could be any other file in that folder.
             if(~exist('pop_fileio', 'file'))
-                self.add_eeglab_path();
+                self.addEeglabPath();
             end
 
-            if(~exist('main_gui', 'file'))
+            if(~exist('mainGUI', 'file'))
                 addpath(genpath(['..' self.slash 'gui' self.slash]));
             end
         end
         
-        function update_main_gui(self)
-            % Update the main gui's data after rating processing
-            h = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+        function updatemainGUI(self)
+            % Update the main gui's data
+            
+            h = findobj(allchild(0), 'flat', 'Tag', 'mainGUI');
             if( isempty(h))
-                h = main_gui;
+                h = mainGUI;
             end
             handle = guidata(h);
-            handle.project_list(self.name) = self;
-            guidata(handle.main_gui, handle);
-            main_gui();
+            handle.projectList(self.name) = self;
+            guidata(handle.mainGUI, handle);
+            mainGUI();
         end
         
-        function folder = add_slash(self, folder)
-            % Add "\" is not exists already ("\" for windows)
+        function folder = addSlash(self, folder)
+            % Add "\" if not exists already ("/" for windows)
+            
             if( ~ isempty(folder) && ...
                     isempty(regexp( folder ,['\' self.slash '$'],'match')))
                 folder = strcat(folder, self.slash);
@@ -1140,36 +1200,42 @@ classdef Project < handle
     
     %% Public static methods
     methods(Static)
-        function address = make_state_address(p_folder)
+        function address = makeStateAddress(p_folder)
             % Return the address of the state file
             
             address = strcat(p_folder, ...
-                ConstantGlobalValues.state_file.PROJECT_NAME);
+                ConstantGlobalValues.stateFile.PROJECT_NAME);
         end 
     end
     
     %% Private utility static methods
     methods(Static, Access=private)
-        function rate = make_rating_manually(block, qRate)
-            if block.is_manually_rated
+        
+        function rate = makeRatingManually(block, qRate)
+            % Return qRate if the block is not rated manually. If
+            % it is rated manually return 'Manually Rated'. This is used
+            % only for visualisation in ratingGUI
+            % block - block for which the rate is returned
+            % qRate - the rate to be returned
+            if block.isManuallyRated
                 rate = 'Manually Rated';
             else
                 rate = qRate;
             end
         end
         
-        function subjects = list_subjects(root_folder)
-            % Return the list of subjects (dirs) in the folder
-            % root_folder       the folder in which subjects are looked for
+        function subjects = listSubjects(rootFolder)
+            % Return the    list of subjects (dirs) in the folder
+            % rootFolder    the folder in which subjects are looked for
             
-            subs = dir(root_folder);
+            subs = dir(rootFolder);
             isub = [subs(:).isdir];
             subjects = {subs(isub).name}';
             subjects(ismember(subjects,{'.','..'})) = [];
         end
         
-        function files = dir_nothiddens(folder)
-            % Return the list of files in the folder. Excude the hidden
+        function files = dirNotHiddens(folder)
+            % Return the list of files in the folder. Exclude the hidden
             % files
             % folder    The files in this filder are listed
             
@@ -1178,36 +1244,36 @@ classdef Project < handle
             files = files(idx);
         end
         
-        function modified = folder_is_changed(folder, folder_counts, ...
-                file_counts, ext)
+        function modified = isFolderChanged(folder, folder_counts, ...
+                nBlocks, ext)
             % Return true if the number of files or folders in the
-            % root_folder are changed since the last update. 
+            % folder are changed since the last update. 
             % NOTE: This is a very naive way of checking if changes
             % happened. There could be changes in files, but not number of 
             % files, which are not detected. Use with cautious.
             
             modified = false;
-            subjects = Project.list_subjects(folder);
-            subject_count = length(subjects);
+            subjects = Project.listSubjects(folder);
+            nSubject = length(subjects);
 
             if( ~ isempty(folder_counts) )
-                if( subject_count ~= folder_counts )
+                if( nSubject ~= folder_counts )
                     modified = true;
                     return;
                 end
             end
 
-            file_count = 0;
-            for i = 1:subject_count
+            nBlock = 0;
+            for i = 1:nSubject
                 subject = subjects{i};
 
                 files = dir([folder, subject ,'/*' ,ext]);
-                file_count = file_count + length(files);
+                nBlock = nBlock + length(files);
             end
 
             % NOTE: Very risky. The assumption is that for each result 
             % file, there is a corresponding reduced file as well.
-            if(file_count ~= file_counts && file_count / 2 ~= file_counts)
+            if(nBlock ~= nBlocks && nBlock / 2 ~= nBlocks)
                 modified = true;
             end
         end

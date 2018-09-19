@@ -1,15 +1,15 @@
-function popup_msg(msg_str, title)
+function popup_msg(msgStr, title)
 
-handle = findobj(allchild(0), 'flat', 'Tag', 'rating_gui');
+handle = findobj(allchild(0), 'flat', 'Tag', 'ratingGUI');
 if(isempty(handle))
-    handle = findobj(allchild(0), 'flat', 'Tag', 'main_gui');
+    handle = findobj(allchild(0), 'flat', 'Tag', 'mainGUI');
 end
-main_pos = get(handle,'position');
+mainPos = get(handle,'position');
 if(strcmp(title, 'Error'))
-    msg_handle = msgbox(msg_str, title, 'Error','modal');
+    msgHandle = msgbox(msgStr, title, 'Error','modal');
 else
-    msg_handle = msgbox(msg_str, title, 'modal');
+    msgHandle = msgbox(msgStr, title, 'modal');
 end
-msg_pos = get(msg_handle,'position');
-set(msg_handle, 'position', [main_pos(3)/2 main_pos(4)/2 msg_pos(3) msg_pos(4)]);
-waitfor(msg_handle);
+msgPos = get(msgHandle,'position');
+set(msgHandle, 'position', [mainPos(3)/2 mainPos(4)/2 msgPos(3) msgPos(4)]);
+waitfor(msgHandle);

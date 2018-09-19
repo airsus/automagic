@@ -18,28 +18,28 @@ classdef ConstantGlobalValues
     % along with this program.  If not, see <http://www.gnu.org/licenses/>.
     properties(Constant)
 
-        version = '1.7.4';
+        VERSION = '1.7.4';
             
-        DEFAULT_keyword = 'Default';
+        DEFAULT_KEYWORD = 'Default';
                 
-        NONE_keyword = 'None';
+        NONE_KEYWORD = 'None';
         
-        new_project = struct('LIST_NAME', 'Create New Project...', ...
+        NEW_PROJECT = struct('LIST_NAME', 'Create New Project...', ...
             'NAME', 'Type the name of your new project...', ...
             'DATA_FOLDER', 'Choose where your raw data is...', ...
             'FOLDER', 'Choose where you want the results to be saved...');
         
-        load_selected_project = struct('LIST_NAME', 'Load an existing project...');
+        LOAD_PROJECT = struct('LIST_NAME', 'Load an existing project...');
         
-        prefix_pattern = '^[gobni]i?p_';
+        PREFIX_PATTERN = '^[gobni]i?p_';
         
-        ratings = struct('Good',        'Good', ...
+        RATINGS = struct('Good',        'Good', ...
                          'Bad',          'Bad', ...
                          'OK',           'OK', ...
                          'Interpolate',  'Interpolate', ...
                          'NotRated',     'Not Rated');
         
-        extensions = struct('mat', '.mat', ...
+        EXTENSIONS = struct('mat', '.mat', ...
                             'text', {'.txt', '.asc', '.csv'}, ...
                             'fif', '.fif',...
                             'set', '.set')
@@ -52,13 +52,13 @@ classdef ConstantGlobalValues
                                     'NEXT',         'rightarrow', ...
                                     'PREVIOUS',     'leftarrow')
                                  
-        default_params = DefaultParameters
+        DefaultParams = DefaultParameters
         
-        default_visualisation_params = DefaultVisualisationParameters
+        DefaultVisualisationParams = DefaultVisualisationParameters
         
-        rec_params = RecommendedParameters
+        RecParams = RecommendedParameters
         
-        preprocessing_constants = PreprocessingConstants
+        PreprocessingCsts = PreprocessingConstants
     end
     
     methods
@@ -75,7 +75,7 @@ classdef ConstantGlobalValues
     end
     
     methods(Static)
-        function state_file = state_file()
+        function stateFile = stateFile()
             if ispc
                 home = [getenv('HOMEDRIVE') getenv('HOMEPATH')];
                 slash = '\';
@@ -84,10 +84,10 @@ classdef ConstantGlobalValues
                 slash = '/';
             end
             
-            state_file = struct('NAME', 'state.mat', ...
-                            'PROJECT_NAME', 'project_state.mat', ...
-                            'FOLDER', [home slash 'methlab_pipeline' slash], ...
-                            'ADDRESS', [home slash 'methlab_pipeline' slash 'state.mat']);
+            stateFile = struct('NAME', 'state.mat', ...
+                               'PROJECT_NAME', 'project_state.mat', ...
+                               'FOLDER', [home slash 'methlab_pipeline' slash], ...
+                               'ADDRESS', [home slash 'methlab_pipeline' slash 'state.mat']);
         end
     end
 end

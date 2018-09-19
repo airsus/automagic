@@ -1,43 +1,44 @@
 classdef Block < handle
     %Block is a class representing each raw file and its corresponding
-    %preprocessed file in data_folder and result_folder respectively.
+    %preprocessed file in dataFolder and resultFolder respectively.
     %   A Block contains the entire relevant information of each raw file
     %   and its corresponding preprocessed file.
-    %   This information include a unique_name for each block, the name of
-    %   the raw_file, its extension, its corresponding Subject, the prefix
-    %   of the preprocessed file, parameters of preprocessing (for more 
-    %   info on the parameters of the preprocessing see preprocess.m) 
-    %   , sampling rate of the corresponding project, list of channels
-    %   that are chosen to be interpolated, rate of the preprocessed file
-    %   given during the rating process in rating_gui, list of channels
-    %   interpolated during the preprocessing, list of channels that are
-    %   interpolated by manual inspection and a boolean stating whether
-    %   this block has been already interpolated or not.
+    %   This information include a uniqueName for each block, the name of
+    %   the rawFile, its extension, its corresponding Subject, the prefix
+    %   of the preprocessed file, parameters of preprocessing and many
+    %   more.
     %
     %   Block is a subclass of handle, meaning it's a refrence to an
     %   object. Use accordingly.
     %
     %Block Methods:
     %   Block - To create a project following arguments must be given:
-    %   myBlock = Block(subject, file_name, ext, dsrate, params)
-    %   where subject is an instance of class Subject which specifies the
-    %   Subject to which this block belongs to, file_name is the name of 
-    %   the raw_file corresponding to this block, dsrate is the sampling
-    %   rate of the corresponding project with which a reduced file is
-    %   obtained and params the parameters of the preprocessing used on
-    %   this block.
+    %   myBlock = Block(project, subject, fileName)
+    %   where project is the project to which this block belongs, subject 
+    %   is an instance of class Subject which specifies the Subject to 
+    %   which this block belongs to and fileName is the name of the
+    %   rawFile corresponding to this block.
     %
-    %   update_rating_info_from_file_if_any - Check if any corresponding
+    %   preprocess - Preprocess this block and updates structures
+    %   accordingly
+    %
+    %   interpolate - Interpolate this block (if rated as to be 
+    %   interpolated) and update structures accordingly
+    %
+    %   getCurrentQualityScore - Return the current quality score pointed
+    %   by self.project.qualityScoreIdx
+    %
+    %   updateRatingInfoFromFile - Check if any corresponding
     %   preprocessed file exists, if it's the case import the rating data
     %   to this block, initialise otherwise.
     %
-    %   potential_result_address - Check in the result folder for a
+    %   potentialResultAddress - Check in the result folder for a
     %   corresponding preprocessed file with any prefix that respects the
     %   standard pattern (See prefix).
     %   
-    %   update_addresses - The method is to be called to update addresses
+    %   updateAddresses - The method is to be called to update addresses
     %   in case the project is loaded from another operating system and may
-    %   have a different path to the data_folder or result_folder. This can
+    %   have a different path to the dataFolder or resultFolder. This can
     %   happen either because the data is on a server and the path to it is
     %   different on different systems, or simply if the project is loaded
     %   from a windows to an iOS or vice versa. The best practice is to call
@@ -46,7 +47,7 @@ classdef Block < handle
     %
     %   setRatingInfoAndUpdate - This method must be called to set and
     %   update the new rating information of this block (For example when 
-    %   user changes the rating within the rating_gui).
+    %   user changes the rating within the ratingGui).
     %
     %   saveRatingsToFile - Save all rating information to the
     %   corresponding preprocessed file
@@ -73,43 +74,45 @@ classdef Block < handle
         index 
         
         % The address of the corresponding raw file
-        source_address
+        sourceAddress
         
         % The address of the corresponding preprocessed file. It has the
-        % form /root/project/subject/prefix_unique_name.mat (ie. np_subject1_001).
-        result_address
+        % form /root/project/subject/prefix_uniqueName.mat (ie. np_subject1_001).
+        resultAddress
         
         % The address of the corresponding reduced file. The reduced file is
         % a downsampled file of the preprocessed file. Its use is only to be
-        % plotted on the rating_gui. It is downsampled to speed up the
-        % plotting in rating_gui
-        reduced_address
+        % plotted on the ratingGui. It is downsampled to speed up the
+        % plotting in ratingGui
+        reducedAddress
         
         qualityScore
     end
 
     properties(SetAccess=private)
         
+        % The instance of the roject to which this block belongs
         project
+        
         % Instance of the Subject. The corresponding subject that contains
         % this block.
         subject
         
-        % Unique_name of this block. It has the form
+        % uniqueName of this block. It has the form
         % subjectName_rawFileName (ie. subject1_001).
-        unique_name
+        uniqueName
         
         % Name of the raw file of this block
-        file_name
+        fileName
         
-        % File extension of the raw file. Could be .raw, .RAW, .dat or .fif
-        file_extension
+        % File extension of the raw file (ie. .raw).
+        fileExtension
         
         % Downsampling rate of the project. This is used to downsample and
         % obtain the reduced file.
-        dsrate
+        dsRate
         
-        srate 
+        sRate 
         
         % Parameters of the preprocessing. To learn more please see
         % preprocessing/preprocess.m
@@ -136,25 +139,25 @@ classdef Block < handle
         
         % List of the channels chosen by the user in the gui to be 
         % interpolated.
-        tobe_interpolated
+        tobeInterpolated
         
         % rate of this block: Good, Bad, OK, Interpolate, Not Rated
         rate
         
         % List of the channels that have been interpolated by the manual
-        % inspection in interpolate_selected. Note that this is not a set,
+        % inspection in interpolateSelected. Note that this is not a set,
         % If a channel is interpolated n times, there will be n instances 
         % of this channel in the list.  
-        final_badchans
+        finalBadChans
         
         % List of the channels that have been selected as bad channels during
         % the preprocessing. Note that they are not necessarily interpolated.
-        auto_badchans
+        autoBadChans
         
         % is true if the block has been already interpolated at least once.
-        is_interpolated
+        isInterpolated
         
-        is_manually_rated
+        isManuallyRated
         
         slash
         
@@ -164,194 +167,195 @@ classdef Block < handle
     properties(Dependent)
         
         % The address of the plots obtained during the preprocessing
-        image_address
+        imageAddress
     end
     
     %% Constructor
     methods   
-        function self = Block(project, subject, file_name)
+        function self = Block(project, subject, fileName)
   
             self.CGV = ConstantGlobalValues;
             
             self.project = project;
             self.subject = subject;
-            self.file_name = file_name;
+            self.fileName = fileName;
             
-            self.file_extension = project.file_extension;
-            self.dsrate = project.dsrate;
+            self.fileExtension = project.fileExtension;
+            self.dsRate = project.dsRate;
             self.params = project.params;
-            self.srate = project.srate;
+            self.sRate = project.sRate;
             
             
-            self.unique_name = self.extract_unique_name(subject, file_name);
-            self.source_address = self.extract_source_address(subject, ...
-                file_name, self.file_extension);
-            self = self.update_rating_info_from_file_if_any();
+            self.uniqueName = self.extractUniqueName(subject, fileName);
+            self.sourceAddress = self.extractSourceAddress(subject, ...
+                fileName, self.fileExtension);
+            self = self.updateRatingInfoFromFile();
         end
     end
     
     %% Public Methods
     methods
         
-        function self = update_rating_info_from_file_if_any(self)
+        function self = updateRatingInfoFromFile(self)
             % Check if any corresponding preprocessed file exists, if it's 
             % the case and that file has been already rated import the 
             % rating data to this block, initialise otherwise.
             
-            if( exist(self.potential_result_address(), 'file'))
-                preprocessed = matfile(self.potential_result_address());
+            if( exist(self.potentialResultAddress(), 'file'))
+                preprocessed = matfile(self.potentialResultAddress());
                 automagic = preprocessed.automagic;
                 
-                aut_params = automagic.params;
-                aut_fields = fieldnames(aut_params);
-                idx = ismember(aut_fields, fieldnames(self.params));
-                aut_params = struct2cell(aut_params);
-                aut_params = cell2struct(aut_params(idx), aut_fields(idx));
-                if( ~ isequal(aut_params, self.params))
+                autParams = automagic.params;
+                autFields = fieldnames(autParams);
+                idx = ismember(autFields, fieldnames(self.params));
+                autParams = struct2cell(autParams);
+                autParams = cell2struct(autParams(idx), autFields(idx));
+                if( ~ isequal(autParams, self.params))
                     msg = ['Preprocessing parameters of the ',...
-                        self.file_name, ' does not correspond to', ... 
+                        self.fileName, ' does not correspond to', ... 
                         'the preprocessing parameters of this '
                         'project. This file can not be merged.'];
-                    popup_msg(msg, 'Error');
+                    popupMsg(msg, 'Error');
                     ME = MException('Automagic:Block:parameterMismatch', msg);
                     throw(ME);
                 end 
             end
             % Find the preprocessed file if any (empty char if there is no
             % file).
-            extracted_prefix = self.extract_prefix(...
-                self.potential_result_address());
+            extractedPrefix = self.extractPrefix(...
+                self.potentialResultAddress());
             
             % If the prefix indicates that the block has been already rated
-            if(self.has_information(extracted_prefix))
-                preprocessed = matfile(self.potential_result_address());
+            if(self.hasInformation(extractedPrefix))
+                preprocessed = matfile(self.potentialResultAddress());
                 automagic = preprocessed.automagic;
                 self.rate = automagic.rate;
-                self.tobe_interpolated = automagic.tobe_interpolated;
-                self.is_interpolated = (length(extracted_prefix) == 3);
-                self.auto_badchans = automagic.auto_badchans;
-                self.final_badchans = automagic.final_badchans;
+                self.tobeInterpolated = automagic.tobeInterpolated;
+                self.isInterpolated = (length(extractedPrefix) == 3);
+                self.autoBadChans = automagic.autoBadChans;
+                self.finalBadChans = automagic.finalBadChans;
                 self.qualityScore = automagic.qualityScore;
-                self.is_manually_rated = automagic.is_manually_rated;
+                self.isManuallyRated = automagic.isManuallyRated;
             else
-                self.rate = ConstantGlobalValues.ratings.NotRated;
-                self.tobe_interpolated = [];
-                self.auto_badchans = [];
-                self.final_badchans = [];
-                self.is_interpolated = false;
+                self.rate = ConstantGlobalValues.RATINGS.NotRated;
+                self.tobeInterpolated = [];
+                self.autoBadChans = [];
+                self.finalBadChans = [];
+                self.isInterpolated = false;
                 self.qualityScore = nan;
-                self.is_manually_rated = 1;
+                self.isManuallyRated = 1;
             end
             
             % Build prefix and adress based on ratings
-            self = self.update_prefix_and_result_address();
+            self = self.updatePrefixAndResultAddress();
         end
         
-        function result_address = potential_result_address(self)
-            % Check in the result folder for a
-            % corresponding preprocessed file with any prefix that respects 
-            % the standard pattern (See prefix).
+        function resultAddress = potentialResultAddress(self)
+            % Check in the result folder for a corresponding preprocessed 
+            % file with any prefix that respects the standard pattern (See prefix).
    
             pattern = '^[gobni]i?p_';
-            fileData = dir(strcat(self.subject.result_folder, self.slash));                                        
+            fileData = dir(strcat(self.subject.resultFolder, self.slash));                                        
             fileNames = {fileData.name};  
-            idx = regexp(fileNames, strcat(pattern, self.file_name, '.mat')); 
+            idx = regexp(fileNames, strcat(pattern, self.fileName, '.mat')); 
             inFiles = fileNames(~cellfun(@isempty,idx));
             assert(length(inFiles) <= 1);
             if(~ isempty(inFiles))
-                result_address = strcat(self.subject.result_folder, ...
+                resultAddress = strcat(self.subject.resultFolder, ...
                     self.slash, inFiles{1});
             else
-                result_address = '';
+                resultAddress = '';
             end
         end
        
-        function self = update_addresses(self, new_data_path, ...
-                new_project_path)
-            % The method is to be called to update addresses
-            % in case the project is loaded from another operating system and may
-            % have a different path to the data_folder or result_folder. This can
-            % happen either because the data is on a server and the path to it is
-            % different on different systems, or simply if the project is loaded
-            % from a windows to a iOS or vice versa. 
+        function self = updateAddresses(self, newDataPath, ...
+                newProjectPath)
+            % The method is to be called to update addresses in case the 
+            % project is loaded from another operating system and may have 
+            % a different path to the dataFolder or resultFolder. This can
+            % happen either because the data is on a server and the path 
+            % to it is different on different systems, or simply if the 
+            % project is loaded from a windows to a iOS or vice versa. 
+            % newDataPath - Set the data path to this path
+            % newProjectPath - Set the project path to this path
 
-            self.subject = self.subject.update_addresses(new_data_path, ...
-                new_project_path);
-            self.source_address = ...
-                self.extract_source_address(self.subject, self.file_name,...
-                self.file_extension);
-            self = self.update_prefix_and_result_address();
+            self.subject = self.subject.updateAddresses(newDataPath, ...
+                newProjectPath);
+            self.sourceAddress = ...
+                self.extractSourceAddress(self.subject, self.fileName,...
+                self.fileExtension);
+            self = self.updatePrefixAndResultAddress();
         end
         
         function self = setRatingInfoAndUpdate(self, updates)
             % Set the new rating information
-            % Here 'rate' will be overwritten to Interpolate if channels
-            % are given to tobe_interpolated
-            % is_manally_rated will be overwritten to the reality even if
-            % it is given by a param
-            % Check consistency of rate and tobe_interpolated
-            % final_badchans will append if list is not empty, otherwise
-            % makes it empty
+            % updates - A structure with following optional fields: rate,
+            % qualityScore, tobeInterpolated, finalBadChans and 
+            % isInterpolated. If a field is not given, the previous value
+            % is kept. 
+            
             if isfield(updates, 'qualityScore')
                 self.qualityScore  = updates.qualityScore;
             end
             
             if isfield(updates, 'rate')
                 self.rate = updates.rate;
-                self.is_manually_rated = ~ strcmp(updates.rate, ...
+                self.isManuallyRated = ~ strcmp(updates.rate, ...
                     rateQuality(self.getCurrentQualityScore(), self.project.qualityCutoffs));
-                if ~ strcmp(self.rate, self.CGV.ratings.Interpolate)
-                    if ~ isfield(updates, 'tobe_interpolated')
+                if ~ strcmp(self.rate, self.CGV.RATINGS.Interpolate)
+                    if ~ isfield(updates, 'tobeInterpolated')
                         % If new rate is not Interpolate and no (empty) list 
                         % of interpolation is given then make the list empty
-                        self.tobe_interpolated = [];
+                        self.tobeInterpolated = [];
                     end
                 end
                 
             end
             
-            if isfield(updates, 'tobe_interpolated')
-                self.tobe_interpolated = updates.tobe_interpolated;
-                if ~ isempty(updates.tobe_interpolated)
-                    self.rate = self.CGV.ratings.Interpolate;
+            if isfield(updates, 'tobeInterpolated')
+                self.tobeInterpolated = updates.tobeInterpolated;
+                if ~ isempty(updates.tobeInterpolated)
+                    self.rate = self.CGV.RATINGS.Interpolate;
                 else
                     % This can happen when user removes the interpolation
                     % channel while choosing them
                 end
             end
             
-            if isfield(updates, 'final_badchans')
-                if isempty(updates.final_badchans)
-                    self.final_badchans = updates.final_badchans;
+            if isfield(updates, 'finalBadChans')
+                if isempty(updates.finalBadChans)
+                    self.finalBadChans = updates.finalBadChans;
                 else
-                    self.final_badchans = ...
-                        [self.final_badchans, updates.final_badchans]; 
+                    self.finalBadChans = ...
+                        [self.finalBadChans, updates.finalBadChans]; 
                 end
             end
             
-            if isfield(updates, 'is_interpolated')
-                self.is_interpolated = updates.is_interpolated;
+            if isfield(updates, 'isInterpolated')
+                self.isInterpolated = updates.isInterpolated;
             end
             
             % Update the result address and rename if necessary
-            self = self.update_prefix_and_result_address();
+            self = self.updatePrefixAndResultAddress();
             
             % Update the rating list structure of the project
-            self.project.update_rating_lists(self);
+            self.project.updateRatingLists(self);
         end
         
         function [EEG, automagic] = preprocess(self)
+            % Preprocess the block and update the structures
+          
             % Load the file
-            data = self.load_eeg_from_file();
+            data = self.loadEegFromFile();
 
-            if(any(strcmp({self.CGV.extensions.fif}, self.file_extension))) 
-                self.params.original_file = self.source_address;
+            if(any(strcmp({self.CGV.EXTENSIONS.fif}, self.fileExtension))) 
+                self.params.original_file = self.sourceAddress;
             end
 
             % Preprocess the file
             [EEG, fig1, fig2] = preprocess(data, self.params);
 
-            if(any(strcmp({self.CGV.extensions.fif}, self.file_extension))) 
+            if(any(strcmp({self.CGV.EXTENSIONS.fif}, self.fileExtension))) 
                 self.params = rmfield(self.params, 'original_file');
             end
             
@@ -359,7 +363,7 @@ classdef Block < handle
             if(isempty(EEG))
                 return;
             end
-            qScore  = calcQuality(EEG, unique(self.final_badchans), ...
+            qScore  = calcQuality(EEG, unique(self.finalBadChans), ...
                 self.project.qualityThresholds); 
             qScoreIdx.OHA = arrayfun(@(x) ceil(length(x.OHA)/2), qScore);
             qScoreIdx.THV = arrayfun(@(x) ceil(length(x.THV)/2), qScore);
@@ -370,33 +374,34 @@ classdef Block < handle
             qRate = rateQuality(self.getIdxQualityScore(qScore, qScoreIdx), self.project.qualityCutoffs);
             
             self.setRatingInfoAndUpdate(struct('rate', qRate, ...
-                'tobe_interpolated', EEG.automagic.auto_badchans, ...
-                'final_badchans', [], 'is_interpolated', false, ...
+                'tobeInterpolated', EEG.automagic.autoBadChans, ...
+                'finalBadChans', [], 'isInterpolated', false, ...
                 'qualityScore', qScore));
             
             
             automagic = EEG.automagic;
             EEG = rmfield(EEG, 'automagic');
             
-            automagic.tobe_interpolated = automagic.auto_badchans;
-            automagic.final_badchans = self.final_badchans;
-            automagic.is_interpolated = self.is_interpolated;
-            automagic.version = self.CGV.version;
+            automagic.tobeInterpolated = automagic.autoBadChans;
+            automagic.finalBadChans = self.finalBadChans;
+            automagic.isInterpolated = self.isInterpolated;
+            automagic.version = self.CGV.VERSION;
             automagic.qualityScore = self.qualityScore;
             automagic.rate = self.rate;
-            automagic.is_manually_rated = self.is_manually_rated;
+            automagic.isManuallyRated = self.isManuallyRated;
             self.saveFiles(EEG, automagic, fig1, fig2);
         end
         
         function interpolate(self)
-            % Interpolate and save to results
-            preprocessed = matfile(self.result_address,'Writable',true);
+            % Interpolate the block and update the structures
+            
+            preprocessed = matfile(self.resultAddress,'Writable',true);
             EEG = preprocessed.EEG;
             automagic = preprocessed.automagic;
             
-            interpolate_chans = self.tobe_interpolated;
+            interpolate_chans = self.tobeInterpolated;
             if(isempty(interpolate_chans))
-                popup_msg(['The subject is rated to be interpolated but no',...
+                popupMsg(['The subject is rated to be interpolated but no',...
                     'channels has been chosen.'], 'Error');
                 return;
             end
@@ -406,10 +411,10 @@ classdef Block < handle
             EEG.data(nanchans, :) = 0;
 
             EEG = eeg_interp(EEG ,interpolate_chans , ...
-                self.params.interpolation_params.method);
+                self.params.InterpolationParams.method);
 
             qScore  = calcQuality(EEG, ...
-                unique([self.final_badchans interpolate_chans]), ...
+                unique([self.finalBadChans interpolate_chans]), ...
                 self.project.qualityThresholds);
             qScoreIdx.OHA = arrayfun(@(x) ceil(length(x.OHA)/2), qScore);
             qScoreIdx.THV = arrayfun(@(x) ceil(length(x.THV)/2), qScore);
@@ -425,82 +430,56 @@ classdef Block < handle
             EEG.data(original_nans, :) = NaN;
 
             % Downsample the new file and save it
-            reduced.data = (downsample(EEG.data', self.dsrate))'; %#ok<STRNU>
-            save(self.reduced_address, ...
-                self.CGV.preprocessing_constants ...
-                .general_constants.reduced_name, '-v6');
+            reduced.data = (downsample(EEG.data', self.dsRate))'; %#ok<STRNU>
+            save(self.reducedAddress, ...
+                self.CGV.PreprocessingCsts ...
+                .GeneralCsts.REDUCED_NAME, '-v6');
 
             % Setting the new information
             self.setRatingInfoAndUpdate(struct('rate', qRate, ...
-                'tobe_interpolated', [], ...
-                'final_badchans', interpolate_chans, ...
-                'is_interpolated', true, ...
+                'tobeInterpolated', [], ...
+                'finalBadChans', interpolate_chans, ...
+                'isInterpolated', true, ...
                 'qualityScore', qScore));
             
             automagic.interpolation.channels = interpolate_chans;
-            automagic.interpolation.params = self.params.interpolation_params;
+            automagic.interpolation.params = self.params.InterpolationParams;
             automagic.qualityScore = self.qualityScore;
             automagic.rate = self.rate;
             
-            preprocessed = matfile(self.result_address,'Writable',true);
+            preprocessed = matfile(self.resultAddress,'Writable',true);
             preprocessed.EEG = EEG;
             preprocessed.automagic = automagic;
             self.saveRatingsToFile();
-        end
-        
-        function saveFiles(self, EEG, automagic, fig1, fig2) %#ok<INUSL>
-            % Save results of preprocessing
-            
-            % Delete old results
-            if( exist(self.reduced_address, 'file' ))
-                delete(self.reduced_address);
-            end
-            if( exist(self.result_address, 'file' ))
-                delete(self.result_address);
-            end
-            if( exist([self.image_address, '.tif'], 'file' ))
-                delete([self.image_address, '.tif']);
-            end
-            
-            % save results
-            set(fig1,'PaperUnits','inches','PaperPosition',[0 0 10 8])
-            print(fig1, self.image_address, '-djpeg', '-r200');
-            close(fig1);
-            print(fig2, strcat(self.image_address, '_orig'), '-djpeg', '-r100');
-            close(fig2);
-
-            reduced.data = downsample(EEG.data',self.dsrate)'; %#ok<STRNU>
-            fprintf('Saving results...\n');
-            save(self.reduced_address, ...
-                self.CGV.preprocessing_constants...
-                .general_constants.reduced_name, ...
-                '-v6');
-            save(self.result_address, 'EEG', 'automagic','-v7.3');
         end
         
         function saveRatingsToFile(self)
             % Save all rating information to the corresponding preprocessed 
             % file
             
-            preprocessed = matfile(self.result_address,'Writable',true);
+            preprocessed = matfile(self.resultAddress,'Writable',true);
             automagic = preprocessed.automagic;
-            automagic.tobe_interpolated = self.tobe_interpolated;
+            automagic.tobeInterpolated = self.tobeInterpolated;
             automagic.rate = self.rate;
-            automagic.auto_badchans = self.auto_badchans;
-            automagic.is_interpolated = self.is_interpolated;
-            automagic.is_manually_rated = self.is_manually_rated;
+            automagic.autoBadChans = self.autoBadChans;
+            automagic.isInterpolated = self.isInterpolated;
+            automagic.isManuallyRated = self.isManuallyRated;
             automagic.qualityScore = self.qualityScore;
             
             % It keeps track of the history of all interpolations.
-            automagic.final_badchans = self.final_badchans;
+            automagic.finalBadChans = self.finalBadChans;
             preprocessed.automagic = automagic;
         end
         
         function qScore = getCurrentQualityScore(self)
-            qScore = self.getIdxQualityScore(self.qualityScore, self.project.qualityScoreIdx);
+            % Return the quality score pointed by self.project.qualityScoreIdx
+            qScore = self.getIdxQualityScore(self.qualityScore, ...
+                self.project.qualityScoreIdx);
         end
         
         function slash = get.slash(self) %#ok<MANU>
+            % Return the system dependent slash
+            
             if(isunix)
                 slash = '/';
             elseif(ispc)
@@ -508,43 +487,44 @@ classdef Block < handle
             end
         end
         
-        function img_address = get.image_address(self)
+        function img_address = get.imageAddress(self)
             % The name and address of the obtained plots during
             % preprocessing
-           img_address = [self.subject.result_folder self.slash self.file_name];
+            
+           img_address = [self.subject.resultFolder self.slash self.fileName];
         end
         
-        function bool = is_interpolate(self)
+        function bool = isInterpolate(self)
             % Return to true if this block is rated as Interpolate
-            bool = strcmp(self.rate, ConstantGlobalValues.ratings.Interpolate);
-            bool = bool &&  (~ self.is_null);
+            bool = strcmp(self.rate, ConstantGlobalValues.RATINGS.Interpolate);
+            bool = bool &&  (~ self.isNull);
         end
         
-        function bool = is_good(self)
+        function bool = isGood(self)
             % Return to true if this block is rated as Good
-            bool = strcmp(self.rate, ConstantGlobalValues.ratings.Good);
-            bool = bool &&  (~ self.is_null);
+            bool = strcmp(self.rate, ConstantGlobalValues.RATINGS.Good);
+            bool = bool &&  (~ self.isNull);
         end
         
-        function bool = is_ok(self)
+        function bool = isOk(self)
             % Return to true if this block is rated as OK
-            bool = strcmp(self.rate, ConstantGlobalValues.ratings.OK);
-            bool = bool &&  (~ self.is_null);
+            bool = strcmp(self.rate, ConstantGlobalValues.RATINGS.OK);
+            bool = bool &&  (~ self.isNull);
         end
         
-        function bool = is_bad(self)
+        function bool = isBad(self)
             % Return to true if this block is rated as Bad
-            bool = strcmp(self.rate, ConstantGlobalValues.ratings.Bad);
-            bool = bool &&  (~ self.is_null);
+            bool = strcmp(self.rate, ConstantGlobalValues.RATINGS.Bad);
+            bool = bool &&  (~ self.isNull);
         end
         
-        function bool = is_not_rated(self)
+        function bool = isNotRated(self)
             % Return to true if this block is rated as Not Rated
-            bool = strcmp(self.rate, ConstantGlobalValues.ratings.NotRated);
-            bool = bool &&  (~ self.is_null);
+            bool = strcmp(self.rate, ConstantGlobalValues.RATINGS.NotRated);
+            bool = bool &&  (~ self.isNull);
         end
         
-        function bool = is_null(self)
+        function bool = isNull(self)
             % Return true if this block is a mock block
             bool = (self.index == -1);
         end
@@ -553,35 +533,67 @@ classdef Block < handle
     %% Private Methods
     methods(Access=private)
 
-        function data = load_eeg_from_file(self)
+        function saveFiles(self, EEG, automagic, fig1, fig2) %#ok<INUSL>
+            % Save results of preprocessing
+            
+            % Delete old results
+            if( exist(self.reducedAddress, 'file' ))
+                delete(self.reducedAddress);
+            end
+            if( exist(self.resultAddress, 'file' ))
+                delete(self.resultAddress);
+            end
+            if( exist([self.imageAddress, '.tif'], 'file' ))
+                delete([self.imageAddress, '.tif']);
+            end
+            
+            % save results
+            set(fig1,'PaperUnits','inches','PaperPosition',[0 0 10 8])
+            print(fig1, self.imageAddress, '-djpeg', '-r200');
+            close(fig1);
+            print(fig2, strcat(self.imageAddress, '_orig'), '-djpeg', '-r100');
+            close(fig2);
+
+            reduced.data = downsample(EEG.data',self.dsRate)'; %#ok<STRNU>
+            fprintf('Saving results...\n');
+            save(self.reducedAddress, ...
+                self.CGV.PreprocessingCsts...
+                .GeneralCsts.REDUCED_NAME, ...
+                '-v6');
+            save(self.resultAddress, 'EEG', 'automagic','-v7.3');
+        end
+        
+        function data = loadEegFromFile(self)
+            
             % Case of .mat file
-            if( any(strcmp(self.file_extension(end-3:end), ...
-                    {self.CGV.extensions.mat})))
-                data = load(self.source_address);
+            if( any(strcmp(self.fileExtension(end-3:end), ...
+                    {self.CGV.EXTENSIONS.mat})))
+                data = load(self.sourceAddress);
                 data = data.EEG;
                 
             % case of .txt file
-            elseif(any(strcmp(self.file_extension, ...
-                    {self.CGV.extensions.text})))
+            elseif(any(strcmp(self.fileExtension, ...
+                    {self.CGV.EXTENSIONS.text})))
                 [~, data] = ...
                     evalc(['pop_importdata(''dataformat'',''ascii'',' ...
-                    '''data'', self.source_address,''srate'', self.srate,' ...
+                    '''data'', self.sourceAddress,''sRate'', self.sRate,' ...
                     '''pnts'',0,''xmin'',0)']);
                 
             % case of .set file 
-            elseif(any(strcmp(self.file_extension, ...
-                    {self.CGV.extensions.set})))
-                [~ , data] = evalc('pop_loadset(self.source_address)');
+            elseif(any(strcmp(self.fileExtension, ...
+                    {self.CGV.EXTENSIONS.set})))
+                [~ , data] = evalc('pop_loadset(self.sourceAddress)');
             else
-                [~ , data] = evalc('pop_fileio(self.source_address)');
+                [~ , data] = evalc('pop_fileio(self.sourceAddress)');
             end 
         end
         
-        function self = update_prefix(self)
+        function self = updatePrefix(self)
             % Update the prefix based in the rating information. This must 
             % be set after rating info are set. See the below function.
+            
             p = 'p';
-            if (self.is_interpolated)
+            if (self.isInterpolated)
                 i = 'i';
             else
                 i = '';
@@ -590,43 +602,43 @@ classdef Block < handle
             self.prefix = strcat(r, i, p);
         end
 
-        function self = update_prefix_and_result_address(self)
+        function self = updatePrefixAndResultAddress(self)
             % Update prefix and thus addresses based on the rating
             % information. This must be called once rating info are set. 
             % Then the address and prefix are set based on rating info.
-            self = self.update_prefix();
-            self.result_address = strcat(self.subject.result_folder, ...
-                self.slash, self.prefix, '_', self.file_name, '.mat');
-            self.reduced_address = self.extract_reduced_address(...
-                self.result_address, self.dsrate);
+            self = self.updatePrefix();
+            self.resultAddress = strcat(self.subject.resultFolder, ...
+                self.slash, self.prefix, '_', self.fileName, '.mat');
+            self.reducedAddress = self.extractReducedAddress(...
+                self.resultAddress, self.dsRate);
             
             % Rename the file if it doesn't correspond to the actual rating
-            if( ~ strcmp(self.result_address, self.potential_result_address))
-                if( ~ isempty(self.potential_result_address) )
-                    movefile(self.potential_result_address, ...
-                        self.result_address);
+            if( ~ strcmp(self.resultAddress, self.potentialResultAddress))
+                if( ~ isempty(self.potentialResultAddress) )
+                    movefile(self.potentialResultAddress, ...
+                        self.resultAddress);
                 end
             end
         end
         
-        function source_address = extract_source_address(self, subject, ...
-                file_name, ext)
+        function sourceAddress = extractSourceAddress(self, subject, ...
+                fileName, ext)
             % Return the address of the raw file
-            source_address = [subject.data_folder self.slash file_name, ext];
+            sourceAddress = [subject.dataFolder self.slash fileName, ext];
         end
         
-        function prefix = extract_prefix(self, result_address)
-            % Given the result_address, take the prefix out of it and
+        function prefix = extractPrefix(self, resultAddress)
+            % Given the resultAddress, take the prefix out of it and
             % return. If results_adsress = '', then returns prefix = ''. 
-            splits = strsplit(result_address, self.slash);
+            splits = strsplit(resultAddress, self.slash);
             name_with_ext = splits{end};
             splits = strsplit(name_with_ext, '.');
             prefixed_name = splits{1};
             splits = strsplit(prefixed_name, '_');
             prefix = splits{1};
             
-            if( ~ Block.is_valid_prefix(prefix) )
-                popup_msg('Not a valid prefix.','Error');
+            if( ~ Block.isValidPrefix(prefix) )
+                popupMsg('Not a valid prefix.','Error');
                 return;
             end
         end
@@ -642,23 +654,23 @@ classdef Block < handle
             qScore.RBC = qScore.RBC(qScoreIdx.RBC);
         end
         
-        function reduced_address = extract_reduced_address(...
-                result_address, dsrate)
+        function reducedAddress = extractReducedAddress(...
+                resultAddress, dsRate)
             % Return the address of the reduced file
             
             pattern = '[gobni]i?p_';
-            reduced_address = regexprep(result_address,pattern,...
-                strcat('reduced', int2str(dsrate), '_'));
+            reducedAddress = regexprep(resultAddress,pattern,...
+                strcat('reduced', int2str(dsRate), '_'));
         end
         
-        function unique_name = extract_unique_name(subject, file_name)
-            % Return the unique_name of this block. The unique_name is the
+        function uniqueName = extractUniqueName(subject, fileName)
+            % Return the uniqueName of this block. The uniqueName is the
             % concatenation of the subject's name and this raw file's name
             
-            unique_name = strcat(subject.name, '_', file_name);
+            uniqueName = strcat(subject.name, '_', fileName);
         end
 
-        function bool = has_information(prefix)
+        function bool = hasInformation(prefix)
             % Return true if the prefix indicates that this preprocessed
             % file has been already rated.
             
@@ -670,39 +682,39 @@ classdef Block < handle
                 return;
             end
             
-            switch Block.get_rate_from_prefix(prefix)
-                case ConstantGlobalValues.ratings.NotRated
+            switch Block.getRateFromPrefix(prefix)
+                case ConstantGlobalValues.RATINGS.NotRated
                     bool = false;
                 case ''
                     bool = false;
             end
         end
         
-        function type = get_rate_from_prefix(prefix)
+        function type = getRateFromPrefix(prefix)
             % Extract the rating information from the prefix. The first
             % character of the prefix indicates the rating. 
             
             if( strcmp(prefix, ''))
-                type = ConstantGlobalValues.ratings.NotRated;
+                type = ConstantGlobalValues.RATINGS.NotRated;
                 return;
             end
             
             type = '';
             switch prefix(1)
                 case 'g'
-                    type = ConstantGlobalValues.ratings.Good;
+                    type = ConstantGlobalValues.RATINGS.Good;
                 case 'o'
-                    type = ConstantGlobalValues.ratings.OK;
+                    type = ConstantGlobalValues.RATINGS.OK;
                 case 'b'
-                    type = ConstantGlobalValues.ratings.Bad;
+                    type = ConstantGlobalValues.RATINGS.Bad;
                 case 'i'
-                    type = ConstantGlobalValues.ratings.Interpolate;
+                    type = ConstantGlobalValues.RATINGS.Interpolate;
                 case 'n'
-                    type = ConstantGlobalValues.ratings.NotRated;
+                    type = ConstantGlobalValues.RATINGS.NotRated;
             end
         end
 
-        function bool = is_valid_prefix(prefix)
+        function bool = isValidPrefix(prefix)
             % Return true if the prefix respects the standard pattern
             
             pattern = '^[gobni]i?p$';

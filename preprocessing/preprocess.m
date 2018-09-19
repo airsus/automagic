@@ -1,72 +1,48 @@
 function [EEG, varargout] = preprocess(data, varargin)
-% preprocess  preprocess the data 
-%   [result, fig] = preprocess(data, varargin)
+% preprocess the input EEG 
+%   [EEG, varargout] = preprocess(data, varargin)
 %   where data is the EEGLAB data structure and varargin is an 
 %   optional parameter which must be a structure with optional fields 
-%   'filter_params', 'asr_params', 'pca_params', 'ica_params'
-%   'interpolation_params', 'eog_regression_params', 'eeg_system', 
-%   'channel_reduction_params' and 'original_file' to specify parameters for 
-%   filtering, channel rejection, pca, ica, interpolation, EOG regression, 
-%   channel locations, reducing channels and original file address 
-%   respectively. The latter one is needed only if a '*.fif' file is used,
-%   otherwise it can be omitted.
+%   'FilterParams', 'ASRParams', 'PCAParams', 'ICAParams', 'PrepParams',
+%   'InterpolationParams', 'EOGRegressionParams', 'EEGSystem',
+%   'ChannelReductionParams', 'HighvarParams' and 'ORIGINAL_FILE' to 
+%   specify parameters for filtering, cleanrawdata(), pca, ica, prep robust 
+%   average referencing, interpolation, eog regression, channel locations,
+%   reducing channels, high variance channel rejection and original 
+%   file address respectively. The latter one is needed only if a '*.fif' 
+%   file is used, otherwise it can be omitted.
 %   
-%   To learn more about 'filter_params', 'ica_params' and 'pca_params' 
-%   please see their corresponding functions perform_filter.m, 
-%   perform_ica.m and perform_pca.m.
+%   To learn more about 'FilterParams', 'ICAParams', 'PCAParams' and
+%   'HighvarParams' please see their corresponding functions performFilter.m, 
+%   performMaraICA.m, performPCA.m and performHighvarianceChannelRejection.m.
 %
-%   'asr_params' is an optional structure which has the same parameters as 
+%   To learn more about EEGSystem and ChannelreductionParams please see
+%   SystemDependentParse.m.
+%   
+%   'ASRParams' is an optional structure which has the same parameters as 
 %   required by clean_artifacts(). For more information please
 %   see clean_artifacts() in Artefact Subspace Reconstruction.
 %   
-%   'interpolation_params' is an optional structure with an optional field
+%   'PrepParams' is an optional struture required by prep library. For more
+%   information please see their documentation.
+%   
+%   'InterpolationParams' is an optional structure with an optional field
 %   'method' which can be on of the following chars: 'spherical',
 %   'invdist' and 'spacetime'. The default value is
-%   interpolation_params.method = 'spherical'. To learn more about these
+%   InterpolationParams.method = 'spherical'. To learn more about these
 %   three methods please see eeg_interp.m of EEGLAB.
-%   
-%   'eog_regression_params' has a field 'perform_eog_regression' that 
-%   must be a boolean indication whether to perform EOG Regression or not. 
-%   The default value is 'eog_regression_params.perform_eog_regression = 1'
-%   which performs eog regression. The other field 
-%   'eog_regression_params.eog_chans' must be an array of numbers 
-%   indicating indices of the EOG channels in the data.
-%   
-%   'channel_reduction_params.perform_reduce_channels' must be a boolean 
-%   indicating whether to reduce the number of channels or not. The 
-%   default value is 'channel_reduction_params.perform_reduce_channels = 1'
-%   'channel_reduction_params.tobe_excluded_chans' must be an array of 
-%   numbers indicating indices of the channels to be excluded from the 
-%   analysis
-%   
-%   'original_file' is necassary only in case of '*.fif' files. In that case,
+%
+%   'ORIGINAL_FILE' is necassary only in case of '*.fif' files. In that case,
 %   this should be the address of the file where this EEG data is loaded
 %   from.
-%   
-%   eeg_system must be a structure with fields 'name', 'sys10_20', 'ref_chan', 
-%   'loc_file' and 'file_loc_type'.  eeg_system.name can be either 'EGI' or 
-%   'Others'. eeg_system.sys10_20 is a boolean indicating whether to use 
-%   10-20 system to find channel locations or not. All other following 
-%   fields are optional if eeg_system.name='EGI' and can be left empty. 
-%   But in the case of eeg_system.name='Others':
-%   eeg_system.ref_chan is the index of the reference channel in dataset. 
-%   If it's left empty, a new reference channel will be added as the last 
-%   channel of the dataset where all values are zeros and this new channel 
-%   will be considered as the reference channel. If eeg_system.ref_chan == -1 
-%   no reference channel is added and no channel is considered as reference 
-%   channel at all. eeg_system.loc_file must be the name of the file located 
-%   in 'matlab_scripts' folder that can be used by pop_chanedit to find 
-%   channel locations and finally eeg_system.file_loc_type must be the type 
-%   of that file. Please see pop_chanedit for more information. Obviously 
-%   only types supported by pop_chanedit are supported.
 %   
 %   If varargin is ommited, default values are used. If any of the fields
 %   of varargin are ommited, corresponsing default values are used. If a
 %   structure is given as 'struct([])' then the corresponding operation is
-%   omitted and is not performed; for example, ica_params = struct([])
-%   skips the ICA and does not perform any ICA. Wheras if ica_params =
-%   struct() if ica_params is simply not given, then the default value will
-%   be used.
+%   omitted and is not performed; for example, ICAParams = struct([])
+%   skips the ICA and does not perform any ICA. Whereas if ICAParams =
+%   struct() or if ICAParams is simply not given, then the default value 
+%   will be used.
 %
 % Copyright (C) 2017  Amirreza Bahreini, amirreza.bahreini@uzh.ch
 % 
@@ -83,95 +59,92 @@ function [EEG, varargout] = preprocess(data, varargin)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-%% Parse arguments
-defaults = DefaultParameters;
-constants = PreprocessingConstants;
+Defaults = DefaultParameters;
+Csts = PreprocessingConstants;
 p = inputParser;
-addParameter(p,'eeg_system', defaults.eeg_system, @isstruct);
-addParameter(p,'filter_params', defaults.filter_params, @isstruct);
-addParameter(p,'prep_params', defaults.prep_params, @isstruct);
-addParameter(p,'asr_params', defaults.asr_params, @isstruct);
-addParameter(p,'pca_params', defaults.pca_params, @isstruct);
-addParameter(p,'highvar_params', defaults.highvar_params, @isstruct);
-addParameter(p,'ica_params', defaults.ica_params, @isstruct);
-addParameter(p,'interpolation_params', defaults.interpolation_params, @isstruct);
-addParameter(p,'eog_regression_params', defaults.eog_regression_params, @isstruct);
-addParameter(p,'channel_reduction_params', defaults.channel_reduction_params, @isstruct);
-addParameter(p,'original_file', constants.general_constants.original_file, @ischar);
+addParameter(p,'EEGSystem', Defaults.EEGSystem, @isstruct);
+addParameter(p,'FilterParams', Defaults.FilterParams, @isstruct);
+addParameter(p,'PrepParams', Defaults.PrepParams, @isstruct);
+addParameter(p,'ASRParams', Defaults.ASRParams, @isstruct);
+addParameter(p,'PCAParams', Defaults.PCAParams, @isstruct);
+addParameter(p,'HighvarParams', Defaults.HighvarParams, @isstruct);
+addParameter(p,'ICAParams', Defaults.ICAParams, @isstruct);
+addParameter(p,'InterpolationParams', Defaults.InterpolationParams, @isstruct);
+addParameter(p,'EOGRegressionParams', Defaults.EOGRegressionParams, @isstruct);
+addParameter(p,'ChannelReductionParams', Defaults.ChannelReductionParams, @isstruct);
+addParameter(p,'ORIGINAL_FILE', Csts.GeneralCsts.ORIGINAL_FILE, @ischar);
 parse(p, varargin{:});
 params = p.Results;
-eeg_system = p.Results.eeg_system;
-filter_params = p.Results.filter_params;
-asr_params = p.Results.asr_params;
-prep_params = p.Results.prep_params;
-highvar_params = p.Results.highvar_params;
-pca_params = p.Results.pca_params;
-ica_params = p.Results.ica_params;
-interpolation_params = p.Results.interpolation_params; %#ok<NASGU>
-eog_regression_params = p.Results.eog_regression_params;
-channel_reduction_params = p.Results.channel_reduction_params;
-original_file_address = p.Results.original_file; %#ok<NASGU>
-assert( isempty(ica_params) || isempty(pca_params), ...
-    'Can not perform both ICA and PCA.');
+EEGSystem = p.Results.EEGSystem;
+FilterParams = p.Results.FilterParams;
+ASRParams = p.Results.ASRParams;
+PrepParams = p.Results.PrepParams;
+HighvarParams = p.Results.HighvarParams;
+PCAParams = p.Results.PCAParams;
+ICAParams = p.Results.ICAParams;
+InterpolationParams = p.Results.InterpolationParams; %#ok<NASGU>
+EOGRegressionParams = p.Results.EOGRegressionParams;
+ChannelReductionParams = p.Results.ChannelReductionParams;
+ORIGINAL_FILE = p.Results.ORIGINAL_FILE;
 clear p varargin;
 
 % Add and download necessary paths
-download_and_add_paths(struct('prep_params', prep_params, ...
-                              'pca_params', pca_params));
+downloadAndAddPaths(struct('PrepParams', PrepParams, ...
+    'PCAParams', PCAParams));
                           
 % Set system dependent parameters and eeparate EEG from EOG
-[EEG, EOG, eeg_system, ica_params] = ...
-    system_dependent_params(data, eeg_system, channel_reduction_params, ...
-    eog_regression_params, ica_params);
-EEG_ref = EEG;
+[EEG, EOG, EEGSystem, ICAParams] = ...
+    systemDependentParse(data, EEGSystem, ChannelReductionParams, ...
+    EOGRegressionParams, ICAParams, ORIGINAL_FILE);
+EEGRef = EEG;
 
 % Remove the reference channel from the rest of preprocessing
-[~, EEG] = evalc('pop_select(EEG, ''nochannel'', eeg_system.ref_chan)');
-EEG.automagic.channel_reduction.new_ref_chan = eeg_system.ref_chan;
-EEG_orig = EEG;
+[~, EEG] = evalc('pop_select(EEG, ''nochannel'', EEGSystem.refChan)');
+EEG.automagic.channelReduction.new_RefChan = EEGSystem.refChan;
+EEGOrig = EEG;
 
 
 %% Preprocessing
 [s, ~] = size(EEG.data);
-EEG.automagic.preprocessing.to_remove = [];
-EEG.automagic.preprocessing.removed_mask = false(1, s); clear s;
+EEG.automagic.preprocessing.toRemove = [];
+EEG.automagic.preprocessing.removedMask = false(1, s); clear s;
 
 % Running prep
-[EEG, EOG] = perform_prep(EEG, EOG, prep_params, eeg_system.ref_chan);
+[EEG, EOG] = performPrep(EEG, EOG, PrepParams, EEGSystem.refChan);
 
 
 % Clean EEG using clean_rawdata()
-[EEG, EOG] = perform_cleanrawdata(EEG, EOG, asr_params);
+[EEG, EOG] = perform_cleanrawdata(EEG, EOG, ASRParams);
 
 % Filtering on the whole dataset
-display(PreprocessingConstants.filter_constants.run_message);
-EEG = perform_filter(EEG, filter_params);
-EOG = perform_filter(EOG, filter_params);
+display(PreprocessingConstants.FilterCsts.RUN_MESSAGE);
+EEG = performFilter(EEG, FilterParams);
+EOG = performFilter(EOG, FilterParams);
 
 % Remove channels
-to_remove = EEG.automagic.preprocessing.to_remove;
-removed_mask = EEG.automagic.preprocessing.removed_mask;
-[~, new_to_remove] = intersect(find(~removed_mask), to_remove); %#ok<ASGLU>
-[~, EEG] = evalc('pop_select(EEG, ''nochannel'', new_to_remove)');
-removed_mask(to_remove) = 1;
-to_remove = [];
-EEG.automagic.preprocessing.removed_mask = removed_mask;
-EEG.automagic.preprocessing.to_remove = to_remove;
-clear to_remove removed_mask new_to_remove;
+toRemove = EEG.automagic.preprocessing.toRemove;
+removedMask = EEG.automagic.preprocessing.removedMask;
+[~, newToRemove] = intersect(find(~removedMask), toRemove); %#ok<ASGLU>
+[~, EEG] = evalc('pop_select(EEG, ''nochannel'', newToRemove)');
+removedMask(toRemove) = 1;
+toRemove = [];
+EEG.automagic.preprocessing.removedMask = removedMask;
+EEG.automagic.preprocessing.toRemove = toRemove;
+clear toRemove removedMask newToRemove;
 
 % Remove effect of EOG
-EEG.automagic.eog_regression.performed = 'no';
-if( eog_regression_params.perform_eog_regression )
-    EEG = EOG_regression(EEG, EOG);
+EEG.automagic.eogRegression.performed = 'no';
+if( EOGRegressionParams.performEOGRegression )
+    EEG = performEOGRegression(EEG, EOG);
 end
 EEG_regressed = EEG;
 
 % PCA or ICA
 EEG.automagic.ica.performed = 'no';
 EEG.automagic.pca.performed = 'no';
-if ( ~isempty(ica_params) )
+if ( ~isempty(ICAParams) )
     try
-        EEG = perform_ica(EEG, ica_params);
+        EEG = performMaraICA(EEG, ICAParams);
     catch ME
         message = ['ICA is not done on this subject, continue with the next steps: ' ...
             ME.message];
@@ -179,8 +152,8 @@ if ( ~isempty(ica_params) )
         EEG.automagic.ica.performed = 'FAILED';
         EEG.automagic.error_msg = message;
     end
-elseif ( ~isempty(pca_params))
-    [EEG, pca_noise] = perform_pca(EEG, pca_params);
+elseif ( ~isempty(PCAParams))
+    [EEG, pca_noise] = performPCA(EEG, PCAParams);
 end
 EEG_cleared = EEG;
 
@@ -192,38 +165,39 @@ EEG.data = singled_data;
 clear doubled_data res singled_data;
 
 % Reject channels based on high variance
-EEG.automagic.highvariance_rejection.performed = 'no';
-if ~isempty(highvar_params)
-    [~, EEG] = evalc('high_variance_channel_rejection(EEG, highvar_params)');
+EEG.automagic.highVarianceRejection.performed = 'no';
+if ~isempty(HighvarParams)
+    [~, EEG] = evalc('performHighvarianceChannelRejection(EEG, HighvarParams)');
 end
 
 % Put back removed channels
-removed_chans = find(EEG.automagic.preprocessing.removed_mask);
-for chan_idx = 1:length(removed_chans)
-    chan_nb = removed_chans(chan_idx);
+removedChans = find(EEG.automagic.preprocessing.removedMask);
+for chan_idx = 1:length(removedChans)
+    chan_nb = removedChans(chan_idx);
     EEG.data = [EEG.data(1:chan_nb-1,:); ...
                   NaN(1,size(EEG.data,2));...
                   EEG.data(chan_nb:end,:)];
     EEG.chanlocs = [EEG.chanlocs(1:chan_nb-1), ...
-                      EEG_orig.chanlocs(chan_nb), EEG.chanlocs(chan_nb:end)];
+                      EEGOrig.chanlocs(chan_nb), EEG.chanlocs(chan_nb:end)];
 end
 % Put back refrence channel
-ref_chan = eeg_system.ref_chan;
-EEG.data = [EEG.data(1:ref_chan-1,:); ...
+refChan = EEGSystem.refChan;
+EEG.data = [EEG.data(1:refChan-1,:); ...
                         zeros(1,size(EEG.data,2));...
-                        EEG.data(ref_chan:end,:)];
-EEG.chanlocs = [EEG.chanlocs(1:ref_chan-1), EEG_ref.chanlocs(ref_chan), ...
-                    EEG.chanlocs(ref_chan:end)];                   
+                        EEG.data(refChan:end,:)];
+EEG.chanlocs = [EEG.chanlocs(1:refChan-1), EEGRef.chanlocs(refChan), ...
+                    EEG.chanlocs(refChan:end)];                   
 EEG.nbchan = size(EEG.data,1);
 clear chan_nb re_chan;
 
 % Write back output
-EEG.automagic.auto_badchans = setdiff(removed_chans, eeg_system.ref_chan);
+EEG.automagic.autoBadChans = setdiff(removedChans, EEGSystem.refChan);
 EEG.automagic.params = params;
+
 %% Creating the final figure to save
-plot_filter_params.high.freq = 1;
-plot_filter_params.high.order = [];
-EEG_filtered_toplot = perform_filter(EEG_orig, plot_filter_params);
+plot_FilterParams.high.freq = 1;
+plot_FilterParams.high.order = [];
+EEG_filtered_toplot = performFilter(EEGOrig, plot_FilterParams);
 fig1 = figure('visible', 'off');
 set(gcf, 'Color', [1,1,1])
 hold on
@@ -250,7 +224,7 @@ subplot(11,1,4:5)
 imagesc(EEG_filtered_toplot.data);
 axe = gca;
 hold on;
-bads = EEG.automagic.auto_badchans;
+bads = EEG.automagic.autoBadChans;
 for i = 1:length(bads)
     y = bads(i);
     p1 = [0, size(EEG_filtered_toplot.data, 2)];
@@ -278,21 +252,21 @@ colormap jet
 caxis([-100 100])
 set(gca,'XTick',XTicks)
 set(gca,'XTickLabel',XTicketLabels)
-if (~isempty(ica_params))
+if (~isempty(ICAParams))
     if strcmp(EEG.automagic.ica.performed, 'FAILED')
         title_text = '\color{red}ICA FALIED';
         cla(ica_subplot)
     else
         title_text = 'ICA corrected clean data';
     end
-elseif(~isempty(pca_params))
+elseif(~isempty(PCAParams))
     title_text = 'PCA corrected clean data';
 else
     title_text = '';
 end
 title(title_text)
 %figure;
-if( ~isempty(fieldnames(pca_params)) && (isempty(pca_params.lambda) || pca_params.lambda ~= -1))
+if( ~isempty(fieldnames(PCAParams)) && (isempty(PCAParams.lambda) || PCAParams.lambda ~= -1))
     subplot(11,1,10:11)
     imagesc(pca_noise);
     colormap jet
@@ -320,7 +294,7 @@ colormap jet
 caxis([-100 100])
 set(ax,'XTick', XTicks)
 set(ax,'XTickLabel', XTicketLabels)
-title_str = [num2str(plot_filter_params.high.freq) ' Hz High pass filtered EEG data'];
+title_str = [num2str(plot_FilterParams.high.freq) ' Hz High pass filtered EEG data'];
 title(title_str, 'FontSize', 10)
 
 varargout{1} = fig1;

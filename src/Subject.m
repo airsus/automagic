@@ -1,5 +1,5 @@
 classdef Subject
-%SUBJECT is a class representing each subject in the data_folder. 
+%SUBJECT is a class representing each subject in the dataFolder. 
 %   A Subject corresponds to a folder, which contains one or more
 %   Blocks. A Bock represents a raw file and it's associated
 %   preprocessed file, if any (See Block).
@@ -26,33 +26,33 @@ classdef Subject
     
     properties(SetAccess=private)
         % List of all blocks of this subject
-        block_list
+        blockList
         
-        % The address of the data_folder in which this subject is stored.
-        data_folder
+        % The address of the dataFolder in which this subject is stored.
+        dataFolder
        
         % The address of the folder where the results are (to be) stored.
-        result_folder
+        resultFolder
     end
     
     methods
         %% Constructor
-        function self = Subject(data_folder, result_folder)
-            self.result_folder = result_folder;
-            self.data_folder = data_folder;
-            self.name = self.extract_name(data_folder);
+        function self = Subject(dataFolder, resultFolder)
+            self.resultFolder = resultFolder;
+            self.dataFolder = dataFolder;
+            self.name = self.extract_name(dataFolder);
         end     
         
-        function self = update_addresses(self, new_data_path, new_project_path)
+        function self = updateAddresses(self, newDataPath, newProjectPath)
             % The method is to be called to update addresses
             % in case the project is loaded from another operating system and may
-            % have a different path to the data_folder or result_folder. This can
+            % have a different path to the dataFolder or resultFolder. This can
             % happen either because the data is on a server and the path to it is
             % different on different systems, or simply if the project is loaded
             % from a windows to a iOS or vice versa. 
 
-            self.data_folder = [new_data_path self.name];
-            self.result_folder = [new_project_path self.name];
+            self.dataFolder = [newDataPath self.name];
+            self.resultFolder = [newProjectPath self.name];
         end
     end
     
