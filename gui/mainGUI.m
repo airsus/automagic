@@ -1301,3 +1301,11 @@ handles = setEEGSystem(new_params, handles);
 % Update handles structure
 guidata(hObject, handles);
 % Hint: get(hObject,'Value') returns toggle state of othersysradio
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over existingpopupmenu.
+function existingpopupmenu_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to existingpopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
