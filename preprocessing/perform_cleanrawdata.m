@@ -77,7 +77,7 @@ if(isfield(EEGCleaned, 'etc'))
 
         newToRemove = union(toRemove, badChans);
     end
-    EOG_out.etc = etcfield;
+    EEG_out.etc = etcfield;
 
     % Remove the same time-windows from the EOG channels
    if(isfield(EEGCleaned.etc, 'clean_sample_mask'))
