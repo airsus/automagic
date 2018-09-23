@@ -26,9 +26,10 @@ switch block.rate
         set(handles.rategroup,'selectedobject', handles.notrate)
 end
 
-res = rateQuality(block.getCurrentQualityScore(), cutoffs);
+qualityScore = block.getCurrentQualityScore();
+res = rateQuality(qualityScore, cutoffs);
 set(handles.qualityscoretext, 'FontSize', 6)
-set(handles.qualityscoretext, 'String', evalc('disp(block.qualityScore)'))
+set(handles.qualityscoretext, 'String', evalc('disp(qualityScore)'))
 switch res
     case handles.CGV.RATINGS.Good
        set(handles.goodrate,'ForegroundColor','red')

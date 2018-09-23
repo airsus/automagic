@@ -86,7 +86,7 @@ classdef Block < handle
         % plotting in ratingGui
         reducedAddress
         
-        qualityScore
+        qualityScores
     end
 
     properties(SetAccess=private)
@@ -234,7 +234,7 @@ classdef Block < handle
                 self.isInterpolated = (length(extractedPrefix) == 3);
                 self.autoBadChans = automagic.autoBadChans;
                 self.finalBadChans = automagic.finalBadChans;
-                self.qualityScore = automagic.qualityScore;
+                self.qualityScores = automagic.qualityScores;
                 self.isManuallyRated = automagic.isManuallyRated;
             else
                 self.rate = ConstantGlobalValues.RATINGS.NotRated;
@@ -242,7 +242,7 @@ classdef Block < handle
                 self.autoBadChans = [];
                 self.finalBadChans = [];
                 self.isInterpolated = false;
-                self.qualityScore = nan;
+                self.qualityScores = nan;
                 self.isManuallyRated = 1;
             end
             
@@ -290,12 +290,12 @@ classdef Block < handle
         function self = setRatingInfoAndUpdate(self, updates)
             % Set the new rating information
             % updates - A structure with following optional fields: rate,
-            % qualityScore, tobeInterpolated, finalBadChans and 
+            % qualityScores, tobeInterpolated, finalBadChans and 
             % isInterpolated. If a field is not given, the previous value
             % is kept. 
             
-            if isfield(updates, 'qualityScore')
-                self.qualityScore  = updates.qualityScore;
+            if isfield(updates, 'qualityScores')
+                self.qualityScores  = updates.qualityScores;
             end
             
             if isfield(updates, 'rate')
@@ -376,7 +376,7 @@ classdef Block < handle
             self.setRatingInfoAndUpdate(struct('rate', qRate, ...
                 'tobeInterpolated', EEG.automagic.autoBadChans, ...
                 'finalBadChans', [], 'isInterpolated', false, ...
-                'qualityScore', qScore));
+                'qualityScores', qScore));
             
             
             automagic = EEG.automagic;
@@ -386,7 +386,8 @@ classdef Block < handle
             automagic.finalBadChans = self.finalBadChans;
             automagic.isInterpolated = self.isInterpolated;
             automagic.version = self.CGV.VERSION;
-            automagic.qualityScore = self.qualityScore;
+            automagic.qualityScores = self.qualityScores;
+            automagic.qualityScore = self.getCurrentQualityScore();
             automagic.rate = self.rate;
             automagic.isManuallyRated = self.isManuallyRated;
             self.saveFiles(EEG, automagic, fig1, fig2);
@@ -440,11 +441,12 @@ classdef Block < handle
                 'tobeInterpolated', [], ...
                 'finalBadChans', interpolate_chans, ...
                 'isInterpolated', true, ...
-                'qualityScore', qScore));
+                'qualityScores', qScore));
             
             automagic.interpolation.channels = interpolate_chans;
             automagic.interpolation.params = self.params.InterpolationParams;
-            automagic.qualityScore = self.qualityScore;
+            automagic.qualityScores = self.qualityScores;
+            automagic.qualityScore = self.getCurrentQualityScore();
             automagic.rate = self.rate;
             
             preprocessed = matfile(self.resultAddress,'Writable',true);
@@ -464,7 +466,8 @@ classdef Block < handle
             automagic.autoBadChans = self.autoBadChans;
             automagic.isInterpolated = self.isInterpolated;
             automagic.isManuallyRated = self.isManuallyRated;
-            automagic.qualityScore = self.qualityScore;
+            automagic.qualityScores = self.qualityScores;
+            automagic.qualityScore = self.getCurrentQualityScore();
             
             % It keeps track of the history of all interpolations.
             automagic.finalBadChans = self.finalBadChans;
@@ -473,7 +476,7 @@ classdef Block < handle
         
         function qScore = getCurrentQualityScore(self)
             % Return the quality score pointed by self.project.qualityScoreIdx
-            qScore = self.getIdxQualityScore(self.qualityScore, ...
+            qScore = self.getIdxQualityScore(self.qualityScores, ...
                 self.project.qualityScoreIdx);
         end
         
